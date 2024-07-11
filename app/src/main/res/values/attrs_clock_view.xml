@@ -1,0 +1,15 @@
+<resources>
+    <declare-styleable name="ClockView">
+        <attr name="backgroundColor" format="color" />
+        <attr name="borderColor" format="color" />
+        <attr name="progressColor" format="color" />
+        <attr name="borderWidth" format="dimension" />
+        <attr name="maxValue" format="float" />
+        <attr name="value" format="float" />
+        <attr name="textTopMargin" format="dimension" />
+        <attr name="textBottomMargin" format="dimension" />
+        <attr name="textSize" format="dimension" />
+
+
+    </declare-styleable>
+</resources>

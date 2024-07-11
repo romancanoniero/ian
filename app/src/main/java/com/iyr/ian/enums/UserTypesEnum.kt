@@ -1,0 +1,5 @@
+package com.iyr.ian.enums
+
+enum class UserTypesEnum {
+    COMMON_USER, PLACE, POLICE_MAN, POLICE_CAR, FIREMAN, FIRE_TRUCK, AMBULANCE,DOCTOR, TOWING, MECHANIC
+}

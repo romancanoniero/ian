@@ -1,0 +1,55 @@
+<resources>
+
+
+    <dimen name="box_xxsuperbig">225dp</dimen>
+    <dimen name="box_xsuperbig">180dp</dimen>
+    <dimen name="box_superbig">157.5dp</dimen>
+    <dimen name="box_xxxbig">126.8dp</dimen>
+    <dimen name="box_xxbig">95.8dp</dimen>
+    <dimen name="box_xbig">72dp</dimen>
+    <dimen name="box_big">54dp</dimen>
+    <dimen name="box_normal">39dp</dimen>
+    <dimen name="box_medium">31.5dp</dimen>
+    <dimen name="box_small">27dp</dimen>
+    <dimen name="box_xsmall">21dp</dimen>
+    <dimen name="box_xxsmall">12dp</dimen>
+    <dimen name="dimen_2dp">1.5dp</dimen>
+    <dimen name="dimen_4dp">3dp</dimen>
+    <dimen name="dimen_10dp">7.5dp</dimen>
+    <dimen name="dimen_1dp">0.8dp</dimen>
+    <dimen name="dimen_6dp">4.5dp</dimen>
+    <dimen name="dimen_14dp">10.5dp</dimen>
+    <dimen name="dimen_16dp">12dp</dimen>
+    <dimen name="dimen_20dp">15dp</dimen>
+    <dimen name="dimen_30dp">22.5dp</dimen>
+    <dimen name="dimen_15dp">11.2dp</dimen>
+    <dimen name="dimen_5dp">3.8dp</dimen>
+    <dimen name="dimen_45dp">33.8dp</dimen>
+    <dimen name="dimen_55dp">41.2dp</dimen>
+    <dimen name="dimen_75dp">68.75dp</dimen>
+    <dimen name="dimen_100dp">91.67dp</dimen>
+
+
+    <dimen name="marker_user_image_size">56dp</dimen>
+
+    <dimen name="otp_item_height">64dp</dimen>
+    <dimen name="otp_item_width">64dp</dimen>
+
+    <dimen name="text_size_heading">28.8sp</dimen>
+    <dimen name="text_size_subheading">16sp</dimen>
+    <dimen name="text_size_paragraph">12.8sp</dimen>
+    <dimen name="text_size_subparagraph">9.6sp</dimen>
+    <dimen name="text_size_subsubparagraph">6.4sp</dimen>
+
+    <dimen name="circle_1">206dp</dimen>
+    <dimen name="circle_5">64dp</dimen>
+
+
+    <dimen name="rectangle_1">101dp</dimen>
+    <dimen name="rectangle_2">91dp</dimen>
+    <dimen name="rectangle_3">84dp</dimen>
+
+
+    <dimen name="button_1">202dp</dimen>
+    <dimen name="button_2">46dp</dimen>
+</resources>

@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout11"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/constraintLayout10"
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="15dp"
+            android:layout_marginVertical="60dp"
+            android:background="@drawable/white_popup_bg"
+            android:orientation="vertical"
+            android:paddingHorizontal="30dp"
+            android:paddingBottom="20dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+
+            <TextView
+                android:id="@+id/dialogTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/muli_black"
+                android:text="@string/error"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/text_size_subheading" />
+
+            <TextView
+                android:id="@+id/dialogMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:layout_marginTop="15dp"
+
+                android:layout_marginBottom="15dp"
+                android:fontFamily="@font/muli_semibold"
+                android:gravity="center|fill_horizontal"
+                android:lineSpacingExtra="2dp"
+                android:text="@string/to_continue_must_complete_data"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/text_size_subparagraph"
+
+                />
+
+            <LinearLayout
+                android:id="@+id/req_field_display_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="@string/display_name_requirements"
+                    android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:id="@+id/req_field_first_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="@string/first_name_requirements"
+                    android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/req_field_last_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="@string/last_name_requirements"
+                    android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+         <LinearLayout
+                android:id="@+id/req_field_email_or_phone_number_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+             <TextView
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_marginStart="10dp"
+                 android:layout_weight="1"
+                 android:text="@string/email_or_phone_number_empty"
+                 android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+         <LinearLayout
+                android:id="@+id/req_field_email_or_phone_number_unknown_format"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+             <TextView
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_marginStart="10dp"
+                 android:layout_weight="1"
+                 android:text="@string/cannot_be_determined_if_email_or_phone"
+                 android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+         <LinearLayout
+                android:id="@+id/req_field_password_invalid"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+             <TextView
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_marginStart="10dp"
+                 android:layout_weight="1"
+                 android:text="@string/password_invalid"
+                 android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+         <LinearLayout
+                android:id="@+id/req_field_security_code_is_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+             <TextView
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_marginStart="10dp"
+                 android:layout_weight="1"
+                 android:text="@string/security_code_is_missing"
+                 android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+         <LinearLayout
+                android:id="@+id/req_field_security_code_invalid"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_baseline_circle_12" />
+
+             <TextView
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_marginStart="10dp"
+                 android:layout_weight="1"
+                 android:text="@string/security_code_requirements"
+                 android:textSize="@dimen/text_size_subparagraph" />
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/acceptButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:layout_marginTop="30dp"
+                android:background="@drawable/primary_button_border"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/got_it"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_size_subparagraph" />
+
+
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

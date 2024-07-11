@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="AvatarGroupView">
+        <attr name="avatarSizeValue" format="dimension" />
+        <attr name="avatarMaxVisibleAvatarsValue" format="integer" />
+        <attr name="avatarBorderColorValue" format="color" />
+        <attr name="avatarBorderWidth" format="dimension" />
+        <attr name="avatarPreviewItems" format="integer" />
+    </declare-styleable>
+</resources>

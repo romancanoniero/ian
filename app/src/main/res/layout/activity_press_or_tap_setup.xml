@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:seekarc="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+
+        android:background="#f9f9f9"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/back_arrows"
+                android:layout_width="@dimen/box_normal"
+                android:layout_height="@dimen/box_normal"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/circle_primary_color"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="@color/white" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/stepTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/choose_your"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="@dimen/text_size_subheading" />
+
+                <TextView
+                    android:id="@+id/stepLegend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="@string/sos_activation_type"
+                    android:textSize="@dimen/text_size_subheading"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:orientation="horizontal">
+
+
+            <ToggleButton
+                android:id="@+id/toggleHoldButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:checked="true"
+                android:text="@string/holding"
+                android:textOff="@string/holding"
+                android:textOn="@string/holding"
+                android:textSize="@dimen/text_size_paragraph"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textView11"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="3" />
+
+            <ToggleButton
+                android:id="@+id/toggleTapButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:checked="false"
+                android:text="@string/tapping"
+                android:textOff="@string/tapping"
+                android:textOn="@string/tapping"
+                android:textSize="@dimen/text_size_paragraph"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="@dimen/circle_1_1"
+            android:layout_height="@dimen/circle_1_1"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginHorizontal="60dp"
+            android:layout_marginTop="20dp"
+            android:visibility="visible">
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guideline4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintGuide_percent=".5" />
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guide_left"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/dummy_button_image"
+                app:layout_constraintGuide_percent=".16"
+                app:layout_constraintTop_toTopOf="@id/dummy_button_image" />
+
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/guide_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/dummy_button_image"
+                app:layout_constraintGuide_percent=".86"
+                app:layout_constraintTop_toTopOf="@id/dummy_button_image" />
+
+
+            <TextView
+                android:id="@+id/button_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:elevation="4dp"
+                android:fontFamily="@font/app_font_family"
+                android:gravity="center_vertical|center_horizontal"
+                android:lines="1"
+                android:text="@string/press_here"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_size_subheading"
+                android:textStyle="bold"
+
+                app:layout_constraintBottom_toTopOf="@+id/guideline4"
+                app:layout_constraintEnd_toStartOf="@+id/guide_right"
+                app:layout_constraintStart_toStartOf="@+id/guide_left"
+                app:layout_constraintTop_toTopOf="@+id/guideline4" />
+
+
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/dummy_button_image"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:elevation="2dp"
+                android:padding="8dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="v,1:1"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:src="@drawable/shape_circle_red"
+                app:civ_border_color="#EF848E"
+                app:civ_border_width="12dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                />
+
+
+            <com.triggertrap.seekarc.SeekArc
+                android:id="@+id/seekCounter"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:elevation="10dp"
+                android:clickable="true"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                app:touchInside="false"
+                seekarc:touchInside="false"
+                android:padding="14dp"
+                android:text="15"
+                app:arcColor="@color/f9f9f9"
+                app:arcWidth="5dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:max="6"
+                app:progress="0"
+
+                app:progressColor="@color/colorPrimary"
+                app:thumb="@drawable/circle_primary_color"
+
+                seekarc:rotation="180"
+                seekarc:startAngle="0"
+                seekarc:sweepAngle="360"
+              />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <TextView
+            android:id="@+id/textView7"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/muli"
+            android:gravity="center_horizontal"
+            android:text="@string/set_holding_time"
+            android:textSize="@dimen/text_size_paragraph" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp">
+
+
+            <TextView
+                android:id="@+id/counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:text="0"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/text_size_subheading"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:id="@+id/view3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:gravity="bottom"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/resetButton"
+                    style="@style/SecondaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+
+                    android:layout_weight="1"
+                    android:text="@string/reset" />
+
+                <Button
+                    android:id="@+id/saveButton"
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:text="@string/save" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</layout>

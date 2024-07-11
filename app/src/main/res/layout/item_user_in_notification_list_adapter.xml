@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#f9f9f9"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:cardPreventCornerOverlap="true"
+        app:cardUseCompatPadding="true"
+        app:contentPadding="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="7dp"
+            android:orientation="horizontal">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/user_image"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:elevation="6dp"
+                    android:src="@drawable/profile_dummy"
+                    app:civ_border_color="@color/colorGrey50"
+                    app:civ_border_overlay="true"
+                    app:civ_border_width="1dp"
+                    app:civ_circle_background_color="#AAA9A9"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/user_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Romulo"
+                    android:textAllCaps="true"
+                    android:textColor="@color/material_purple500"
+                    android:textSize="@dimen/text_size_paragraph"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/second_line"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginTop="4dp"
+                    android:text="Aun no es usuario de IAN. Invitale a unirsenos"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_subparagraph"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="4dp"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/speed_dial_section"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textView16"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/speed_dial"
+                            android:textSize="@dimen/text_size_subparagraph"
+                            android:visibility="visible" />
+
+                        <LinearLayout
+                            android:id="@+id/switch_speed_dial_section"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="@dimen/box_xsmall"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/ic_emergency_call" />
+
+                            <Switch
+                                android:id="@+id/switch_speed_dial"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginStart="10dp"
+                                android:layout_marginEnd="10dp"
+                                android:layout_weight="1"
+
+                                android:checked="true"
+                                android:thumb="@drawable/switch_thumb_selector"
+                                android:track="@drawable/bg_switch_states" />
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/current_lists_section"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/primary_action_button"
+                android:layout_width="@dimen/box_xsmall"
+                android:layout_height="@dimen/box_xsmall"
+                android:layout_gravity="top"
+                android:clickable="false"
+                android:focusable="false"
+                android:src="@drawable/ic_action_delete"
+                app:tint="@color/colorPrimary" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="4dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@color/gray_600" />
+
+</LinearLayout>

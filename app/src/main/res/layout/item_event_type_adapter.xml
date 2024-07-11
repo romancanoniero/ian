@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@null">
+
+    <TextView
+        android:id="@+id/circular_bg"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/shape_event_selector_background"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="@+id/avatar_area"
+        app:layout_constraintDimensionRatio="v,1:1"
+        app:layout_constraintEnd_toEndOf="@id/avatar_area"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent=".84" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/avatar_area"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:elevation="10dp"
+        app:layout_constraintDimensionRatio="v,1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/avatar_image"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/poli"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="v,1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/guideline2"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        app:layout_constraintBottom_toBottomOf="@+id/avatar_area"
+        app:layout_constraintTop_toBottomOf="@id/avatar_area"
+        app:layout_constraintTop_toTopOf="@id/avatar_area" />
+
+
+    <LinearLayout
+        android:id="@+id/linearLayout11"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="10dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="@id/bottom_card"
+        app:layout_constraintStart_toStartOf="@id/bottom_card"
+        app:layout_constraintTop_toBottomOf="@+id/avatar_area">
+
+        <View
+            android:id="@+id/view7"
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+
+        <TextView
+            android:id="@+id/rotules_first_line"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="@string/call"
+            android:textSize="@dimen/text_size_subparagraph"
+            android:textStyle="normal" />
+
+        <TextView
+            android:id="@+id/rotules_second_line"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="20dp"
+            android:autoText="false"
+            android:gravity="center_horizontal"
+            android:text="a la Policia"
+            android:textSize="@dimen/text_size_subparagraph" />
+
+        <View
+            android:id="@+id/view6"
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+
+    </LinearLayout>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bottom_card"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="-6dp"
+
+        android:layout_marginEnd="-6dp"
+        android:paddingHorizontal="30dp"
+        android:visibility="visible"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="20dp"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintBottom_toBottomOf="@id/linearLayout11"
+        app:layout_constraintEnd_toEndOf="@+id/circular_bg"
+        app:layout_constraintStart_toStartOf="@+id/circular_bg"
+        app:layout_constraintTop_toBottomOf="@+id/guideline2">
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#5E35B1">
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

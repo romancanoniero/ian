@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.iyr.ian.ui.settings.profile_settings.ProfileSettingsFragment">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#f9f9f9"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="22dp">
+
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="@dimen/box_xxxbig"
+                    android:layout_height="@dimen/box_xxxbig"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginHorizontal="75dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <LinearLayout
+                        android:id="@+id/upload_photo_stamp"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_marginStart="40dp"
+                        android:layout_marginTop="40dp"
+                        android:layout_marginEnd="40dp"
+                        android:layout_marginBottom="40dp"
+                        android:elevation="8dp"
+                        android:orientation="vertical"
+                        android:visibility="visible"
+                        app:layout_constraintBottom_toBottomOf="@+id/profile_image"
+                        app:layout_constraintEnd_toEndOf="@+id/profile_image"
+                        app:layout_constraintStart_toStartOf="@+id/profile_image"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <ImageView
+                            android:id="@+id/imageView9"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            app:srcCompat="@drawable/ic_upload_picture"
+                            app:tint="@color/white" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/muli_black"
+                            android:gravity="center_horizontal|center_vertical"
+                            android:text="@string/upload_picture"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_paragraph" />
+                    </LinearLayout>
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/profile_image"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:backgroundTint="@color/darkGray"
+                        android:src="@drawable/profile_dummy"
+                        android:visibility="visible"
+                        app:civ_border_color="@color/white"
+                        app:civ_border_width="2dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/profile_image_warning"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="visible"
+                        app:layout_constraintEnd_toEndOf="@+id/profile_image"
+                        app:layout_constraintStart_toEndOf="@+id/profile_image"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="30dp"
+                android:orientation="vertical">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/nickname_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <EditText
+                        android:id="@+id/display_name"
+                        style="@style/InputText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:capitalize="words"
+                        android:ems="10"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+                        android:hint="@string/hint_nick_name"
+
+                        android:inputType="none|textCapWords"
+                        android:textColorHint="@color/material_purple500" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:id="@+id/change_password_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:paddingVertical="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="@string/change_password"
+                        android:textColor="@color/colorPrimary" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:rotation="180"
+                        android:src="@drawable/ic_chevron_left"
+                        app:tint="@color/colorPrimary" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/change_email_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:paddingVertical="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="@string/change_email"
+                        android:textColor="@color/colorPrimary" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:rotation="180"
+                        android:src="@drawable/ic_chevron_left"
+                        app:tint="@color/colorPrimary" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/change_phone_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:paddingVertical="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="@string/change_phone_number"
+                        android:textColor="@color/colorPrimary" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:rotation="180"
+                        android:src="@drawable/ic_chevron_left"
+                        app:tint="@color/colorPrimary" />
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="bottom"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/save_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/save" />
+            </LinearLayout>
+        </LinearLayout>
+
+
+
+</layout>
+
+

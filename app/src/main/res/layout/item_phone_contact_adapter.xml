@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/user_image"
+            android:layout_width="@dimen/circle_6"
+            android:layout_height="@dimen/circle_6"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+
+            android:src="@drawable/profile_dummy"
+            app:civ_border_color="@color/colorGrey50"
+            app:civ_border_overlay="true"
+            app:civ_border_width="1dp"
+            app:civ_circle_background_color="#AAA9A9" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/user_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli_black"
+                android:inputType="textCapWords"
+                android:text="Romulo"
+
+                android:textAllCaps="true"
+                android:textColor="@color/darkGray"
+                android:textSize="@dimen/text_size_paragraph"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/phone_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="+549111111111"
+                android:textColor="@color/gray_400"
+                android:textSize="@dimen/text_size_paragraph"/>
+
+            <TextView
+                android:id="@+id/email_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="xxxx@yyyyyy.zzzz"
+                android:textColor="@color/gray_400"
+                android:textSize="@dimen/text_size_subparagraph"
+                android:singleLine="true"
+                />
+
+        </LinearLayout>
+
+        <CheckBox
+            android:id="@+id/selector"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_gravity="center_vertical"
+
+            android:layout_marginEnd="10dp"
+            android:button="@drawable/checkbox_round"
+            android:checked="false"
+            app:layout_constraintTop_toTopOf="parent" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height=".5dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="10dp"
+        android:background="@color/gray_600" />
+
+</LinearLayout>

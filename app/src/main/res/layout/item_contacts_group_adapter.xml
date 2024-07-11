@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+        app:cardBackgroundColor="@color/white"
+        app:cardElevation="6dp"
+        app:cardPreventCornerOverlap="true"
+        app:cardUseCompatPadding="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="10dp"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+
+
+            android:paddingEnd="10dp">
+
+            <TextView
+                android:id="@+id/list_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="Romulo"
+                android:textAllCaps="true"
+                android:textColor="@color/material_purple500"
+                android:textSize="@dimen/text_size_subparagraph" />
+
+            <TextView
+                android:id="@+id/members_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="5dp
+"
+                android:text="5"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/text_size_subparagraph"
+                android:textStyle="normal" />
+
+            <ImageView
+                android:id="@+id/selector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:foregroundTint="@color/colorPrimary"
+                android:rotation="180"
+                app:srcCompat="@drawable/ic_chevron_left"
+                app:tint="@color/colorPrimary" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+
+</LinearLayout>

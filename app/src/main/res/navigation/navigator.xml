@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigator"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.iyr.ian.ui.main.HomeFragment"
+        android:label="HomeFragment"
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_homeFragment_to_eventTypeSelectorFragment"
+            app:destination="@id/eventTypeSelectorFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_mapSituationFragment"
+            app:destination="@id/mapSituationFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_friendsFragment"
+            app:destination="@id/friendsFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/eventTypeSelectorFragment"
+        android:name="com.iyr.ian.ui.events.fragments.EventTypeSelectorFragment"
+        android:label="EventTypeSelectorFragment"
+        tools:layout="@layout/fragment_event_selection">
+        <action
+            android:id="@+id/action_eventTypeSelectorFragment_to_eventRealTimeTrackingFragment"
+            app:destination="@id/eventRealTimeTrackingFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/eventRealTimeTrackingFragment"
+        android:name="com.iyr.ian.ui.events.fragments.EventRealTimeTrackingFragment"
+        android:label="EventRealTimeTrackingFragment"
+        tools:layout="@layout/fragment_event_real_time_tracker_selector">
+        <action
+            android:id="@+id/action_eventRealTimeTrackingFragment_to_eventLocationReadOnlyFragment"
+            app:destination="@id/eventLocationReadOnlyFragment" />
+        <action
+            android:id="@+id/action_eventRealTimeTrackingFragment_to_eventAdditionalMediaFragment"
+            app:destination="@id/eventAdditionalMediaFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/eventLocationReadOnlyFragment"
+        android:name="com.iyr.ian.ui.events.fragments.EventLocationReadOnlyFragment"
+        android:label="EventLocationReadOnlyFragment"
+        tools:layout="@layout/fragment_event_location_read_only">
+        <action
+            android:id="@+id/action_eventLocationReadOnlyFragment_to_eventAdditionalMediaFragment"
+            app:destination="@id/eventAdditionalMediaFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/eventAdditionalMediaFragment"
+        android:name="com.iyr.ian.ui.events.fragments.EventAdditionalMediaFragment"
+        android:label="EventAdditionalMediaFragment"
+        tools:layout="@layout/fragment_event_aditional_media">
+        <action
+            android:id="@+id/action_eventAdditionalMediaFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/mapSituationFragment"
+        android:name="com.iyr.ian.ui.map.MapSituationFragment"
+        android:label="MapSituationFragment"
+        tools:layout="@layout/fragment_map_situation">
+        <action
+            android:id="@+id/action_mapSituationFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/friendsFragment"
+        android:name="com.iyr.ian.ui.friends.FriendsFragment"
+        android:label="FriendsFragment"
+        tools:layout="@layout/fragment_friends"/>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.iyr.ian.ui.settings.SettingsFragment"
+        android:label="SettingsFragment"
+        tools:layout="@layout/fragment_settings_landing">
+        <action
+            android:id="@+id/action_settingsFragment_to_profileSettingsFragment"
+            app:destination="@id/profileSettingsFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_subscriptionCurrentPlanActivity"
+            app:destination="@id/subscriptionCurrentPlanActivity" />
+        <action
+            android:id="@+id/action_settingsFragment_to_pushButtonSetupFragment"
+            app:destination="@id/pushButtonSetupFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_bluetoothConfigurationActivity"
+            app:destination="@id/bluetoothConfigurationActivity" />
+    </fragment>
+    <fragment
+        android:id="@+id/profileSettingsFragment"
+        android:name="com.iyr.ian.ui.settings.profile_settings.ProfileSettingsFragment"
+        android:label="fragment_profile_settings"
+        tools:layout="@layout/fragment_profile_settings" />
+    <fragment
+        android:id="@+id/planSubscriptionFragment"
+        android:name="com.iyr.ian.ui.settings.subscription_plan.PlanSubscriptionFragment"
+        android:label="PlanSubscriptionFragment"
+        tools:layout="@layout/activity_subscription_current_plan"/>
+    <activity
+        android:id="@+id/subscriptionCurrentPlanActivity"
+        android:name="com.iyr.fewtouchs.ui.views.signup.subscription_plan.SubscriptionCurrentPlanActivity"
+        android:label="SubscriptionCurrentPlanActivity"
+        tools:layout="@layout/fragment_plan_subscription"/>
+    <fragment
+        android:id="@+id/pushButtonSetupFragment"
+        android:name="com.iyr.ian.ui.settings.push_button.PushButtonSetupFragment"
+        android:label="PushButtonSetupFragment"
+        tools:layout="@layout/activity_press_or_tap_setup"/>
+    <activity
+        android:id="@+id/bluetoothConfigurationActivity"
+        android:name="com.iyr.ian.ui.setup.bluetooth.BluetoothConfigurationActivity"
+        android:label="BluetoothConfigurationActivity"
+        tools:layout="@layout/activity_bluetooth_configuration"/>
+</navigation>

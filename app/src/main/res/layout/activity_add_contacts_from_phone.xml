@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="20dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1">
+
+                        <ImageButton
+                            android:id="@+id/back_arrows"
+                            android:layout_width="@dimen/box_normal"
+                            android:layout_height="@dimen/box_normal"
+                            android:layout_marginTop="20dp"
+                            android:background="@drawable/circle_primary_color"
+                            android:contentDescription="@string/go_back"
+
+                            android:src="@drawable/ic_chevron_left"
+                            app:tint="@color/white" />
+
+                    </LinearLayout>
+
+                    <TextView
+
+                        android:id="@+id/skip_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+
+                        android:fontFamily="@font/muli_bold"
+                        android:text="@string/skip"
+                        android:textSize="@dimen/text_size_paragraph" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/loginTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:layout_weight="1"
+
+                            android:text="@string/choose_your"
+                            android:textColor="@color/black"
+                            android:textSize="@dimen/text_size_subheading"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+
+                        <TextView
+                            android:id="@+id/loginSubTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/muli_black"
+                            android:text="@string/speed_dial_contacts"
+                            android:textColor="@color/black"
+                            android:textSize="@dimen/text_size_subheading"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                    </LinearLayout>
+
+
+                    <TextView
+                        android:id="@+id/selection_checkbox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:layout_marginEnd="5dp"
+                        android:layout_weight="1"
+                        android:gravity="bottom|right"
+                        android:minHeight="33dp"
+                        android:text="@string/all"
+                        android:textSize="@dimen/text_size_paragraph" />
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/search_text_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+
+                    android:hint="@string/search"
+                    android:visibility="visible"
+
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/search_text"
+                        style="@style/MaterialTextInputEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:imeOptions="actionUnspecified"
+                        android:inputType="textEmailAddress"
+                        android:visibility="visible" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="@color/colorPrimary"
+                    android:shadowColor="@color/material_red200" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_contacts"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:visibility="visible"
+                    tools:itemCount="7"
+                    tools:listitem="@layout/item_phone_contact_adapter" />
+
+                <Button
+                    android:id="@+id/invite_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/bg_button_primary"
+                    android:text="@string/invite"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+            </LinearLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <LinearLayout
+            android:id="@+id/frame_loader"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/loader_background"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="25dp"
+                    app:cardElevation="12dp"
+                    app:cardPreventCornerOverlap="true"
+                    app:cardUseCompatPadding="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="20dp"
+                        android:orientation="vertical">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:id="@+id/percent_indicator"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:layout_gravity="center_horizontal"
+                                android:fontFamily="@font/muli_bold"
+                                android:gravity="center_horizontal|center_vertical"
+                                android:shadowColor="@color/white"
+                                android:shadowDx="-1"
+                                android:shadowDy="1"
+                                android:singleLine="true"
+                                android:text="8%"
+                                android:textSize="@dimen/text_size_subheading"
+                                app:layout_constraintBottom_toBottomOf="@+id/progress_indicator"
+                                app:layout_constraintEnd_toEndOf="@+id/progress_indicator"
+                                app:layout_constraintStart_toStartOf="@+id/progress_indicator"
+                                app:layout_constraintTop_toTopOf="@+id/progress_indicator" />
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:id="@+id/progress_indicator"
+                                android:layout_width="@dimen/box_xxbig"
+                                android:layout_height="@dimen/box_xxbig"
+                                android:layout_gravity="center_horizontal|center_vertical"
+                                android:layout_weight="1"
+                                android:elevation="12dp"
+                                android:max="100"
+                                android:progress="50"
+                                app:indicatorSize="@dimen/box_xxbig"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:trackColor="@color/gray_600"
+                                app:trackThickness="4dp" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+    </FrameLayout>
+</layout>

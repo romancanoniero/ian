@@ -1,0 +1,45 @@
+package com.iyr.ian
+
+class Constants{
+
+
+    companion object
+    {
+        val RC_SIGN_IN_FACEBOOK = 64206
+        val RC_SIGN_IN_GOOGLE = 7
+
+
+        const val REQUEST_CODE_RECOVER_PLAY_SERVICES = 11001
+
+
+        //-- REQUEST CODES
+        const val LOCATION_REQUEST_CODE = 400
+        const val LOCATION_BACKGROUND_REQUEST_CODE = 401
+        const val PHONE_CALL_REQUEST_CODE = 1000
+        const val LOCATION_PERMISSION_REQUEST_CODE = 3
+        const val SMS_PERMISSION_REQUEST_CODE = 3000
+        const val NOTIFICATIONS_POST_PERMISSION_REQUEST_CODE = 5000
+
+        //-- PERMISSIONS
+        //  public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+        const val MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: Int = 1001
+        const val MY_PERMISSIONS_COARSE_LOCATION = 2000
+        const val MY_PERMISSIONS_FINE_LOCATION = 2001
+        const val MY_PERMISSION_REQUEST_SEND_SMS = 5001
+        const val MY_PERMISSION_REQUEST_READ_CONTACTS = 100
+
+
+        const val RECORD_AUDIO = 3000
+        // BROADCASTING SYSYEM
+        const val BROADCAST_LOCATION_UPDATED = "BROADCAST_LOCATION_UPDATED"
+        const val BROADCAST_LOCATION_SERVICE_AVALAIBILITY = "BROADCAST_LOCATION_AVALAIBILITY"
+        const val BROADCAST_UNREAD_MESSAGES_UPDATES = "BROADCAST_UNREAD_MESSAGES_UPDATES"
+
+
+        const val OTP_ACTION_SIGNING = "SIGNING"
+        const val OTP_ACTION_LOGIN = "LOGIN"
+
+        const val AUTOCOMPLETE_REQUEST_CODE = 1
+    }
+}
+

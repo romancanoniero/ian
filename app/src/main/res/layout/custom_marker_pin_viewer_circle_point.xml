@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="@dimen/marker_user_image_size"
+    android:layout_height="@dimen/marker_user_image_size"
+    app:layout_constraintBottom_toBottomOf="parent">
+
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/user_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:elevation="6dp"
+        android:src="@drawable/profile_dummy"
+        android:visibility="visible"
+        app:civ_border_color="#656262"
+        app:civ_border_width="1dp"
+        app:civ_circle_background_color="@color/white"
+        app:layout_constraintDimensionRatio="v,1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent=".7" />
+
+    <ImageView
+        android:id="@+id/imageView13"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/marker_stick"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/user_image"
+
+        />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginTop="22dp"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    tools:context=".ui.views.home.fragments.FriendsFragment">
+
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/invite_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="30dp"
+        android:clickable="true"
+        android:src="@drawable/ic_share_circle"
+        app:backgroundTint="@color/white"
+        app:fabSize="auto"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:maxImageSize="24dp"
+        app:useCompatPadding="false" />
+
+    <TextView
+        android:id="@+id/no_friends_legend"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/muli"
+        android:text="@string/your_contact_list_is_empty"
+        android:textSize="20sp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@+id/linearLayout16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout16"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/linearLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/location_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/search"
+                    app:boxStrokeWidth="2dp"
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+
+                    <AutoCompleteTextView
+                        android:id="@+id/search_box"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+
+                        android:completionThreshold="8"
+                        android:drawableStart="@drawable/ic_magnifying_glass"
+                        android:drawablePadding="10dp"
+                        android:ems="10"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:includeFontPadding="true"
+                        android:inputType="text|textPersonName|textCapWords"
+                        android:minHeight="48dp"
+                        android:paddingHorizontal="6dp"
+                        android:textColor="@color/text_color"
+                        tools:text="LucilaRo">
+
+                    </AutoCompleteTextView>
+
+
+                    <!--
+                        <EditText
+                            android:id="@+id/search_box"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:drawableStart="@drawable/ic_magnifying_glass"
+                            android:drawablePadding="10dp"
+                            android:ems="10"
+                            android:focusable="auto"
+                            android:focusableInTouchMode="true"
+                            android:inputType="textPersonName"
+                            android:minHeight="48dp" />
+    -->
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <ImageView
+                    android:id="@+id/loadingIndicator"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_centerInParent="true"
+                    android:layout_gravity="center"
+                    android:src="@drawable/progress_animation"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/auxIcon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_centerInParent="true"
+                    android:layout_gravity="center"
+                    android:src="@drawable/places_ic_search"
+                    android:visibility="visible" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/search_box_lower_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=""
+                android:visibility="visible" />
+
+            <com.iyr.fewtouchs.ui.views.home.fragments.friends.controls.CustomAutoCompleteView
+                android:id="@+id/text_search"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:completionThreshold="4"
+                android:drawableEnd="@android:drawable/ic_search_category_default"
+                android:focusable="auto"
+                android:focusableInTouchMode="true"
+                android:gravity="bottom"
+                android:hint="Buscar por Apodo, Telefono o Email"
+
+                android:popupBackground="#ff0000"
+                android:singleLine="true"
+
+                android:visibility="gone" />
+
+
+        </LinearLayout>
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_friends"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_weight="1"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout"
+            tools:itemCount="5"
+            tools:listitem="@layout/item_friend_adapter" />
+
+
+    </LinearLayout>
+
+
+    <View
+        android:id="@+id/transparent_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

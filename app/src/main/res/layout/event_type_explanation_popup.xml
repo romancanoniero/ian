@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout11"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/float_transparent">
+
+        <View
+            android:id="@+id/guideline2"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            app:layout_constraintBottom_toTopOf="@id/circular_bg"
+            app:layout_constraintHeight_percent=".5"
+            app:layout_constraintTop_toBottomOf="@id/circular_bg"
+            app:layout_constraintVertical_bias=".6" />
+
+        <ImageView
+            android:id="@+id/avatar_image"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:elevation="10dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/poli"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="@id/circular_bg"
+            app:layout_constraintDimensionRatio="h,1:1"
+            app:layout_constraintEnd_toEndOf="@id/circular_bg"
+            app:layout_constraintStart_toStartOf="@id/circular_bg" />
+
+        <TextView
+            android:id="@+id/circular_bg"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/shape_event_selector_background"
+            android:elevation="4dp"
+            app:layout_constraintDimensionRatio="v,1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintWidth_percent=".8"
+            tools:layout_editor_absoluteY="66dp" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:elevation="6dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <LinearLayout
+            android:id="@+id/dialog_background"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/white_popup_bg"
+            android:orientation="vertical"
+            android:padding="20dp"
+            app:layout_constraintBottom_toBottomOf="@id/secondary_button_container"
+            app:layout_constraintEnd_toEndOf="@+id/avatar_image"
+            app:layout_constraintStart_toStartOf="@+id/circular_bg"
+            app:layout_constraintTop_toBottomOf="@id/guideline2"></LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="@+id/dialog_background"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/dialog_background"
+            app:layout_constraintTop_toBottomOf="@id/circular_bg">
+
+
+            <TextView
+                android:id="@+id/legend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/muli_extrabold"
+                android:text="Mediante esta acción, puedes pedirle a tus contactos que se contacten con la policia para que acudan en tu ayuda o de otra persona."
+                android:textAlignment="textStart"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/text_size_paragraph" />
+
+
+            <TextView
+                android:id="@+id/buy_suggestion_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/muli_extrabold"
+                android:text="Si quieres utilizar esta funcionalidad , debes subscribirte a un plan pago."
+                android:textAlignment="textStart"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/text_size_paragraph" />
+
+            <CheckBox
+                android:id="@+id/checkbox_no_show_again"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginHorizontal="20dp"
+                android:text="No mostrar otra vez"
+                android:textSize="@dimen/text_size_paragraph" />
+
+
+        </LinearLayout>
+
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/button_one"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+
+            android:layout_marginTop="10dp"
+            android:background="@drawable/primary_button_border"
+            android:fontFamily="@font/muli_bold"
+            android:gravity="center"
+            android:text="@string/lets_subscribe"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="@id/body"
+            app:layout_constraintStart_toStartOf="@id/body"
+            app:layout_constraintTop_toBottomOf="@+id/body" />
+
+        <LinearLayout
+            android:id="@+id/secondary_button_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="@+id/button_one"
+            app:layout_constraintStart_toStartOf="@+id/button_one"
+            app:layout_constraintTop_toBottomOf="@id/button_one">
+
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/button_two"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="10dp"
+                android:background="@null"
+                android:fontFamily="@font/muli_extrabold"
+                android:gravity="center"
+                android:text="@string/close"
+                android:textColor="@color/darkGray"
+                android:textSize="13sp"
+
+                />
+        </LinearLayout>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

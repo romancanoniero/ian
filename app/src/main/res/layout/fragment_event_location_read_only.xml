@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    android:background="#FFB300"
+    tools:context=".ui.views.home.fragments.events.EventsFragment">
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_screen"
+    android:layout_width="match_parent"
+
+
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+
+
+    tools:context=".ui.views.home.fragments.events.EventsFragment">
+
+    <!--
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/scrollview_general"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:layout_constraintBottom_toTopOf="@id/confirm_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0">
+-->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/avatar_area"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/box_superbig"
+            android:layout_marginTop="24dp"
+
+            app:layout_constraintDimensionRatio="v,1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_percent=".10"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/avatar_image"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginBottom="4dp"
+                android:elevation="40dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/poli"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="v,1:1"
+                app:layout_constraintEnd_toEndOf="@id/background_circle"
+                app:layout_constraintStart_toStartOf="@+id/background_circle"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/background_circle"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+
+                android:layout_marginBottom="4dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="v,1:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHeight_percent=".99"
+
+                app:layout_constraintStart_toStartOf="parent">
+
+                <TextView
+                    android:id="@+id/circle_red"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginBottom="4dp"
+
+                    android:background="@drawable/shape_circle_red"
+                    android:elevation="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHeight_percent=".86"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintWidth_percent=".85" />
+
+                <TextView
+                    android:id="@+id/circle_white"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/shape_circle_white"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHeight_percent=".80"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintWidth_percent=".80" />
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/backarrow"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:elevation="6dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_back"
+            android:visibility="gone"
+            app:civ_border_color="#f8f8f8"
+            app:civ_border_width="4dp"
+            app:civ_circle_background_color="@color/white"
+            app:layout_constraintDimensionRatio="h,1:1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_percent=".20" />
+
+        <at.markushi.ui.CircleButton
+            android:id="@+id/edit_button"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:elevation="12dp"
+            android:src="@android:drawable/ic_menu_edit"
+            android:visibility="gone"
+            app:cb_color="@color/blue"
+            app:cb_pressedRingWidth="8dip"
+            app:layout_constraintBottom_toBottomOf="@+id/location_readonly_layout"
+            app:layout_constraintStart_toStartOf="@+id/location_readonly_layout"
+            app:layout_constraintTop_toBottomOf="@+id/location_readonly_layout" />
+
+
+        <TextView
+            android:id="@+id/location_selector_title_line_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:gravity="center_horizontal"
+            android:text="@string/where_should_my_friends_ask_for_help_to_go"
+            android:textAllCaps="false"
+            android:textSize="@dimen/text_size_paragraph"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/avatar_area" />
+
+
+        <ScrollView
+            android:id="@+id/scroll_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical"
+            android:paddingTop="10dp"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/location_selector_title_line_1">
+
+            <!--                 android:layout_marginTop="10dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:orientation="vertical"
+                android:paddingTop="10dp"
+                android:visibility="visible"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/location_selector_title_line_1"
+-->
+            <LinearLayout
+                android:id="@+id/location_readonly_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/address_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/address_read_only"
+                        style="@style/MaterialTextInputEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:drawableEnd="@android:drawable/ic_dialog_map"
+                        android:drawableTint="@color/colorPrimary"
+
+                        android:singleLine="true"
+                        android:textColor="@color/text_color"
+                        android:textSize="@dimen/text_size_subparagraph"
+                        android:visibility="visible" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/address_apt_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="auto"
+                    android:focusableInTouchMode="true"
+                    android:hint="@string/hint_floor_apt"
+                    android:visibility="gone"
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/floor_field_apt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginTop="10dp"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+
+                        android:inputType="textCapCharacters"
+                        android:textAllCaps="true"
+                        android:textColor="@color/text_color"
+                        android:textSize="@dimen/text_size_subparagraph" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/travel_mode_section"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    app:layout_constraintTop_toBottomOf="@id/floor_field_apt"
+                    tools:layout_editor_absoluteX="10dp">
+
+                    <TextView
+                        android:id="@+id/textView4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/muli_bold"
+                        android:text="@string/what_are_you_going_in"
+                        android:textSize="@dimen/text_size_subparagraph" />
+
+                    <RadioGroup
+                        android:id="@+id/radiogroup_travel_mode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:visibility="gone" />
+
+
+                        <RadioButton
+                            android:id="@+id/rb_by_train"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:button="@drawable/radiobutton_selector_by_train"
+                            android:gravity="center_horizontal"
+                            android:padding="2dp"
+                            android:visibility="gone" />
+
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:visibility="gone" />
+
+
+                        <RadioButton
+                            android:id="@+id/rb_by_bus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:button="@null"
+                            android:drawableLeft="@drawable/radiobutton_selector_by_bus"
+                            android:gravity="center"
+                            android:padding="2dp"
+                            android:visibility="gone" />
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1" />
+
+
+                        <RadioButton
+                            android:id="@+id/rb_by_car"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:button="@drawable/radiobutton_selector_by_car"
+                            android:checked="true"
+                            android:gravity="center_horizontal"
+                            android:padding="2dp" />
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1" />
+
+
+                        <RadioButton
+                            android:id="@+id/rb_by_scooter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:button="@drawable/radiobutton_selector_by_scooter"
+                            android:checked="false"
+                            android:gravity="center_horizontal"
+                            android:padding="2dp" />
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1" />
+
+
+                        <RadioButton
+                            android:id="@+id/rb_by_bicycle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:button="@drawable/radiobutton_selector_by_bicycle"
+                            android:gravity="center_horizontal"
+                            android:padding="2dp" />
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1" />
+
+                        <RadioButton
+                            android:id="@+id/rb_by_walk"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+
+                            android:button="@drawable/radiobutton_selector_by_walk"
+                            android:gravity="center_horizontal"
+                            android:padding="2dp" />
+
+                        <Space
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1" />
+
+
+                    </RadioGroup>
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/confirm_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="10dp"
+        android:elevation="20dp"
+        android:gravity="center_horizontal|center_vertical"
+        android:paddingStart="10dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="10dp"
+        android:text="@string/next"
+        android:textAllCaps="false"
+        android:textColor="@color/primary_button_text_color" />
+
+
+    <View
+        android:id="@+id/transparent_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="invisible"/>
+    <!--  </androidx.constraintlayout.widget.ConstraintLayout> -->
+
+</LinearLayout>
+
+    <!--
+    </FrameLayout>
+    -->

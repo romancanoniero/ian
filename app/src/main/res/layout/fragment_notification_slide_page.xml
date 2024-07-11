@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:elevation="6dp"
+        app:layout_constraintBottom_toTopOf="@+id/constraintLayout10"
+        app:layout_constraintEnd_toEndOf="@+id/constraintLayout10"
+        app:layout_constraintStart_toStartOf="@+id/constraintLayout10"
+        app:layout_constraintTop_toTopOf="@+id/constraintLayout10">
+
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/animation"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:elevation="6dp"
+            app:layout_constraintBottom_toTopOf="@+id/notification_type_image"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintWidth_percent=".9"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/lottie_live"
+            app:lottie_repeatMode="reverse" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/notification_type_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:elevation="6dp"
+
+            android:src="@drawable/ic_policeman"
+            app:civ_border_color="#3C3B3B"
+            app:civ_border_width="1dp"
+            app:civ_circle_background_color="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/user_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:elevation="10dp"
+
+            android:src="@drawable/profile_dummy"
+            android:visibility="visible"
+            app:civ_border_color="#656262"
+            app:civ_border_width="1dp"
+            app:civ_circle_background_color="@color/white"
+            app:layout_constraintBottom_toBottomOf="@+id/notification_type_image"
+            app:layout_constraintEnd_toStartOf="@+id/icons_separator"
+            app:layout_constraintHorizontal_bias="0.06"
+            app:layout_constraintStart_toStartOf="@+id/icons_separator"
+            app:layout_constraintTop_toTopOf="@+id/notification_type_image" />
+
+
+        <View
+            android:id="@+id/icons_separator"
+            android:layout_width="50dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@+id/notification_type_image"
+            app:layout_constraintEnd_toStartOf="@+id/notification_type_image"
+            app:layout_constraintStart_toStartOf="@+id/notification_type_image"
+            app:layout_constraintTop_toTopOf="@+id/notification_type_image" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <LinearLayout
+        android:id="@+id/constraintLayout10"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="42dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="10dp"
+        android:paddingTop="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+
+            android:layout_marginTop="40dp"
+            android:fontFamily="@font/muli_black"
+            android:text="Pedido de Asistencia"
+            android:textColor="@color/colorPrimary"
+            android:textSize="18sp"
+
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli"
+                android:lineSpacingExtra="2dp"
+                android:text="12/12/2021 12:00"
+                android:textAlignment="textStart"
+                android:textColor="@color/darkGray"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/time_a_go"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/muli"
+                android:lineSpacingExtra="2dp"
+                android:text="(justo ahora)"
+                android:textAlignment="textStart"
+                android:textColor="@color/darkGray"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/legend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:fontFamily="@font/muli_extrabold"
+            android:lineSpacingExtra="2dp"
+            android:text="Roman pidio que te comuniques con la Policia y los envies a la siguiente ubicacion : Monroe 5554 4 B"
+            android:textAlignment="textStart"
+            android:textColor="@color/colorPrimary"
+            android:textSize="14sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/title" />
+
+        <!--
+   <androidx.constraintlayout.widget.ConstraintLayout
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       app:layout_constraintTop_toBottomOf="@id/legend">
+-->
+        <androidx.gridlayout.widget.GridLayout
+            android:id="@+id/event_data_grid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="visible"
+            app:columnCount="2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent">
+
+            <TextView
+                android:id="@+id/event_type_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli_black"
+                android:text="Tipo:"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/event_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/muli"
+                android:text="Solicitud de Aviso a la Policía"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/event_id_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli_black"
+                android:text="Id Evento:"
+                android:textSize="12sp"
+                android:visibility="gone"
+
+                />
+
+            <TextView
+                android:id="@+id/event_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/muli"
+                android:text="#123456789"
+                android:textSize="10sp"
+                android:visibility="gone"
+
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
+                android:id="@+id/event_date_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli_black"
+                android:text="Fecha:"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/event_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/muli"
+                android:text="12/12/2021 10:00:00"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
+                android:id="@+id/event_location_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli_black"
+                android:text="Ubicación:"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/event_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/muli"
+                android:text="Monroe 5555, Ciudad autonoma de buenos aires"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
+                android:id="@+id/user_compromised_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/muli_black"
+                android:text="Le Incluye:"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/user_compromised"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/muli"
+                android:text="Si"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+
+        </androidx.gridlayout.widget.GridLayout>
+        <!--
+       <ImageView
+           android:id="@+id/map_image"
+           android:layout_width="match_parent"
+           android:layout_height="0dp"
+           android:scaleType="fitCenter"
+           android:visibility="gone"
+           app:layout_constraintDimensionRatio="v,16:6"
+           app:layout_constraintEnd_toEndOf="parent"
+           app:layout_constraintStart_toStartOf="parent"
+           app:layout_constraintTop_toTopOf="parent"
+           app:srcCompat="@drawable/mapa" />
+-->
+        <!--
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+    -->
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/constraintLayout10"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/constraintLayout10">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/buttonOne"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="10dp"
+            android:background="@drawable/primary_button_border"
+            android:fontFamily="@font/muli_bold"
+            android:gravity="center"
+            android:text="@string/assist"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/legend" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/buttonCancel"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="20dp"
+            android:background="@null"
+            android:fontFamily="@font/muli_extrabold"
+            android:gravity="center"
+            android:text="@string/ignore"
+            android:textColor="@color/darkGray"
+            android:textSize="13sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/acceptButton" />
+
+
+    </LinearLayout>
+
+</RelativeLayout>

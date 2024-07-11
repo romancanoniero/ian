@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="20dp"
+
+            android:layout_marginHorizontal="15dp"
+            android:layout_marginVertical="60dp"
+            android:background="@drawable/white_popup_bg"
+            >
+
+
+            <TextView
+                android:id="@+id/dialogTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/permission_refussed_title"
+                android:textSize="@dimen/text_size_heading"
+                android:textAlignment="center"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/permissionExplanation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:layout_marginRight="20dp"
+                android:fontFamily="@font/muli_semibold"
+                android:gravity="center"
+                android:lineSpacingExtra="2dp"
+                android:text="Message...."
+                android:textSize="14sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/dialogTitle" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/tryAgainButton"
+                style="@style/PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="30dp"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/open_settings"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/permissionExplanation" />
+
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/cancelButton"
+                style="@style/SecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="30dp"
+                android:layout_marginTop="10dp"
+                android:background="@null"
+                android:fontFamily="@font/muli_extrabold"
+                android:gravity="center"
+                android:text="@string/understand"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tryAgainButton" />
+
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </RelativeLayout>
+</layout>

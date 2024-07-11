@@ -1,0 +1,17 @@
+<resources>
+    <dimen name="box_xxxbig">42.2dp</dimen>
+    <dimen name="dimen_1dp">0.2dp</dimen>
+    <dimen name="dimen_6dp">1.5dp</dimen>
+    <dimen name="dimen_14dp">3.5dp</dimen>
+    <dimen name="dimen_16dp">4dp</dimen>
+    <dimen name="dimen_20dp">5dp</dimen>
+    <dimen name="dimen_30dp">7.5dp</dimen>
+    <dimen name="dimen_15dp">3.8dp</dimen>
+    <dimen name="dimen_5dp">1.2dp</dimen>
+    <dimen name="dimen_45dp">11.2dp</dimen>
+    <dimen name="dimen_55dp">13.8dp</dimen>
+    <dimen name="text_size_subheading">8sp</dimen>
+    <dimen name="dimen_75dp">75dp</dimen>
+    <dimen name="dimen_100dp">100dp</dimen>
+    <dimen name="message_incoming_bubble_margin_left">2dp</dimen>
+</resources>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:clickable="false"
+    android:focusable="false">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@null"
+        android:clickable="true"
+        android:descendantFocusability="blocksDescendants"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        app:cardBackgroundColor="@color/speed_dial_card_background"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:cardPreventCornerOverlap="true"
+        app:cardUseCompatPadding="true"
+        app:contentPaddingLeft="16dp"
+        app:contentPaddingRight="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        >
+
+        <LinearLayout
+            android:id="@+id/inner_frame"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="8dp"
+            android:clickable="false">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/profile_image"
+                android:layout_width="@dimen/circle_5"
+                android:layout_height="@dimen/circle_5"
+                android:clickable="false"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:src="@drawable/profile_dummy"
+                app:civ_border_color="@color/white"
+                app:civ_border_width="3dp"
+                app:civ_circle_background_color="@color/red" />
+
+            <LinearLayout
+                android:id="@+id/inner_container"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:orientation="vertical">
+
+
+                <TextView
+                    android:id="@+id/user_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:fontFamily="@font/muli_extrabold"
+                    android:includeFontPadding="false"
+                    android:inputType="textCapCharacters"
+
+                    android:padding="0dp"
+                    android:singleLine="true"
+                    android:text="Robolufo"
+                    android:textAllCaps="true"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_subparagraph" />
+
+                <LinearLayout
+                    android:id="@+id/line2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/imageView"
+                        android:layout_width="@dimen/box_xxsmall"
+                        android:layout_height="@dimen/box_xxsmall"
+                        android:duplicateParentState="true"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
+                        android:src="@drawable/ic_emergency_call" />
+
+                    <TextView
+
+                        android:id="@+id/user_phone_number"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:background="@null"
+                        android:duplicateParentState="true"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
+
+                        android:fontFamily="@font/muli"
+                        android:gravity="bottom"
+                        android:padding="0dp"
+                        android:text="(393)-555-5656"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/text_size_subparagraph"
+                        android:visibility="visible" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,32 @@
+<resources>
+	<dimen name="text_size_heading">13.5sp</dimen>
+	<dimen name="text_size_subheading">12sp</dimen>
+	<dimen name="text_size_paragraph">6sp</dimen>
+	<dimen name="text_size_subparagraph">4.5sp</dimen>
+	<dimen name="text_size_subsubparagraph">3sp</dimen>
+	<dimen name="box_xxsuperbig">112.5dp</dimen>
+	<dimen name="box_xsuperbig">90dp</dimen>
+	<dimen name="box_superbig">78.8dp</dimen>
+	<dimen name="box_xxxbig">63.4dp</dimen>
+	<dimen name="box_xxbig">47.9dp</dimen>
+	<dimen name="box_xbig">36dp</dimen>
+	<dimen name="box_big">27dp</dimen>
+	<dimen name="box_normal">19.5dp</dimen>
+	<dimen name="box_medium">15.8dp</dimen>
+	<dimen name="box_small">13.5dp</dimen>
+	<dimen name="box_xsmall">10.5dp</dimen>
+	<dimen name="box_xxsmall">6dp</dimen>
+	<dimen name="dimen_1dp">0.4dp</dimen>
+	<dimen name="dimen_2dp">0.8dp</dimen>
+	<dimen name="dimen_4dp">1.5dp</dimen>
+	<dimen name="dimen_6dp">2.2dp</dimen>
+	<dimen name="dimen_10dp">3.8dp</dimen>
+	<dimen name="dimen_14dp">5.2dp</dimen>
+	<dimen name="dimen_16dp">6dp</dimen>
+	<dimen name="dimen_20dp">7.5dp</dimen>
+	<dimen name="dimen_30dp">11.2dp</dimen>
+	<dimen name="dimen_15dp">5.6dp</dimen>
+	<dimen name="dimen_5dp">1.9dp</dimen>
+	<dimen name="dimen_55dp">20.6dp</dimen>
+	<dimen name="dimen_45dp">16.9dp</dimen>
+</resources>

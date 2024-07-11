@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        app:font="@font/rubik_light"
+        app:fontStyle="normal"
+        app:fontWeight="100" />
+
+    <font
+        app:font="@font/rubik_light"
+        app:fontStyle="normal"
+        app:fontWeight="200" />
+
+    <font
+        app:font="@font/rubik_light"
+        app:fontStyle="normal"
+        app:fontWeight="300" />
+
+    <font
+        app:font="@font/rubik_regular"
+        app:fontStyle="normal"
+        app:fontWeight="300" />
+
+    <font
+        app:font="@font/rubik_regular"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+
+    <font
+        app:font="@font/rubik_medium"
+        app:fontStyle="normal"
+        app:fontWeight="500" />
+
+    <font
+        app:font="@font/rubik_semi_bold"
+        app:fontStyle="normal"
+        app:fontWeight="600" />
+
+    <font
+
+        app:font="@style/font_black"
+        app:fontStyle="normal"
+        app:fontWeight="700" />
+
+    <font
+        android:font="@font/rubik_variable_font_wght"
+        android:fontStyle="normal"
+        android:fontWeight="800"
+        app:font="@font/rubik_variable_font_wght"
+        app:fontStyle="normal"
+        app:fontWeight="800" />
+    <font
+        app:font="@font/rubik_black"
+        app:fontStyle="normal"
+        app:fontWeight="900" />
+
+    <font
+        android:font="@font/rubik_black"
+        android:fontStyle="normal"
+        android:fontWeight="950"
+        app:font="@font/rubik_black"
+        app:fontStyle="normal"
+        app:fontWeight="950" />
+
+</font-family>
+
+

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:keepScreenOn="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+
+    <LinearLayout
+        android:id="@+id/actionbar"
+        style="?android:attr/actionBarStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/imageView2"
+            style="?android:attr/actionButtonStyle"
+            android:layout_width="64dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/app_name"
+            android:onClick="onAppMenu"
+            android:scaleType="fitCenter"
+            android:src="@mipmap/ic_custom_launcher_foreground" />
+
+        <TextView
+            android:id="@+id/text_title"
+            style="?android:attr/actionBarTabTextStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:text="@string/app_name" />
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/start_scan"
+
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_back_arrow" />
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_height="wrap_content"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:context=".MainActivity"
+        android:id="@+id/results_list"
+        android:layout_width="match_parent"
+        tools:listitem="@layout/fragment_le_scan_item" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/text_scanning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/scanning" />
+    </FrameLayout>
+</LinearLayout>

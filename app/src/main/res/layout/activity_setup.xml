@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp">
+
+
+        <LinearLayout
+            android:id="@+id/linearLayout4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageButton
+                android:id="@+id/back_arrows"
+                android:layout_width="@dimen/box_normal"
+                android:layout_height="@dimen/box_normal"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/circle_primary_color"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="@color/white" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/loginTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/complete_your_in_setup"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="@dimen/text_size_subheading"
+                    app:layout_constraintLeft_toLeftOf="parent"
+
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/loginTitle2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginRight="20dp"
+                    android:text="@string/profile_in_setup"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_subheading"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            android:visibility="visible"
+            app:layout_constraintBottom_toTopOf="@+id/saveButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout4">
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+
+                >
+
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="20dp"
+                    android:visibility="visible">
+
+                    <com.airbnb.lottie.LottieAnimationView
+                        android:id="@+id/animation"
+                        android:layout_width="@dimen/box_superbig"
+                        android:layout_height="@dimen/box_superbig"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentBottom="true"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="30dp"
+                        android:elevation="6dp"
+                        android:visibility="gone"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintDimensionRatio="V,1:1"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_percent=".9"
+                        app:lottie_autoPlay="true"
+                        app:lottie_loop="false"
+                        app:lottie_rawRes="@raw/lottie_loader_jake_parrotta"
+                        app:lottie_repeatMode="reverse" />
+
+                    <LinearLayout
+                        android:id="@+id/upload_photo_stamp"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_marginStart="40dp"
+                        android:layout_marginTop="40dp"
+                        android:layout_marginEnd="40dp"
+                        android:layout_marginBottom="40dp"
+                        android:elevation="8dp"
+                        android:orientation="vertical"
+                        android:visibility="visible"
+                        app:layout_constraintBottom_toBottomOf="@+id/profile_image"
+                        app:layout_constraintEnd_toEndOf="@+id/profile_image"
+                        app:layout_constraintStart_toStartOf="@+id/profile_image"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/profile_image_layer"
+                        android:layout_width="@dimen/circle_1_1"
+                        android:layout_height="@dimen/circle_1_1"
+                       android:src="#83A8A6A6"
+                        android:visibility="visible"
+                        app:civ_border_color="@color/gray_600"
+                        app:civ_border_width="3dp"
+                        android:elevation="8dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/user_image"
+                        android:layout_width="@dimen/circle_1_1"
+                        android:layout_height="@dimen/circle_1_1"
+                        android:backgroundTint="@color/darkGray"
+                        android:src="@drawable/man_avatar_ronny_overhate"
+                        android:visibility="visible"
+                        app:civ_border_color="@color/gray_600"
+                        app:civ_border_width="3dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        />
+
+
+
+
+                    <TextView
+                        android:id="@+id/profile_image_warning"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:visibility="visible"
+                        app:layout_constraintEnd_toEndOf="@+id/profile_image"
+                        app:layout_constraintStart_toEndOf="@+id/profile_image"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/select_picture"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/tap_to_select"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/nickname_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <EditText
+                        android:id="@+id/displayName"
+                        style="@style/InputText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:capitalize="words"
+                        android:ems="10"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+                        android:hint="@string/hint_nick_name"
+                        android:inputType="none|textCapWords"
+                        android:textColorHint="@color/material_purple500"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/displayNameLabel" />
+
+                    <TextView
+                        android:id="@+id/display_name_min_chars"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/min_chars_required"
+                        android:textSize="@dimen/text_size_subparagraph" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/phone_number_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <EditText
+                        android:id="@+id/phoneNumber"
+                        style="@style/InputText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:capitalize="words"
+                        android:ems="10"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+                        android:hint="@string/phone_number_dots"
+                        android:inputType="none|phone"
+                        android:textColorHint="@color/material_purple500"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/displayNameLabel" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/switch_speed_dial_section"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    app:layout_constraintStart_toEndOf="@+id/constraintLayout4"
+                    app:layout_constraintTop_toBottomOf="@+id/second_line">
+
+                    <TextView
+                        android:id="@+id/allowSpeedDialLabel"
+                        style="@style/InputText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/muli"
+                        android:text="@string/allow_to_speed_dial"
+                        android:textAllCaps="false"
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/loginTitle2" />
+
+                    <Switch
+                        android:id="@+id/switch_speed_dial"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:layout_weight="1"
+
+                        android:checked="true"
+                        android:thumb="@drawable/switch_thumb_selector"
+                        android:thumbTint="@color/colorPrimary"
+                        android:track="@drawable/switch_track_selector" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/displayNameLabel"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="30dp"
+                    android:fontFamily="@font/muli_extrabold"
+                    android:text="@string/hint_username"
+                    android:textAllCaps="true"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="12sp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/loginTitle2" />
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/name_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <EditText
+                        android:id="@+id/firstName"
+                        style="@style/InputText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:capitalize="words"
+                        android:ems="10"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+                        android:hint="@string/first_name"
+                        android:inputType="none|textCapWords"
+                        android:textColorHint="@color/material_purple500"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/displayNameLabel" />
+
+                    <TextView
+                        android:id="@+id/name_min_chars"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/min_chars_required"
+                        android:textSize="@dimen/text_size_subparagraph" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/lastname_input_layout"
+                    style="@style/MaterialOutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+                    app:hintTextAppearance="@style/CustomTILHint">
+
+                    <EditText
+                        android:id="@+id/lastName"
+                        style="@style/InputText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:capitalize="words"
+                        android:ems="10"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+                        android:hint="@string/last_name"
+                        android:inputType="none|textCapWords"
+                        android:textColorHint="@color/material_purple500"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/displayNameLabel" />
+
+                    <TextView
+                        android:id="@+id/lastname_min_chars"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/min_chars_required"
+                        android:textSize="@dimen/text_size_subparagraph" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/security_code_input_layout"
+                        style="@style/MaterialOutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="40dp"
+                        app:hintTextAppearance="@style/CustomTILHint">
+
+                        <EditText
+                            android:id="@+id/security_code"
+                            style="@style/InputText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:capitalize="words"
+                            android:ems="10"
+                            android:focusable="auto"
+                            android:focusableInTouchMode="true"
+                            android:fontFamily="@font/muli"
+                            android:hint="@string/validation_code"
+                            android:inputType="none|textCapWords"
+                            android:textColorHint="@color/material_purple500"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/displayNameLabel" />
+
+                        <TextView
+                            android:id="@+id/security_code_min_chars"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/min_chars_required"
+                            android:textSize="@dimen/text_size_subparagraph"
+
+                            />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/security_code_info"
+                        android:layout_width="@dimen/circle_9"
+                        android:layout_height="@dimen/circle_9"
+                        android:layout_marginEnd="10dp"
+
+                        android:src="@drawable/ic_toolbar_info_white"
+                        app:civ_circle_background_color="@color/blue"
+                        app:layout_constraintBottom_toBottomOf="@id/security_code_input_layout"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <androidx.appcompat.widget.AppCompatSpinner
+                    android:id="@+id/genderSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:visibility="gone"
+                    app:layout_constraintTop_toBottomOf="@+id/genderLabel" />
+
+
+                <TextView
+                    android:id="@+id/dobLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/muli_extrabold"
+                    android:text="@string/date_of_birth"
+                    android:textAllCaps="true"
+                    android:textColor="@color/colorPrimary"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    app:layout_constraintHorizontal_weight="1"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/heightLayout" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/calendarIcon"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginRight="20dp"
+                        android:layout_weight="0"
+                        android:foregroundTint="@color/text_color"
+                        android:textColor="#90000000"
+                        android:textSize="16sp"
+                        android:visibility="gone"
+                        app:layout_constraintRight_toRightOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/dobLabel"
+                        app:srcCompat="@android:drawable/ic_menu_my_calendar" />
+
+                    <TextView
+                        android:id="@+id/dobValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="2dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_weight="0"
+                        android:focusable="auto"
+                        android:focusableInTouchMode="true"
+                        android:fontFamily="@font/muli"
+                        android:hint="@string/hint_introduce_your_birth_day"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="18sp"
+                        android:visibility="gone"
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        app:layout_constraintRight_toLeftOf="@+id/calendarIcon"
+                        app:layout_constraintTop_toBottomOf="@+id/dobLabel" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/dob_error_explain"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:text=""
+                    android:textColor="@color/design_default_color_error"
+                    android:visibility="gone" />
+
+                <View
+                    android:id="@+id/view4"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="5dp"
+                    android:background="@color/text_color"
+                    android:visibility="gone"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/dobValue" />
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+
+        <LinearLayout
+            android:id="@+id/linearLayout5"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom"
+            android:orientation="vertical"
+            tools:layout_editor_absoluteX="20dp"
+            tools:layout_editor_absoluteY="30dp">
+
+
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/lets_continue"
+            app:layout_constraintBottom_toBottomOf="@+id/linearLayout5"
+            tools:layout_editor_absoluteX="20dp" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

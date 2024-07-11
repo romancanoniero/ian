@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IAN</string>
+    <string name="notifications_new_message_title">Mensaje Nuevo!</string>
+    <string name="notifications_new_message_message">%1$s ha enviado un nuevo Mensaje</string>
+    <string name="event_no_longer_exist">El Evento ya no existe</string>
+    <string name="new_messages">Nuevos Mensajes</string>
+    <string name="error_loading_event_followers">Error leyendo los asistentes</string>
+    <string name="security_code_info_title">Código de Seguridad</string>
+    <string name="security_code_info_description">"Es el Código que deberas ingresar para validar eventos importantes dentro de IAN y debe ser un codigo que puesto del reves no sea identico al original "</string>
+    <string name="create_your_pin_legend">Crea un pin secreto para interactuar con IAN y notificar que estas fuera de peligro. Si escribe su pin al revés, se enviará una alerta de emergencia a sus contactos seleccionados.</string>
+
+    <string name="what_are_you_waiting_for">¿Qué estás esperando?</string>
+    <string name="sharing_app_social_media_description">¡Hola! Te invito a que seas parte de mi Red de Seguridad y Contención.</string>
+
+    <string name="login_error_invalid_password_or_username">la contraseña es inválida o el usuario no tiene una contraseña.</string>
+
+    <string name="open">Abrir</string>
+    <string name="follow">Seguir</string>
+    <string name="go">Ir</string>
+    <string name="delete">Borrar</string>
+    <string name="none">Ninguno</string>
+    <string name="empty">Vacío</string>
+    <string name="go_back">Volver</string>
+    <string name="skip">Saltar</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancelar</string>
+    <string name="close">Cerrar</string>
+    <string name="accept">Aceptar</string>
+    <string name="post">Publicar</string>
+    <string name="invite_friends">Invitar amigos</string>
+    <string name="warning">¡Atención!</string>
+    <string name="no_results">Sin resultados</string>
+    <string name="search_box_minimum_lenght">Mínimo %1$s caracteres. Faltan %2$s</string>
+    <string name="error_signin_by_email_link_invalid_link">El enlace utilizado ha expirado.</string>
+
+    <string name="confirm_title">Confirmar</string>
+    <string name="confirm_forget">El dispositivo se olvidará, ¿estás seguro? Sin embargo, podrás volver a conectar este dispositivo y recordarlo en cualquier momento.\n\n¿Olvidar?</string>
+    <string name="clear">Limpiar</string>
+    <string name="all">Todos</string>
+    <string name="to_me">A mí</string>
+    <string name="invite">Invitar</string>
+    <string name="enabled">Habilitado</string>
+    <string name="choose_your">Selecciona tu</string>
+    <string name="sos_activation_type">tipo de activación del SOS</string>
+    <string name="holding">Presionando</string>
+    <string name="tapping">Pulsando</string>
+    <string name="set_holding_time">Establece los segundos que deberás mantener pulsado el botón de SOS antes de que se dispare la alerta </string>
+    <string name="press_here">Presiona</string>
+    <string name="tap_here">Toca</string>
+    <string name="reset">Reiniciar</string>
+    <string name="save">Guardar</string>
+    <string name="gps">GPS</string>
+    <string name="authorize">Autorizar</string>
+    <string name="not_yet">Aún no</string>
+    <string name="welcome">¡Bienvenido!</string>
+    <string name="got_it">¡Lo tengo!</string>
+    <string name="error">¡Error!</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="assist">Asistir</string>
+    <string name="ignore">Ignorar</string>
+    <string name="confirmation">Confirmar</string>
+    <string name="create">Crear</string>
+    <string name="messages_header">Mensajes</string>
+    <string name="change">Cambiar</string>
+    <string name="try_again">Intentar de nuevo</string>
+    <string name="deny">Rechazar</string>
+    <string name="additional_info">Información adicional</string>
+    <string name="create_group">Crear grupo</string>
+    <string name="create_notification_group" translatable="false">Crear grupo de notificaciones</string>
+    <string name="group_name">Nombre del grupo</string>
+    <string name="search_your_contact" translatable="false">Busca tus contactos</string>
+    <string name="all_your_contacts">Todos tus contactos</string>
+    <string name="selectAll">Seleccionar todos</string>
+
+    <string name="where_do_you_go">¿A dónde te diriges?</string>
+    <string name="address_to_delibery">Lugar del suceso</string>
+
+    <string name="did_you_arrive_dialog_title">¿Llegaste?</string>
+    <string name="did_you_arrive_dialog_message">¿Has llegado a tu destino y estás a salvo?</string>
+    <string name="what_are_you_going_in">¿En qué estás yendo?</string>
+    <string name="error_google_sign_in_failed">Operación Fallida</string>
+
+
+    <string name="login_error_user_doest_not_exists">no hay un registro de usuario correspondiente a este identificador. el usuario puede haber sido eliminado.</string>
+    <string name="error_too_many_tries_from_your_device">Demasiados intentos de ingreso desde tu dispositivo. Inténtalo luego.</string>
+    <string name="error_device_not_authenticated">Tu teléfono no está autenticado.</string>
+    <string name="error_phone_number_is_not_registered">Tu número de teléfono no está registrado.\nVerifica si es correcto o regístrate pulsando la opción en la parte inferior de la pantalla</string>
+    <string name="error_email_not_registered">La cuenta de correo ingresada no figura en nuestros registros</string>
+    <string name="error_user_not_found">Usuario No Encontrado</string>
+    <string name="error_email_not_verified">Debes verificarte mediante el Correo que te enviamos</string>
+
+
+    <string name="you_are_safe_here">"Entre TODOS estaremos más Seguros"</string>
+    <string name="tap_to_select">Toca para cargar</string>
+    <string name="not_filled">Incompleto</string>
+    <string name="please_fullfill_the_telephone_number">Introduce el Número de Teléfono</string>
+    <string name="please_fullfill_correctly_the_telephone_number">Ingresa su Teléfono en un formato válido</string>
+    <string name="please_fullfill_the_image">Debes cargar tu Foto</string>
+    <string name="please_fullfill_the_nickname_to_minimum">El Apodo no cumple con el mínimo de los caracteres requeridos</string>
+    <string name="please_fullfill_the_nickname">Debes ingresar un Apodo con el que los demas te reconocerán.</string>
+
+
+
+
+    <string name="email_slash_phone_number">Correo Electrónico / Número de Teléfono</string>
+    <string name="signup_with_email_link">Autenticate con un Mensaje a tu Correo</string>
+    <string name="signup_with_number">Registrate con tu Teléfono</string>
+    <string name="signup_with_email">Registrate con tu Correo</string>
+    <string name="signup_with_facebook">Registrate con Facebook</string>
+    <string name="signup_with_google">Registrate con Google</string>
+
+
+    <string name="enter_your">Ingresa tu</string>
+    <string name="create_account">Crear Cuenta</string>
+    <string name="by_signing_up_you_agree">Al registrarte, aceptas nuestros</string>
+    <string name="terms_of_service">Términos de Servicio</string>
+    <string name="password_rules">La contraseña debe contener al menos una letra mayúscula, números y tener al menos 8 caracteres.</string>
+    <string name="free_trial_line_1">Prueba</string>
+    <string name="free_trial_line_2">Gratis</string>
+    <string name="select_your_in_signup">Elije tu</string>
+    <string name="signup_type_in_signup">Tipo de Registro</string>
+    <string name="no_contacts_selected">No has seleccionado ningún Contacto para agregar</string>
+
+
+    <string name="app_installation_invitation_message">Hola! Te invito a que te unas a mi Red de Emergencias en %1$s./n Instalátela y vivamos más seguros y conectados.</string>
+    <string name="app_speed_dial_addition_notification_message">Hola! Te queria avisar que te he agregado a mis contactos de discado rápido en IAN que es una red colaborativa de Alertas./n Instalátela haciendo click en el Link que viene en este mensaje y vivamos más seguros y conectados./nPD: Si tenes alguna duda acerca de la autenticidad de este mensaje, comunicate conmigo y te explicaré porque elegí a IAN</string>
+    <string name="subscription_plans_types">Tipos de Subscripciones</string>
+    <string name="select">Seleccionar</string>
+    <string name="subscription_plan_free">Gratis</string>
+    <string name="subscription_plan_solidary">Solidario</string>
+    <string name="subscription_plan_vip">VIP</string>
+    <string name="your_suscription_was_updated">Tu Plan ha sido actualizado</string>
+    <string name="register">Registrarte</string>
+    <string name="introduce_your_password">Ingresa tu Passsword</string>
+    <string name="confirm_your_password">Confirma tu Password</string>
+    <string name="panic_event_sms_message">%1s ha pulsado su boton de Panico. Si quieres ver donde se encuentra, pulsa en el Link.</string>
+    <string name="lets_subscribe">Suscribete</string>
+    <string name="functionality_description_send_police">Mediante esta opción, puedes pedirle a tus contactos que se contacten con la policia para que acudan en tu ayuda o de otra persona.</string>
+    <string name="functionality_description_send_fireman">Mediante esta opción, puedes pedirle a tus contactos que requieran la asistencia de Bomberos para que acudan en tu ayuda o de otra persona.</string>
+    <string name="functionality_description_send_ambulance">Mediante esta opción, puedes pedirle a tus contactos que requieran  Asistencia Médica para que acuda en tu ayuda o de otra persona.</string>
+    <string name="functionality_description_notify_persecution">Mediante esta opción, puedes solicitar a los usuarios que se encuentren en las proximidades que te asistan en una persecución.</string>
+    <string name="functionality_description_scort_me">Mediante esta opción, puedes pedirle a tus contactos que monitoreen tu recorrido.</string>
+    <string name="functionality_description_robber_alert">Mediante esta opción, puedes notificar a tus contactos acerca de una actividad sospechosa.</string>
+    <string name="functionality_description_kid_lost">Mediante esta opción, puedes notificar a los usuarios que se encuentren en las proximidades que se ha perdido un Niño.</string>
+    <string name="functionality_description_pet_lost">Mediante esta opción, puedes notificar a los usuarios que se encuentren en las proximidades que se ha perdido una Mascota.</string>
+    <string name="functionality_description_mechanical_aid">Mediante esta opción, puedes solicitat a los usuarios que se encuentren en las proximidades que te den auxilio Mecánico.</string>
+    <string name="are_you_sure_you_want_to_logout">Estás seguro que quieres desconectar de IAN?</string>
+    <string name="logout">Salir</string>
+
+
+</resources>

@@ -1,0 +1,21 @@
+package com.iyr.ian.utils.bluetooth.ble.rasat.java;
+
+public class Disposable<T> implements AutoCloseable {
+    private final Handler<T> handler;
+    private final Observable<T> observable;
+
+    Disposable(Handler<T> handler, Observable<T> observable) {
+        this.handler = handler;
+        this.observable = observable;
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public void dispose() {
+        observable.remove(handler);
+    }
+
+    @Override
+    public void close() {
+        dispose();
+    }
+}

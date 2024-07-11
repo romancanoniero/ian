@@ -1,0 +1,134 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_marginLeft="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="8dp">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@id/messageUserAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignBottom="@id/chat_bubble"
+
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+
+        app:civ_border_color="@color/gray_dark"
+        app:civ_border_overlay="true"
+        app:civ_border_width="2dp"
+        app:civ_circle_background_color="@color/gray_400" />
+
+    <ImageView
+        android:id="@+id/onlineIndicator"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_alignTop="@id/messageUserAvatar"
+        android:layout_alignEnd="@id/messageUserAvatar"
+        android:layout_alignRight="@id/messageUserAvatar"
+        android:layout_marginEnd="5dp"
+        android:layout_marginRight="5dp"
+/>
+
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/chat_bubble"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="@dimen/message_incoming_bubble_margin_left"
+        android:layout_toEndOf="@+id/messageUserAvatar"
+        app:cardCornerRadius="15dp"
+        app:cardUseCompatPadding="true">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/audioView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/gray_400"
+                android:minWidth="@dimen/box_xxxbig"
+                app:resize_mode="fit"
+                app:default_artwork="@drawable/voice_artwork_png"
+                app:use_artwork="true"/>
+
+            <ImageView
+                android:id="@+id/status"
+                android:layout_width="@dimen/box_normal"
+                android:layout_height="@dimen/box_normal"
+                android:src="@drawable/baseline_cloud_download_128"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"/>
+
+
+            <TextView
+                android:id="@+id/duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="4dp"
+                android:shadowColor="@color/black"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:shadowRadius="2"
+                android:text="00:00:00"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_size_subparagraph"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </com.google.android.material.card.MaterialCardView>
+
+<!--
+    <LinearLayout
+        android:id="@id/bubble"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_toEndOf="@id/messageUserAvatar"
+        android:layout_toRightOf="@id/messageUserAvatar"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+
+        <ImageButton
+            android:id="@+id/play_stop_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@null"
+            android:src="@drawable/ic_audio_play"
+            android:visibility="gone"/>
+
+
+
+    </LinearLayout>
+-->
+    <TextView
+        android:id="@+id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@id/chat_bubble"
+        android:layout_alignRight="@id/chat_bubble"
+        android:layout_alignBottom="@id/chat_bubble"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/gray_dark"
+        android:textSize="@dimen/text_size_subparagraph"
+        android:text="12:00:00"/>
+
+</RelativeLayout>

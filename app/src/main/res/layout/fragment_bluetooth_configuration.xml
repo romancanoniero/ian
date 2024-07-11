@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:id="@+id/mainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp">
+
+
+        <TextView
+            android:id="@+id/legend_line_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/muli"
+            android:text="@string/push_button_config_introduction"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_paragraph"
+            app:layout_constraintLeft_toLeftOf="parent"
+
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <FrameLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="400dp"
+            android:visibility="gone">
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/enabled"
+                android:textSize="@dimen/text_size_subparagraph"
+
+                />
+
+            <Switch
+                android:id="@+id/switch_enabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="10dp"
+                android:layout_weight="1"
+                android:checked="false"
+                android:thumbTint="@color/white"
+                android:trackTint="@color/colorPrimary" />
+
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/scan_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Buscar Dispositivos" />
+
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/bt_status_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_horizontal|center_vertical"
+                android:orientation="vertical"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    >
+
+                    <ImageView
+                        android:id="@+id/bt_logo"
+                        android:layout_width="@dimen/box_xsuperbig"
+                        android:layout_height="@dimen/box_xsuperbig"
+                        app:tint="@color/gray_400"
+                        android:src="@drawable/bt_disabled" />
+
+                    <TextView
+                        android:id="@+id/bt_status_descrip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="Desactivado"
+                        android:textSize="@dimen/text_size_paragraph">
+
+                    </TextView>
+                </LinearLayout>
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_tags"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:layout_marginTop="10dp" />
+        </RelativeLayout>
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh_devices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_devices"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+
+                app:layoutManager="LinearLayoutManager"
+
+                tools:listitem="@layout/row_scan_result" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+
+    </LinearLayout>
+
+</layout>

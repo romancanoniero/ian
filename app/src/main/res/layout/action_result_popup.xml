@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout11"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/constraintLayout10"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="15dp"
+            android:layout_marginVertical="60dp"
+            android:background="@drawable/white_popup_bg"
+            android:orientation="vertical"
+            android:paddingBottom="20dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/muli_black"
+                android:textColor="@color/colorPrimary"
+                android:textSize="24sp"
+                android:visibility="gone"
+
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottie_animation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:lottie_rawRes="@raw/lottie_done"
+                app:lottie_autoPlay="true"
+                />
+
+
+            <TextView
+                android:id="@+id/legend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:layout_marginRight="20dp"
+                android:fontFamily="@font/muli_semibold"
+                android:gravity="start"
+                android:lineSpacingExtra="2dp"
+                android:text="Legend"
+                android:textColor="@color/colorPrimary"
+                android:textSize="14sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+
+                app:layout_constraintTop_toBottomOf="@+id/title" />
+
+
+
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/buttonOne"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="30dp"
+                android:layout_marginTop="30dp"
+                android:background="@drawable/primary_button_border"
+                android:elevation="16dp"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/accept"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/legend" />
+
+
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

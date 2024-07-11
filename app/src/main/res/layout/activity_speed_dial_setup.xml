@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:id="@+id/mainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/back_arrows"
+                android:layout_width="@dimen/box_normal"
+                android:layout_height="@dimen/box_normal"
+
+                android:background="@drawable/circle_primary_color"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="@color/white" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/loginTitle3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/muli"
+                    android:text="@string/speed_dial"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_subheading"
+                    android:textStyle="bold"
+
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/rectangle_02"
+            android:layout_marginTop="40dp"
+            android:paddingHorizontal="30dp">
+
+            <ImageView
+                android:id="@+id/imageView10"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+
+                android:scaleType="fitCenter"
+                app:layout_constraintDimensionRatio="v,1:.52"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/speed_dial_image" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <TextView
+            android:id="@+id/choose_your_pin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="30dp"
+            android:fontFamily="@font/muli_bold"
+            android:gravity="center_horizontal"
+            android:text="@string/speed_dial_legend"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_subparagraph"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/bg_button_primary"
+            android:minHeight="@dimen/box_xsmall"
+            android:orientation="horizontal"
+            android:paddingVertical="12dp">
+
+            <TextView
+                android:id="@+id/textView5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/muli_black"
+                android:gravity="end"
+                android:text="@string/no"
+                android:textColor="@color/primary_button_text_color" />
+
+            <Switch
+                android:id="@+id/switch_speed_dial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:thumb="@drawable/switch_thumb_selector"
+                android:thumbTint="@color/colorPrimary"
+                android:track="@drawable/switch_track_selector"
+                android:checked="true"
+                />
+
+            <TextView
+                android:id="@+id/textView6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/muli_black"
+                android:text="@string/yes"
+                android:textColor="@color/primary_button_text_color" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+
+            android:layout_weight="1"
+            android:gravity="bottom"
+            android:orientation="vertical">
+
+
+        </View>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/nextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/muli_bold"
+            android:gravity="center"
+            android:text="@string/lets_continue"
+            android:textColor="@color/primary_button_text_color"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent" />
+
+
+    </LinearLayout>
+
+</layout>

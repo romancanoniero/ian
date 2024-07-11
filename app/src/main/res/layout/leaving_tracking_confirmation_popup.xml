@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout11"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <LinearLayout
+            android:id="@+id/constraintLayout10"
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="15dp"
+            android:layout_marginVertical="60dp"
+            android:background="@drawable/white_popup_bg"
+            android:orientation="vertical"
+            android:padding="20dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:fontFamily="@font/muli_black"
+                android:gravity="center"
+                android:text="@string/realtime_tracking_title"
+                android:textAlignment="center"
+
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textSize="24sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/legend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/muli_extrabold"
+                android:lineSpacingExtra="2dp"
+                android:text="@string/realtime_tracking_just_one"
+                android:textAlignment="textStart"
+                android:textColor="@color/colorPrimary"
+                android:textSize="16sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/title" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/im_safe_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/primary_button_border"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/reach_the_place"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/legend" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/validate_me_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:layout_marginTop="10dp"
+                android:background="@drawable/primary_button_border"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/validate_me"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/legend" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/close_button"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="20dp"
+                android:background="@null"
+                android:fontFamily="@font/muli_extrabold"
+                android:gravity="center"
+                android:text="@string/close"
+                android:textColor="@color/darkGray"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/acceptButton" />
+
+
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

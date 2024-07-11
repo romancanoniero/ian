@@ -1,0 +1,108 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="8dp">
+
+
+    <TextView
+        android:id="@+id/duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/video_view_container"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="0dp"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_size_subparagraph" />
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@id/messageUserAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_above="@+id/messageTime"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp" />
+
+    <ImageView
+        android:id="@+id/onlineIndicator"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_alignTop="@id/messageUserAvatar"
+        android:layout_alignEnd="@id/messageUserAvatar"
+        android:layout_alignRight="@id/messageUserAvatar"
+        android:layout_marginEnd="5dp"
+        android:layout_marginRight="5dp" />
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/video_view_container"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@+id/onlineIndicator"
+        app:cardCornerRadius="15dp">
+
+
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minWidth="@dimen/box_xxxbig"
+            android:visibility="visible"
+            app:resize_mode="fill"
+            app:shutter_background_color="@color/transparent" />
+
+
+        <ImageView
+            android:id="@+id/iv_message_status"
+            android:layout_width="@dimen/box_small"
+            android:layout_height="@dimen/box_small"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="@dimen/dimen_5dp"
+            android:layout_marginBottom="@dimen/dimen_5dp"
+            android:padding="5dp"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ico_cloud_upload_24" />
+
+        <FrameLayout
+            android:id="@+id/exo_fullscreen_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="right">
+            <ImageView
+                android:id="@+id/exo_fullscreen_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/baseline_fullscreen_24"/>
+        </FrameLayout>
+
+
+
+
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+    <TextView
+        android:id="@+id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/video_view_container"
+        android:layout_alignEnd="@id/video_view_container"
+
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:textColor="@color/gray_dark"
+        android:textSize="@dimen/text_size_subparagraph" />
+
+</RelativeLayout>

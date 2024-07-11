@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/user_image"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:elevation="22dp"
+
+        android:src="@drawable/profile_dummy"
+        android:visibility="visible"
+        app:civ_border_color="#656262"
+        app:civ_border_width="1dp"
+        app:civ_circle_background_color="@color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/notification_type_image"
+        app:layout_constraintEnd_toStartOf="@+id/icons_separator"
+        app:layout_constraintHorizontal_bias="0.06"
+        app:layout_constraintStart_toStartOf="@+id/icons_separator"
+        app:layout_constraintTop_toTopOf="@+id/notification_type_image" />
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/notification_type_image"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:elevation="20dp"
+
+        android:src="@drawable/ic_policeman"
+        app:civ_border_color="#3C3B3B"
+        app:civ_border_width="1dp"
+        app:civ_circle_background_color="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/icons_separator"
+        android:layout_width="25dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="@+id/notification_type_image"
+        app:layout_constraintEnd_toStartOf="@+id/notification_type_image"
+        app:layout_constraintStart_toStartOf="@+id/notification_type_image"
+        app:layout_constraintTop_toTopOf="@+id/notification_type_image" />
+</androidx.constraintlayout.widget.ConstraintLayout>

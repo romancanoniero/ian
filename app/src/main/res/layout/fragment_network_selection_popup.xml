@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/relativeLayout11"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintLayout10"
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="15dp"
+            android:layout_marginVertical="60dp"
+            android:background="@drawable/white_popup_bg"
+            android:paddingHorizontal="30dp"
+            android:paddingBottom="20dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:textSize="@dimen/text_size_heading"
+                android:text="@string/post"
+/>
+
+
+
+            <LinearLayout
+                android:id="@+id/linearLayout12"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView2">
+
+
+                <RadioButton
+                    android:id="@+id/radio_button_all_contacts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="#0E0E0E"
+                    android:fontFamily="@font/muli"
+                    android:minHeight="48dp"
+                    android:text="@string/all_your_contacts"
+                    android:textColor="@color/text_color" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radio_button_select_a_group"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="#131313"
+                        />
+
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/location_input_layout"
+                        style="@style/MaterialOutlinedBox"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/choose_list"
+                        app:boxStrokeWidth="2dp"
+                        app:hintTextAppearance="@style/CustomTILHint">
+
+
+                        <Spinner
+                            android:id="@+id/groups_spinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="45dp"
+                            android:background="@drawable/secondary_button_border"
+                            android:popupBackground="@color/white"
+                            android:spinnerMode="dropdown"
+                            tools:listitem="@layout/item_lists_dropdown_adapter"
+                            />
+
+
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+
+
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/buttonOne"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:layout_marginTop="20dp"
+                android:background="@drawable/primary_button_border"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/action_publish_event"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout12" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/cancel_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/secondary_button_border"
+                android:fontFamily="@font/muli_bold"
+                android:gravity="center"
+                android:text="@string/cancel"
+                android:textColor="@color/secondary_button_text_color"
+                android:textSize="13sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/buttonOne" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

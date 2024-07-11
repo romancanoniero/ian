@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#f9f9f9"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp"
+        android:paddingTop="22dp"
+        tools:context=".ContactGroupFragment">
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/MaterialOutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:hint="@string/search_your_contact">
+
+<!--
+            <com.bytcode.lib.spinner.multiselectspinner.spinners.MultiSpinnerSearch
+                android:id="@+id/users_multi_Selection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:gravity="center"
+                android:minHeight="40dp"
+
+                app:hintText="@string/search_your_contact" />
+-->
+
+            <com.iyr.ian.utils.components.multi_select_spinner.MultiSpinnerSearch
+                android:id="@+id/users_multi_Selection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="center"
+                android:background="@android:color/white"
+                android:gravity="center"
+                android:minHeight="40dp"
+              android:popupBackground="@color/white"
+
+                app:hintText="@string/search_your_contact"
+                app:textColor="@color/text_color" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            tools:listitem="@layout/item_friend_adapter" />
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</layout>
+

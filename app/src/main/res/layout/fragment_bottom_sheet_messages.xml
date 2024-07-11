@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent"
+    android:background="@null"
+    android:elevation="12dp"
+    android:minHeight="400dp"
+    android:name="com.iyr.ian.ui.chat.MessagesInEventFragment">
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="2dp"
+        app:cardPreventCornerOverlap="true"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_actions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingVertical="20dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toTopOf="@id/messageInputFix"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:listitem="@layout/item_speed_message_adapter" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/top_buttons_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/full_screen_button"
+                    android:layout_width="@dimen/box_small"
+                    android:layout_height="@dimen/box_small"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="12dp"
+                    android:foregroundGravity="right"
+                    android:src="@drawable/baseline_fullscreen_24"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/restore_screen_button"
+                    android:layout_width="@dimen/box_small"
+                    android:layout_height="@dimen/box_small"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="12dp"
+                    android:foregroundGravity="right"
+                    android:src="@drawable/baseline_close_fullscreen_24"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+<!--
+                <ImageView
+                    android:id="@+id/close_button"
+                    android:layout_width="@dimen/box_small"
+                    android:layout_height="@dimen/box_small"
+                    android:cropToPadding="true"
+                    android:elevation="22dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="9dp"
+                    android:src="@drawable/round_cancel_24"
+                    app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                    android:visibility="gone"
+                    />
+-->
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <com.stfalcon.chatkit.messages.MessagesList
+                android:id="@+id/messagesList"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp"
+                android:background="@null"
+                android:contentDescription="@string/message_list_voice"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                app:dateHeaderTextSize="@dimen/text_size_subparagraph"
+                app:incomingImageTimeTextSize="@dimen/text_size_subparagraph"
+                app:incomingTextSize="@dimen/text_size_subparagraph"
+                app:incomingTimeTextSize="@dimen/text_size_subparagraph"
+                app:layout_constraintBottom_toTopOf="@id/divider6"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/top_buttons_section"
+                app:layout_constraintVertical_bias="0.0"
+                app:outcomingImageTimeTextSize="@dimen/text_size_subparagraph"
+                app:outcomingTextSize="@dimen/text_size_subparagraph"
+                app:outcomingTimeTextSize="@dimen/text_size_subparagraph" />
+
+            <com.stfalcon.chatkit.messages.MessageInput
+                android:id="@+id/messageInputFix"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@color/chatTextInputSectionBackground"
+                android:focusable="auto"
+                android:focusableInTouchMode="true"
+                app:attachmentButtonDefaultBgColor="@color/colorPrimary"
+                app:attachmentButtonDefaultIconColor="@color/white"
+                app:attachmentButtonHeight="24dp"
+                app:attachmentButtonIcon="@drawable/ic_baseline_add_24"
+                app:attachmentButtonWidth="24dp"
+                app:inputButtonBackground="@drawable/bg_button_secondary"
+                app:inputButtonDefaultBgDisabledColor="@color/gray_600"
+                app:inputButtonDefaultBgPressedColor="@color/white"
+                app:inputButtonHeight="24dp"
+
+                app:inputButtonIcon="@drawable/ic_baseline_send_24"
+                app:inputButtonWidth="24dp"
+                app:inputHint="@string/hint_enter_a_message"
+
+                app:inputMaxLines="3"
+                app:inputTextColor="@color/black"
+                app:inputTextSize="@dimen/text_size_subparagraph"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:showAttachmentButton="true" />
+
+            <View
+                android:id="@+id/divider6"
+                android:layout_width="409dp"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                app:layout_constraintBottom_toTopOf="@+id/recycler_actions"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/fragment_title_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/chat_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/muli_extrabold"
+                    android:text="@string/messages_header"
+                    android:textSize="@dimen/text_size_subparagraph"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+                <!--
+                                <ImageView
+                                    android:id="@+id/close_button"
+                                    android:layout_width="46dp"
+                                    android:layout_height="46dp"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:srcCompat="@drawable/ic_dialog_close_light" />
+
+                          -->
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!--
+    </androidx.core.widget.NestedScrollView>
+-->
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
