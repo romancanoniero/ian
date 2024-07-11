@@ -23,6 +23,7 @@ import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.maps.model.AddressComponentType
 import com.iyr.fewtouchs.utils.osrm.getCurrentLocationAsAddress
+import com.iyr.ian.BuildConfig
 import com.iyr.ian.Constants.Companion.AUTOCOMPLETE_REQUEST_CODE
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
@@ -400,8 +401,8 @@ class EventLocationReadOnlyFragment(
       */
         if (!Places.isInitialized()) {
             Places.initialize(
-                this.requireContext(), this.requireContext().getString(R.string.google_maps_key)
-            )
+                this.requireContext(), BuildConfig.MAPS_API_KEY)
+
         }
 
 

@@ -10,7 +10,7 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse
 import com.google.maps.model.AddressComponentType
-import com.iyr.ian.R
+import com.iyr.ian.BuildConfig
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.callbacks.OnCompleteCallback
 
@@ -56,7 +56,7 @@ class GoogleGeoCodingApiUtils(val context: Context) {
 
             Places.initialize(
                 context,
-                context.getString(R.string.google_maps_key)
+                BuildConfig.MAPS_API_KEY
             )
         }
 

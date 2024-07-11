@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
 
     id("com.android.application")
@@ -16,7 +18,7 @@ android {
 
 
     packagingOptions {
-        pickFirst ("META-INF/DEPENDENCIES")
+        pickFirst("META-INF/DEPENDENCIES")
     }
 
     defaultConfig {
@@ -25,8 +27,16 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Get the API keys from local.properties
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+
+        // Set API keys in BuildConfig
+        buildConfigField("String", "MAPS_API_KEY", properties.getProperty("MAPS_API_KEY"))
+
+
     }
 
     buildTypes {
@@ -94,7 +104,6 @@ dependencies {
     // FUNTIONALITIES SUPPORT
 
 
-
     implementation("com.google.firebase:firebase-dynamic-links")
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
@@ -107,7 +116,6 @@ dependencies {
     implementation("com.google.apis:google-api-services-people:v1-rev20200720-1.30.10")
 
 
-
     // FIREBASE
     implementation(platform("com.google.firebase:firebase-bom:32.0.0"))
     implementation("com.google.firebase:firebase-storage-ktx")
@@ -115,8 +123,8 @@ dependencies {
     implementation("com.google.firebase:firebase-appcheck")
 
 
-    implementation ("com.google.android.gms:play-services-auth:19.2.0")
-    implementation ("com.google.api-client:google-api-client-android:1.20.0")
+    implementation("com.google.android.gms:play-services-auth:19.2.0")
+    implementation("com.google.api-client:google-api-client-android:1.20.0")
 
 
     // DATABASE MANAGEMENT
@@ -159,17 +167,16 @@ dependencies {
 
     //-- Indicators
     implementation("com.tbuonomo:dotsindicator:4.2")
-    implementation ("ru.tinkoff.scrollingpagerindicator:scrollingpagerindicator:1.2.5")
+    implementation("ru.tinkoff.scrollingpagerindicator:scrollingpagerindicator:1.2.5")
 
     implementation("com.github.martinstamenkovski:ARIndicatorView:2.0.0")
     implementation("com.github.mreram:SeekArc:v1.6")
 
 
-    implementation ("com.github.alirezat775:carousel-view:1.1.1")
+    implementation("com.github.alirezat775:carousel-view:1.1.1")
 
     // -- LayoutManagers
     implementation("com.ccy:FocusLayoutManager:1.0.2")
-
 
 
     // OTP
