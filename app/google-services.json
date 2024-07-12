@@ -1,0 +1,204 @@
+{
+  "project_info": {
+    "project_number": "84941778245",
+    "firebase_url": "https://fewtouchs-4321f-default-rtdb.firebaseio.com",
+    "project_id": "fewtouchs-4321f",
+    "storage_bucket": "fewtouchs-4321f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84941778245:android:87e31f9ca525ecb6eda22c",
+        "android_client_info": {
+          "package_name": "com.iyr.commoncontrols.ianmonitor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84941778245-7dl48gjdva3kqj60db9lrrdbkte3fc57.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iyr.commoncontrols.ianmonitor",
+            "certificate_hash": "b210cd23ad79d37912bf514dd244ed428d5682aa"
+          }
+        },
+        {
+          "client_id": "84941778245-ipurs53qrk61ktvd4vln5i774g3n2hpd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iyr.commoncontrols.ianmonitor",
+            "certificate_hash": "f32ce899b13630f744809b43217e910e5df0d7a6"
+          }
+        },
+        {
+          "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6u_1vLlKsw5M6rfwrTRuzMIQDNJXi9gQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84941778245:android:390e2ffbb1cba64eeda22c",
+        "android_client_info": {
+          "package_name": "com.iyr.commoncontrols.iantv"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6u_1vLlKsw5M6rfwrTRuzMIQDNJXi9gQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84941778245:android:9fc9b0dc9b2bc4e0eda22c",
+        "android_client_info": {
+          "package_name": "com.iyr.fewtouchs"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84941778245-9ovhqi6cct7ujbsasmv6gelilgfgsode.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iyr.fewtouchs",
+            "certificate_hash": "f32ce899b13630f744809b43217e910e5df0d7a6"
+          }
+        },
+        {
+          "client_id": "84941778245-b0099995bamhjnbooqvs5v6q029789sf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iyr.fewtouchs",
+            "certificate_hash": "b210cd23ad79d37912bf514dd244ed428d5682aa"
+          }
+        },
+        {
+          "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6u_1vLlKsw5M6rfwrTRuzMIQDNJXi9gQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84941778245:android:12c5ac5bccfa4b4beda22c",
+        "android_client_info": {
+          "package_name": "com.iyr.ian"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84941778245-en7p3pv56pf3glmv7am8l9inrq45osh5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iyr.ian",
+            "certificate_hash": "f32ce899b13630f744809b43217e910e5df0d7a6"
+          }
+        },
+        {
+          "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6u_1vLlKsw5M6rfwrTRuzMIQDNJXi9gQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84941778245:android:7758362972bb7913eda22c",
+        "android_client_info": {
+          "package_name": "com.iyr.iantv"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84941778245-bf4vs4vbjf73i8e3ehpgp3le2pdruo16.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iyr.iantv",
+            "certificate_hash": "0aa98d93b12c63f1aebbc460116a6033a4f39113"
+          }
+        },
+        {
+          "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6u_1vLlKsw5M6rfwrTRuzMIQDNJXi9gQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84941778245-c1t1sphr5vpnaqqiad0sm5qhul7ufhi4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

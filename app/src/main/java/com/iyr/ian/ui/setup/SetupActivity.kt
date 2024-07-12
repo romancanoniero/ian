@@ -62,6 +62,7 @@ import com.lassi.presentation.builder.Lassi
 import com.lassi.presentation.cropper.CropImageView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 import java.util.Locale
 
@@ -106,12 +107,14 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
                         .setAlertDialogNegativeButtonColor(R.color.white)
                         .setAlertDialogPositiveButtonColor(R.color.darkGray)
                         .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
-                        .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .enableActualCircleCrop().setCropAspectRatio(
+                        .setCropType(CropImageView.CropShape.OVAL) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .setCropAspectRatio(
                             1, 1
                         ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
                         .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
                         .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
+                        .enableActualCircleCrop()
+
                         .build()
 
 
@@ -128,11 +131,16 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
                     it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
                 if (!selectedMedia.isNullOrEmpty()) {
 
+                    var source = selectedMedia[0].path.toString()
+                    var destinationPath =
+                        getCacheLocation(AppConstants.PROFILE_IMAGES_STORAGE_PATH + FirebaseAuth.getInstance().uid.toString())
+
+                    GlideApp.with(this).asBitmap().load(source)
+                        .placeholder(getDrawable(R.drawable.progress_animation))
+                        .error(getDrawable(R.drawable.ic_error)).into(binding.userImage)
+
                     lifecycleScope.launch(Dispatchers.IO) {
 
-                        var source = selectedMedia[0].path.toString()
-                        var destinationPath =
-                            getCacheLocation(AppConstants.PROFILE_IMAGES_STORAGE_PATH + FirebaseAuth.getInstance().uid.toString())
 
 
                         var localPath = selectedMedia[0].path.toString()/*
@@ -143,7 +151,6 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
 
 
                         try {
-
 
                             var mediaFile =
                                 prepareMediaObject(MediaTypesEnum.IMAGE, source, destinationPath)
@@ -156,19 +163,23 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
                                     mediaFile.file_name,
                                     "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${FirebaseAuth.getInstance().uid.toString()}"
                                 )
-                                if (imageBitmap?.byteCount ?: 0 > 0) {
-                                    binding.userImage.setImageBitmap(imageBitmap)
-                                } else {
-                                    binding.userImage.setImageBitmap(imageBitmap)
+
+                                withContext(Dispatchers.Main) {
+                                    if (imageBitmap?.byteCount ?: 0 > 0) {
+                                        binding.userImage.setImageBitmap(imageBitmap)
+                                    } else {
+                                        binding.userImage.setImageBitmap(imageBitmap)
+                                    }
+
                                 }
 
-                                viewModel.onImageChanged(
-                                    FirebaseAuth.getInstance().uid.toString(), mediaFile
-                                )
 
                                 uploadFileToFirebaseStorage(
                                     Uri.parse("file:" + localPath),
                                     "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${FirebaseAuth.getInstance().uid.toString()}/${fileName}"
+                                )
+                                viewModel.onImageChanged(
+                                    FirebaseAuth.getInstance().uid.toString(), mediaFile
                                 )
 
 
@@ -294,8 +305,10 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
             {
                 is Resource.Loading -> {
                     binding.animation.visibility = VISIBLE
+                    binding.animation.playAnimation()
                 }
                 is Resource.Success -> {
+                    binding.animation.cancelAnimation()
                     binding.animation.visibility = GONE
 
                     var mediaFile = resource.data
@@ -328,9 +341,13 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
 
                 }
                 is Resource.Error -> {
+                    binding.animation.cancelAnimation()
+
                     binding.animation.visibility = GONE
                     showErrorDialog(resource.message.toString())
                 }
+
+                else -> {}
             }
 
 
@@ -654,6 +671,7 @@ class SetupActivity : AppCompatActivity(), SetupActivityCallback {
         options.withAspectRatio(1F, 1F)
         options.setToolbarTitle(getString(R.string.crop))
          */
+
     }
 
     private fun registerActivityResultContracts() {

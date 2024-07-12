@@ -23,9 +23,9 @@ class SettingsLandingFragmentViewModel : ViewModel() {
         {
             var call = usersRepository.onDeleteAccount()
             if (call.message == null)
-                _deletingAccountStatus.value = Resource.Success<Boolean>()
+                _deletingAccountStatus.setValue(Resource.Success<Boolean>())
             else
-                _deletingAccountStatus.value = Resource.Error<Boolean>(call.message.toString())
+                _deletingAccountStatus.setValue( Resource.Error<Boolean>(call.message.toString()))
         }
     }
 
