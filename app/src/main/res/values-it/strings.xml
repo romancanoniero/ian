@@ -184,4 +184,13 @@
     <string name="new_messages">Nuovi Messaggi</string>
 
 
+
+    <string name="login_error_user_doest_not_exists">Non esiste un record utente corrispondente a questo identificatore. L\'utente potrebbe essere stato cancellato.</string>
+    <string name="error_too_many_tries_from_your_device">Troppi tentativi di accesso dal tuo dispositivo. Riprova più tardi.</string>
+    <string name="error_device_not_authenticated">Il tuo telefono non è autenticato.</string>
+    <string name="error_phone_number_is_not_registered">Il tuo numero di telefono non è registrato.\nVerifica se è corretto o registrati cliccando l\'opzione in fondo alla schermata</string>
+    <string name="error_email_not_registered">L\'account email inserito non è nei nostri registri</string>
+    <string name="error_user_not_found">Utente non trovato</string>
+    <string name="error_email_not_verified">Devi verificare tramite l\'email che ti abbiamo inviato</string>
+
 </resources>

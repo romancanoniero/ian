@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.iyr.ian.R
@@ -18,37 +19,25 @@ import com.iyr.ian.enums.AccessLevelsEnum
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.dialogs.DialogFunctionEnum
-import com.iyr.ian.ui.dialogs.EventTypeExplanationDialog
-import com.iyr.ian.ui.events.EventsFragment
-import com.iyr.ian.ui.events.EventsFragmentViewModel
 import com.iyr.ian.ui.events.OnPostFragmentInteractionCallback
 import com.iyr.ian.ui.events.fragments.adapters.EventTypeAdapter
 import com.iyr.ian.ui.events.fragments.adapters.EventTypeSelectorCallback
-import com.iyr.ian.ui.settings.ISettingsFragment
-import com.iyr.ian.ui.settings.SettingsFragmentsEnum
-import com.iyr.ian.ui.settings.subscription_plan.PlanSubscriptionFragment
 import com.iyr.ian.utils.LocationRequirementsCallback
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.requestLocationRequirements
 import com.iyr.ian.utils.showErrorDialog
+import com.iyr.ian.viewmodels.EventsFragmentViewModel
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
-/**
- * A simple [Fragment] subclass.
- * Use the [EventTypeSelectorFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class EventTypeSelectorFragment(
-    var parentFragment: EventsFragment,
-    val viewModel: EventsFragmentViewModel,
-    private val mainActivityViewModel: MainActivityViewModel
-) :
+class EventTypeSelectorFragment() :
     Fragment(),
     EventTypeSelectorCallback {
 
+    private var accessLevel: Int = AccessLevelsEnum.FREE.ordinal
+    lateinit var viewModel: EventsFragmentViewModel
     private var eventTypeAdapter: EventTypeAdapter? = null
     private var callback: OnPostFragmentInteractionCallback? = null
 
@@ -57,15 +46,16 @@ class EventTypeSelectorFragment(
     //Add empty constructor to avoid the exception
 
     fun newInstance(): EventTypeSelectorFragment {
-        return EventTypeSelectorFragment(parentFragment, viewModel, mainActivityViewModel)
+//        return EventTypeSelectorFragment(parentFragment, viewModel, mainActivityViewModel)
+        return EventTypeSelectorFragment()
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (arguments != null) {
-        }
         eventTypeAdapter = EventTypeAdapter(requireActivity(), this as EventTypeSelectorCallback)
+
+        viewModel = EventsFragmentViewModel.getInstance(requireContext())
         initializeEventTypesAdapter()
     }
 
@@ -83,10 +73,10 @@ class EventTypeSelectorFragment(
     }
 
     private fun setupUI() {
-        (AppClass.instance.getCurrentActivity() as MainActivity).setTitleBarTitle(R.string.select_your_event)
         recyclerEventTypes?.layoutManager = GridLayoutManager(requireContext(), 2)
         recyclerEventTypes?.adapter = eventTypeAdapter
     }
+
 
     private fun initializeEventTypesAdapter() {
         eventTypeAdapter?.getData()?.add(
@@ -163,19 +153,40 @@ class EventTypeSelectorFragment(
         )
     }
 
-
-    fun updateUI() {
-    }
-
     override fun onResume() {
         super.onResume()
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.enableBackBtn(true)
+        appToolbar.updateTitle(getString(R.string.event_publish_type_selector))
+
+        val bottomToolBar = (requireActivity() as MainActivity).binding.bottomToolbar
+        bottomToolBar.visibility = View.GONE
         resetCurrentEvent()
-        updateUI()
+        startObservers()
     }
 
+
+    override fun onPause() {
+        super.onPause()
+        stopObservers()
+    }
+
+
+    private fun startObservers() {
+        MainActivityViewModel.getInstance().subscriptionType.observe(viewLifecycleOwner, {
+            if (it != null) {
+                    this@EventTypeSelectorFragment.accessLevel = it.access_level
+            }
+        })
+    }
+
+
+    private fun stopObservers() {
+        MainActivityViewModel.getInstance().subscriptionType.removeObservers(viewLifecycleOwner)
+    }
+
+
     private fun resetCurrentEvent() {
-        viewModel.onClearLocationRequest()
-        viewModel.clearMedia()
         callback?.resetCurrentEvent()
     }
 
@@ -189,6 +200,7 @@ class EventTypeSelectorFragment(
 
         requireContext().handleTouch()
 
+        val mainActivityViewModel = (requireActivity() as MainActivity).viewModel
 
         if (mainActivityViewModel.isInPanic.value == true) {
             requireActivity().showErrorDialog(
@@ -200,7 +212,7 @@ class EventTypeSelectorFragment(
         } else {
 
 
-            if (mainActivityViewModel.userSubscription.value?.access_level ?: 0 >= AccessLevelsEnum.SOLIDARY.ordinal) {
+            if (accessLevel ?: 0 >= AccessLevelsEnum.SOLIDARY.ordinal) {
 
                 viewModel.setEventType(eventType.toString())
 
@@ -215,21 +227,32 @@ class EventTypeSelectorFragment(
                                 || eventType == EventTypesEnum.SCORT_ME
                             ) {
                                 viewModel.setEventLocationMode(EventLocationType.FIXED)
-
-                                callback!!.OnSwitchFragmentRequest(
-                                    R.id.event_fragment_location_read_only_selector
-                                )
+                                /*
+                                                                callback!!.OnSwitchFragmentRequest(
+                                                                    R.id.event_fragment_location_read_only_selector
+                                                                )
+                                  */
+                                findNavController().navigate(R.id.event_fragment_location_read_only_selector)
                             } else {
 
                                 if (AppClass.instance.isUserAddressStorageEnabled) {
+                                    /*
                                     callback!!.OnSwitchFragmentRequest(
                                         R.id.event_fragment_location_selector,
                                         arguments
-                                    )
+                                    )*/
+                                    findNavController().navigate(R.id.event_fragment_location_selector)
                                 } else {
+                                    /*
                                     callback!!.OnSwitchFragmentRequest(
                                         R.id.event_fragment_realtime_selector, arguments
                                     )
+*/
+
+                                    val action =
+                                        EventTypeSelectorFragmentDirections.actionEventTypeSelectorFragmentToEventRealTimeTrackingFragment()
+                                    findNavController().navigate(action)
+
                                 }
                             }
                         }
@@ -238,34 +261,12 @@ class EventTypeSelectorFragment(
                 }
 
             } else {
-
-                val eventExplanationDialog = EventTypeExplanationDialog(requireContext(),requireActivity(),eventType,
-                    DialogFunctionEnum.SUBSCRIPTION_REQUIRED)
-
-                eventExplanationDialog.setButton1Callback(View.OnClickListener {
-                    eventExplanationDialog.dismiss()
-
-                    var bundle = Bundle()
-                    bundle.putString("go_to", SettingsFragmentsEnum.PLAN_SETTINGS.name)
-
-                    (requireActivity() as MainActivity).switchToFragment(PlanSubscriptionFragment(object  : ISettingsFragment{
-                        override fun goToFragment(index: Int, extras: Bundle?) {
-                            TODO("Not yet implemented")
-                        }
-                    }))
-                    /*
-                    (requireActivity() as MainActivity).switchToModule(
-                        IANModulesEnum.SETTINGS.ordinal, "settings", false, "", bundle
+                val action =
+                    EventTypeSelectorFragmentDirections.actionEventTypeSelectorFragmentToEventTypeExplanationDialog(
+                        eventType,
+                        DialogFunctionEnum.SUBSCRIPTION_REQUIRED
                     )
-*/
-
-                })
-
-
-                eventExplanationDialog.show()
-
-
-
+                findNavController().navigate(action)
             }
 
 

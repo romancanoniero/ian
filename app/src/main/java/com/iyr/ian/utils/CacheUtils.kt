@@ -16,8 +16,14 @@ Context.isFileInCache(fileName: String): String? {
 }
 */
 
-fun Bitmap.saveImageToCache(context: Context, imageName: String, folderName: String): Boolean {
-    val cacheDir = File(context.cacheDir, folderName)
+fun Bitmap.saveImageToCache(context: Context, imageName: String, folderName: String? = null): Boolean {
+    var cacheDir: File? = null
+    if (folderName == null) {
+        cacheDir = File(context.cacheDir, "images")
+    } else {
+        cacheDir = File(context.cacheDir, folderName)
+    }
+//    File(context.cacheDir, folderName)
     if (!cacheDir.exists()) {
         cacheDir.mkdirs()
     }
@@ -39,10 +45,15 @@ fun Bitmap.saveImageToCache(context: Context, imageName: String, folderName: Str
 /**
  * Load image from cache
  */
-fun Context.loadImageFromCache( imageName: String, folderName: String): Bitmap? {
-    val cacheDir = File(this.cacheDir, folderName)
-    val imageFile = File(cacheDir, imageName)
+fun Context.loadImageFromCache( imageName: String, folderName: String? = null): Bitmap? {
+    var cacheDir: File? = null
 
+    if (folderName == null) {
+        cacheDir = File(this.cacheDir, "images")
+    } else {
+        cacheDir = File(this.cacheDir, folderName)
+    }
+    val imageFile = File(cacheDir, imageName)
     return if (imageFile.exists()) {
         BitmapFactory.decodeFile(imageFile.absolutePath)
     } else {

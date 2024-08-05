@@ -1,11 +1,12 @@
 package com.iyr.ian.dao.models
 
 import com.google.gson.Gson
-import java.util.*
+import java.io.Serializable
+import java.util.Locale
+import java.util.Objects
 
 
-class NotificationList {
-
+class ContactGroup : Serializable {
 
     var list_key: String = ""
     var list_name: String = ""
@@ -17,7 +18,7 @@ class NotificationList {
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
         if (o == null || javaClass != o.javaClass) return false
-        val that = o as NotificationList
+        val that = o as ContactGroup
         return list_key == that.list_key
     }
 
@@ -25,9 +26,9 @@ class NotificationList {
         return Objects.hash(list_key)
     }
 
-    fun copy(): NotificationList { //Get another instance of YourClass with the values like this!
+    fun copy(): ContactGroup { //Get another instance of YourClass with the values like this!
         val json = Gson().toJson(this)
-        return Gson().fromJson(json, NotificationList::class.java)
+        return Gson().fromJson(json, ContactGroup::class.java)
     }
 
     override fun toString(): String {

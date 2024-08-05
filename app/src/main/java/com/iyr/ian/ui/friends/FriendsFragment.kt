@@ -238,7 +238,17 @@ class FriendsFragment(val activity: Activity) : Fragment(),
     override fun onResume() {
         super.onResume()
         AppClass.instance.setCurrentFragment(this)
-        (requireActivity() as MainActivity).setTitleBarTitle(R.string.friends)
+//        (requireActivity() as MainActivity).setTitleBarTitle(R.string.friends)
+
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.enableBackBtn(true)
+        appToolbar.updateTitle(getString(R.string.friends))
+
+        val bottomToolBar = (requireActivity() as MainActivity).binding.bottomToolbar
+        bottomToolBar.visibility = View.GONE
+
+
+
         this.binding.root.viewTreeObserver.addOnGlobalLayoutListener(this.onGlobalLayoutListener)
 
         AppClass.instance.setSoftMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
@@ -384,10 +394,10 @@ class FriendsFragment(val activity: Activity) : Fragment(),
 
                         if (contact.telephone_number != "") {
                             invitationType = SharingTargets.SMS
-                            sharingParams.contactAddress = contact.telephone_number
+                            sharingParams.contactAddress = contact.telephone_number ?: ""
                         } else {
                             invitationType = SharingTargets.EMAIL
-                            sharingParams.contactAddress = contact.email
+                            sharingParams.contactAddress = contact.email ?: ""
                             sharingParams.title = "Proba esta aplicacion nueva"
                         }
                         sharingParams.sharingMethod = invitationType

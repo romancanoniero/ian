@@ -3,11 +3,20 @@ package com.iyr.ian.ui.settings.push_button
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.bluetooth.*
-import android.bluetooth.le.*
-import android.content.*
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.DialogInterface
+import android.content.IntentFilter
+import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,21 +26,19 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.clj.fastble.BleManager
-import com.clj.fastble.scan.*
-import com.clj.fastble.scan.BleScanRuleConfig.*
 import com.iyr.ian.BuildConfig
 import com.iyr.ian.Constants
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
-import com.iyr.ian.itag.ITagsService
 import com.iyr.ian.databinding.FragmentBluetoothConfigurationBinding
 import com.iyr.ian.itag.ITag
 import com.iyr.ian.itag.ITagModesEnum
+import com.iyr.ian.itag.ITagsService
 import com.iyr.ian.itag.StoreOpType
 import com.iyr.ian.sharedpreferences.SessionApp
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.interfaces.MainActivityInterface
-import com.iyr.ian.ui.settings.ISettingsFragment
+import com.iyr.ian.ui.settings.SettingsFragmentViewModel
 import com.iyr.ian.ui.settings.push_button.adapters.TagsAdapter
 import com.iyr.ian.ui.settings.push_button.dialogs.BTScannerDialog
 import com.iyr.ian.utils.UIUtils.handleTouch
@@ -43,8 +50,9 @@ import com.iyr.ian.utils.bluetooth.errors.ErrorsObservable
 import com.iyr.ian.utils.multimedia.MediaPlayerUtils
 import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.viewmodels.MainActivityViewModel
-import kotlinx.coroutines.*
-import java.util.*
+import com.iyr.ian.viewmodels.UserViewModel
+import kotlinx.coroutines.Runnable
+import java.util.UUID
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -58,9 +66,7 @@ private enum class FragmentType {
 }
 
 @SuppressLint("MissingPermission")
-class PushButtonSetupFragment(
-    val mainActivityViewModel: MainActivityViewModel, private val _interface: ISettingsFragment
-) : Fragment() {
+class PushButtonSetupFragment() : Fragment() {
     private var mEnableAttempts = 0
     private val disposableBag = DisposableBag()
     private var scanning = false
@@ -68,11 +74,19 @@ class PushButtonSetupFragment(
     private var viewModel: PushButtonsSetupFragmentViewModel? = null
     private val handler = Handler(Looper.getMainLooper())
     private var pressedTimes = 0
+
+    private val mainActivityViewModel: MainActivityViewModel by lazy { MainActivityViewModel.getInstance(requireContext(), UserViewModel.getInstance().getUser()?.user_key.toString()) }
+    private val  settingsFragmentViewModel: SettingsFragmentViewModel by lazy { SettingsFragmentViewModel.getInstance() }
+
+
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager =
             requireActivity().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
+
+
+
 
     val tagsAdapter: TagsAdapter by lazy { TagsAdapter(requireActivity(), ITag.store) }
 
@@ -100,14 +114,6 @@ class PushButtonSetupFragment(
     //  private val bluetoothAdapter: BluetoothAdapter? by lazy { bluetoothManager.adapter }
 
 
-    companion object {
-        @JvmStatic
-        fun newInstance(
-            context: Context,
-            mainActivityViewModel: MainActivityViewModel,
-            _interface: ISettingsFragment
-        ) = PushButtonSetupFragment(mainActivityViewModel, _interface)
-    }
 
 
     internal class ITagServiceConnection : ServiceConnection {

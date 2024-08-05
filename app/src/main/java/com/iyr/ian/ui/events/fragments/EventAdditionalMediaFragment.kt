@@ -1,12 +1,15 @@
 package com.iyr.ian.ui.events.fragments
 
 
+import android.Manifest
+import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,10 +19,13 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.devlomi.record_view.OnRecordListener
@@ -29,7 +35,6 @@ import com.iyr.ian.Constants.Companion.AUTOCOMPLETE_REQUEST_CODE
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.callbacks.IAcceptDenyDialog
-import com.iyr.ian.callbacks.MediaPickersInterface
 import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventLocation
@@ -40,14 +45,10 @@ import com.iyr.ian.enums.RecordingStatusEnum
 import com.iyr.ian.services.eventservice.EventService
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.callback.MainActivityCallback
-import com.iyr.ian.ui.events.EventsFragmentViewModel
-import com.iyr.ian.ui.events.OnPostFragmentInteractionCallback
 import com.iyr.ian.ui.events.fragments.adapters.EventMediaAdapter
 import com.iyr.ian.ui.events.fragments.adapters.MediaHandlingCallback
 import com.iyr.ian.ui.events.fragments.dialogs.EventPublishedDoneDialog
 import com.iyr.ian.ui.events.fragments.dialogs.OnEventPublishedDone
-import com.iyr.ian.ui.events.fragments.dialogs.network_selection.NetworkSelectionDialog
-import com.iyr.ian.ui.events.fragments.dialogs.network_selection.OnNetworkListSelection
 import com.iyr.ian.ui.interfaces.ErrorInterface
 import com.iyr.ian.ui.interfaces.EventsPublishingCallback
 import com.iyr.ian.utils.FileUtils
@@ -63,13 +64,23 @@ import com.iyr.ian.utils.loaders.hideLoader
 import com.iyr.ian.utils.loaders.showLoader
 import com.iyr.ian.utils.multimedia.MultimediaUtils
 import com.iyr.ian.utils.multimedia.editTextDialog
+import com.iyr.ian.utils.multimedia.getDimentions
+import com.iyr.ian.utils.multimedia.getDuration
+import com.iyr.ian.utils.permissionsForImages
+import com.iyr.ian.utils.permissionsForVideo
 import com.iyr.ian.utils.playSound
 import com.iyr.ian.utils.showConfirmationDialog
 import com.iyr.ian.utils.showErrorDialog
-import com.iyr.ian.utils.showSnackBar
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
+import com.iyr.ian.viewmodels.EventsFragmentViewModel
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.lassi.common.utils.KeyUtils
+import com.lassi.data.media.MiMedia
+import com.lassi.domain.media.LassiOption
+import com.lassi.domain.media.MediaType
+import com.lassi.presentation.builder.Lassi
+import com.lassi.presentation.cropper.CropImageView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,12 +90,135 @@ import java.util.UUID
 
 interface EventAdditionalMediaFragmentCallback : ErrorInterface, EventsPublishingCallback
 
-class EventAdditionalMediaFragment(
-    //  private var thisEvent: Event,
-    val callback: OnPostFragmentInteractionCallback,
-    val eventsFragmentViewModel: EventsFragmentViewModel,
-    private val mainActivityViewModel: MainActivityViewModel
-) : Fragment(), EventAdditionalMediaFragmentCallback, MediaHandlingCallback {
+class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentCallback,
+    MediaHandlingCallback {
+
+
+    val viewModel: EventsFragmentViewModel by lazy { EventsFragmentViewModel.getInstance() }
+
+    val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(
+            this.requireContext(),
+            FirebaseAuth.getInstance().uid.toString()
+        )
+    }
+
+    private val filesCompressionData = 50
+    private val filesMinimumSizeInKB = 100L
+    private val filesMaximumSizeInKB = 1024L
+
+
+    private var toPickImagePermissionsRequest: ActivityResultLauncher<Array<String>>? =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
+            if (!permissionsStatusMap.containsValue(false)) {
+
+
+                val imagePickerIntent =
+                    Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
+                        .setMaxCount(1).setGridSize(3)
+                        .setMediaType(MediaType.IMAGE) // MediaType : VIDEO IMAGE, AUDIO OR DOC
+                        .setCompressionRatio(filesCompressionData).setSupportedFileTypes(
+                            "jpg", "jpeg", "png", "webp", "gif"
+                        ).setMinFileSize(filesMinimumSizeInKB) // Restrict by minimum file size
+                        .setMaxFileSize(filesMaximumSizeInKB) //  Restrict by maximum file size
+                        /*
+                     * Configuration for  UI
+                     */.setStatusBarColor(R.color.white).setToolbarResourceColor(R.color.white)
+                        .setProgressBarColor(R.color.colorAccent)
+                        .setPlaceHolder(R.drawable.ic_image_placeholder)
+                        .setErrorDrawable(R.drawable.ic_image_placeholder)
+                        .setSelectionDrawable(R.drawable.ic_checked_media)
+                        .setAlertDialogNegativeButtonColor(R.color.white)
+                        .setAlertDialogPositiveButtonColor(R.color.darkGray)
+                        .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
+                        .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .setCompressionRatio(50) // compress image for single item selection (can be 0 to 100)
+                        .setCropAspectRatio(
+                            1, 1
+                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
+                        .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
+                        .build()
+
+                pickImageContract?.launch(imagePickerIntent)
+            } else {
+                requireActivity().permissionsForImages()
+            }
+        }
+
+    private var pickImageContract: ActivityResultLauncher<Intent>? =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                val selectedMedia =
+                    it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as ArrayList<MiMedia>
+                if (!selectedMedia.isNullOrEmpty()) {
+                    val media = MediaFile(MediaTypesEnum.IMAGE, selectedMedia[0].path.toString())
+                    viewModel.onImageAdded(media.file_name)
+                }
+            }
+        }
+
+
+    private var toTakeVideoPermissionsRequest: ActivityResultLauncher<Array<String>>? =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
+            if (!permissionsStatusMap.containsValue(false)) {
+
+                val videoPickerIntent =
+                    Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
+                        .setMaxCount(5).setGridSize(3)
+                        .setMediaType(MediaType.VIDEO) // MediaType : VIDEO IMAGE, AUDIO OR DOC
+                        .setCompressionRatio(10) // compress image for single item selection (can be 0 to 100)
+                        .setMinTime(5) // for MediaType.VIDEO only
+                        .setMaxTime(60) // for MediaType.VIDEO only
+                        .setSupportedFileTypes(
+                            "mp4", "mkv", "webm", "avi", "flv", "3gp"
+                        ) // Filter by limited media format (Optional)
+                        .setMinFileSize(100) // Restrict by minimum file size
+                        .setMaxFileSize(1024) //  Restrict by maximum file size
+                        .disableCrop() // to remove crop from the single image selection (crop is enabled by default for single image)
+                        /*
+                     * Configuration for  UI
+                     */.setStatusBarColor(R.color.colorPrimaryDark)
+                        .setToolbarResourceColor(R.color.colorPrimary)
+                        .setProgressBarColor(R.color.colorAccent)
+                        .setPlaceHolder(R.drawable.ic_image_placeholder)
+                        .setErrorDrawable(R.drawable.ic_image_placeholder)
+                        .setSelectionDrawable(R.drawable.ic_checked_media)
+                        .setAlertDialogNegativeButtonColor(R.color.white)
+                        .setAlertDialogPositiveButtonColor(R.color.colorPrimary)
+                        .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
+                        .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .setCropAspectRatio(
+                            1, 1
+                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
+                        .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
+                        .enableActualCircleCrop() // Enable actual circular crop (only for MediaType.Image and CropImageView.CropShape.OVAL)
+                        .build()
+
+
+                pickVideoContract?.launch(videoPickerIntent)
+            } else {
+                requireActivity().permissionsForVideo()
+            }
+        }
+
+    private var pickVideoContract: ActivityResultLauncher<Intent>? =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                val selectedMedia =
+                    it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as ArrayList<MiMedia>
+                if (!selectedMedia.isNullOrEmpty()) {
+                    val filePath = selectedMedia[0].path.toString()
+                    val media = MediaFile(MediaTypesEnum.VIDEO, filePath)
+                    media.duration = requireContext().getDuration(Uri.parse("file:$filePath"))
+                    val dimensionsMap = requireContext().getDimentions(Uri.parse("file:$filePath"))
+                    media.width = dimensionsMap["width"]!!
+                    media.height = dimensionsMap["height"]!!
+                    viewModel.onVideoAdded(media.file_name, media.duration)
+                }
+            }
+        }
 
 
     private var hasConnectivity: Boolean = true
@@ -97,7 +231,6 @@ class EventAdditionalMediaFragment(
 
     private lateinit var eventLocationType: String
     private var eventLocation: EventLocation? = null
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -115,7 +248,6 @@ class EventAdditionalMediaFragment(
 
     private fun setupUI() {
         setupMediaAdapter()
-
         setupRecordButton()
 
         binding.changeLocation.setOnClickListener {
@@ -125,115 +257,94 @@ class EventAdditionalMediaFragment(
         binding.addTextButton.setOnClickListener {
             requireActivity().editTextDialog(requireActivity(), "", object : OnCompleteCallback {
                 override fun onComplete(success: Boolean, result: Any?) {
-                    eventsFragmentViewModel.onTextAdded(result.toString())
+                    viewModel.onTextAdded(result.toString())
                 }
             })
         }
 
         binding.addImageButton.setOnClickListener {
-            (requireActivity() as MediaPickersInterface).pickImage()
+            toPickImagePermissionsRequest?.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
         }
 
         binding.recordVideoButton.setOnClickListener {
-            (requireActivity() as MainActivity).recordVideo()
+            toTakeVideoPermissionsRequest?.launch(arrayOf(Manifest.permission.CAMERA))
         }
 
         binding.sendButton.setOnClickListener {
             requireActivity().handleTouch()
-            if (hasConnectivity) {
-                binding.sendButton.isEnabled = false
-                isSaving = true
-                requireActivity().showLoader(R.raw.lottie_campana_emitiendo)
-                lifecycleScope.launch(Dispatchers.IO) {
+            //         if (hasConnectivity) {
+            binding.sendButton.isEnabled = false
+            isSaving = true
 
-                    var notificationListResource =  eventsFragmentViewModel.getNotificationList(eventsFragmentViewModel.event.value?.author_key.toString())
+            //-----------------
 
-                    when (notificationListResource) {
-                        is Resource.Error -> {
-                            requireActivity().hideLoader()
-                            requireActivity().showErrorDialog(notificationListResource.message.toString())
-                        }
+            viewModel.onPostEventClicked()
 
-                        is Resource.Loading -> {
-                            requireActivity().showLoader("Consultando las Listas de Notificaciones")
-                        }
 
-                        is Resource.Success -> {
-                            var list = notificationListResource.data!!
+            //-------------------
 
-                            var event = eventsFragmentViewModel.event.value!!
 
-                            if (list.size > 0) {
-                                val callback: OnNetworkListSelection = object : OnNetworkListSelection {
-                                    override fun onSelected(listKey: String) {
-//                                publishEvent(listKey)
+            /*
+                            requireActivity().showLoader(R.raw.lottie_campana_emitiendo)
+                            lifecycleScope.launch(Dispatchers.IO) {
 
-                                        // Register the service
-                                        val eventService = EventService.getInstance(requireContext())
-//                                val livePostEventData = eventService.getResult()
-                                        event.group_key = listKey
-                                        eventService.fireEvent(event)
+                                val notificationListResource =
+                                    viewModel.getNotificationList(viewModel.event.value?.author_key.toString())
+
+                                when (notificationListResource) {
+                                    is Resource.Error -> {
+                                        requireActivity().hideLoader()
+                                        requireActivity().showErrorDialog(notificationListResource.message.toString())
                                     }
 
-                                    override fun onCanceled() {
-                                        binding.sendButton.isEnabled = true
+                                    is Resource.Loading -> {
+                                        requireActivity().showLoader("Consultando las Listas de Notificaciones")
+                                    }
+
+                                    is Resource.Success -> {
+                                        val list = notificationListResource.data!!
+
+                                        val event = viewModel.event.value!!
+
+                                        if (list.size > 0) {
+                                            val callback: OnNetworkListSelection =
+                                                object : OnNetworkListSelection {
+                                                    override fun onSelected(listKey: String) {
+                                                        // Register the service
+                                                        val eventService =
+                                                            EventService.getInstance(requireContext())
+                                                        event.group_key = listKey
+                                                        eventService.fireEvent(event)
+                                                    }
+
+                                                    override fun onCanceled() {
+                                                        binding.sendButton.isEnabled = true
+                                                    }
+                                                }
+
+                                            val networkSelectionDialog = NetworkSelectionDialog(
+                                                requireContext(), requireActivity(), callback
+                                            )
+
+                                            networkSelectionDialog.show(list)
+                                        } else {
+                                            // Register the service
+                                            val eventService = EventService.getInstance(requireContext())
+                                            event.group_key = "_default"
+                                            eventService.fireEvent(event)
+                                        }
+
                                     }
                                 }
-
-                                val networkSelectionDialog = NetworkSelectionDialog(
-                                    requireContext(), requireActivity(), callback
-                                )
-
-                                networkSelectionDialog.show(list)
-                            } else {
-                                // Register the service
-                                val eventService = EventService.getInstance(requireContext())
-                                event.group_key = "_default"
-                                eventService.fireEvent(event)
                             }
-
-                        }
-                    }
-
-
-
-                    //---------------------
-/*
-                    var currentLocationResource = requireActivity().getCurrentLocation()
-
-                    when (currentLocationResource) {
-                        is Resource.Error -> {
-                            requireActivity().hideLoader()
-                            requireActivity().showErrorDialog(currentLocationResource.message.toString())
-                        }
-
-                        is Resource.Loading -> {
-                            requireActivity().showLoader(resources.getString(R.string.please_wait))
-                        }
-
-                        is Resource.Success -> {
-                            //-------
-                            var currentLocation = currentLocationResource.data!!
-                            val geoLocationAtCreation = GeoLocation()
-                            geoLocationAtCreation.l = ArrayList<Double>()
-                            (geoLocationAtCreation.l as ArrayList<Double>).add(currentLocation.latitude)
-                            (geoLocationAtCreation.l as ArrayList<Double>).add(currentLocation.longitude)
-                            geoLocationAtCreation.event_time = Date().time
-                            eventsFragmentViewModel.event.value!!.location_at_creation =
-                                geoLocationAtCreation
-                            //-------
-                            publishEvent()
-
-                        }
-                    }
-*/
-                }
-
-            } else {
-                requireActivity().showSnackBar(
-                    binding.root, getString(R.string.no_connectivity)
-                )
-            }
+            */
+            /*
+        } else {
+            requireActivity().showSnackBar(
+                binding.root, getString(R.string.no_connectivity)
+            )
+        }
+        */
         }
     }
 
@@ -270,7 +381,7 @@ class EventAdditionalMediaFragment(
             }
 
             override fun onCancel() {
-                var oo = 33
+
             }
 
             override fun onFinish(recordTime: Long, limitReached: Boolean) {
@@ -281,7 +392,7 @@ class EventAdditionalMediaFragment(
             }
 
             override fun onLessThanSecond() {
-                var dede = 33
+
 
                 disposeRecording()
             }
@@ -337,19 +448,22 @@ class EventAdditionalMediaFragment(
 
 
     private fun publishEvent() {
-        eventsFragmentViewModel.prepareToPublish(FirebaseAuth.getInstance().uid.toString())
+        viewModel.prepareToPublish(FirebaseAuth.getInstance().uid.toString())
     }
 
 
     override fun onResume() {
         super.onResume()
-        setupObservers()
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.updateTitle(getString(R.string.event_publish_additional_content_title))
+
+        startObservers()
         measureObjects()
     }
 
     override fun onPause() {
         super.onPause()
-        removeObservers()
+        stopObservers()
     }
 
     private fun measureObjects() {
@@ -382,58 +496,17 @@ class EventAdditionalMediaFragment(
         }
     }
 
-    private fun setupObservers() {
 
-        eventsFragmentViewModel.showNotificationListSelector.observe(this) { status ->
-            when (status) {
-                is Resource.Loading -> {
-                    requireActivity().showLoader(resources.getString(R.string.please_wait))
-                }
+    private val eventService by lazy { EventService.getInstance(requireContext()) }
 
 
-                is Resource.Error -> {
-                    requireActivity().hideLoader()
-                    requireActivity().showErrorDialog(status.message.toString())
-                }
+    private fun startObservers() {
 
 
-                is Resource.Success -> {
-                    requireActivity().hideLoader()
-                    val list = status.data!!
-                    if (list.size > 0) {
-                        val callback: OnNetworkListSelection = object : OnNetworkListSelection {
-                            override fun onSelected(listKey: String) {
-//                                publishEvent(listKey)
+        viewModel.contactsGroupsListFlow.observe(this) { }
+        viewModel.groupsList.observe(this) { }
 
-                                // Register the service
-                                val eventService = EventService.getInstance(requireContext())
-//                                val livePostEventData = eventService.getResult()
-                                eventsFragmentViewModel.event.value!!.group_key = listKey
-                                eventService.fireEvent(eventsFragmentViewModel.event.value!!)
-                            }
-
-                            override fun onCanceled() {
-                                binding.sendButton.isEnabled = true
-                            }
-                        }
-
-                        val networkSelectionDialog = NetworkSelectionDialog(
-                            requireContext(), requireActivity(), callback
-                        )
-
-                        networkSelectionDialog.show(list)
-                    } else {
-                        // Register the service
-                        val eventService = EventService.getInstance(requireContext())
-                        eventsFragmentViewModel.event.value!!.group_key = "_default"
-                        eventService.fireEvent(eventsFragmentViewModel.event.value!!)
-                    }
-                }
-            }
-
-        }
-
-        eventsFragmentViewModel.postingEventStatus.observe(this) { status ->
+        eventService.flow.observe(this) { status ->
             when (status) {
                 is Resource.Loading -> {
                     requireActivity().showLoader(R.raw.lottie_posting_event_3)
@@ -463,13 +536,103 @@ class EventAdditionalMediaFragment(
                 is Resource.Error -> {
                     requireActivity().hideLoader()
                     requireActivity().showErrorDialog(status.message.toString())
-
+                    binding.sendButton.isEnabled = true
                 }
             }
         }
 
-        eventsFragmentViewModel.fixedLocation.observe(this) { location ->
-            eventLocationType = eventsFragmentViewModel.eventLocationType.value ?: "missing"
+        viewModel.showContactGroupSelector.observe(this) { status ->
+            findNavController().navigate(R.id.action_eventAdditionalMediaFragment_to_networkSelectionDialog)
+
+            /*   when (status) {
+                   is Resource.Loading -> {
+                       requireActivity().showLoader(resources.getString(R.string.please_wait))
+                   }
+
+
+                   is Resource.Error -> {
+                       requireActivity().hideLoader()
+                       requireActivity().showErrorDialog(status.message.toString())
+                   }
+
+
+                   is Resource.Success -> {
+                       requireActivity().hideLoader()
+                       val list = status.data!!
+                       if (list.size > 0) {
+                           val callback: OnNetworkListSelection = object : OnNetworkListSelection {
+                               override fun onSelected(listKey: String) {
+   //                                publishEvent(listKey)
+
+                                   // Register the service
+                                   val eventService = EventService.getInstance(requireContext())
+   //                                val livePostEventData = eventService.getResult()
+                                   viewModel.event.value!!.group_key = listKey
+                                   eventService.fireEvent(viewModel.event.value!!)
+                               }
+
+                               override fun onCanceled() {
+                                   binding.sendButton.isEnabled = true
+                               }
+                           }
+
+                           val networkSelectionDialog = NetworkSelectionDialog(
+                               requireContext(), requireActivity(), callback
+                           )
+
+                           networkSelectionDialog.show(list)
+
+
+                       } else {
+                           // Register the service
+                           val eventService = EventService.getInstance(requireContext())
+                           viewModel.event.value!!.group_key = "_default"
+                           eventService.fireEvent(viewModel.event.value!!)
+                       }
+                   }
+               }
+   */
+        }
+
+        /*
+                eventsFragmentViewModel.postingEventStatus.observe(this) { status ->
+                    when (status) {
+                        is Resource.Loading -> {
+                            requireActivity().showLoader(R.raw.lottie_posting_event_3)
+                        }
+
+                        is Resource.Success -> {
+                            requireActivity().hideLoader()
+                            mainActivityViewModel.switchToModule(0, "home")
+
+                            val callbackDialog: OnEventPublishedDone = object : OnEventPublishedDone {
+                                override fun onBringMeToEvent() {
+                                    if (requireActivity() is MainActivityCallback) {
+                                        (requireActivity() as MainActivityCallback).goToEvent(status.data?.event_key!!)
+                                    }
+                                }
+
+                                override fun onRefuse() {
+
+                                }
+                            }
+                            val doneDialog = EventPublishedDoneDialog(
+                                requireContext(), requireActivity(), callbackDialog
+                            )
+                            doneDialog.show()
+                        }
+
+                        is Resource.Error -> {
+                            requireActivity().hideLoader()
+                            requireActivity().showErrorDialog(status.message.toString())
+
+                        }
+                    }
+                }
+        */
+
+        viewModel.fixedLocation.observe(this) { location ->
+            eventLocationType = viewModel.eventLocationType.value ?: "missing"
             if (eventLocationType == EventLocationType.FIXED.name) {
                 binding.addressReadOnly.setText(location?.formated_address)
                 binding.changeLocation.isVisible =
@@ -478,7 +641,7 @@ class EventAdditionalMediaFragment(
             } else binding.addressReadOnly.setText(R.string.at_your_location)
         }
 
-        eventsFragmentViewModel.eventType.observe(this) { eventType ->
+        viewModel.eventType.observe(this) { eventType ->
             (AppClass.instance.getCurrentActivity() as MainActivity).setTitleBarTitle(
                 requireContext().getEventTypeName(eventType.toString())
             )
@@ -495,7 +658,7 @@ class EventAdditionalMediaFragment(
 
         }
 
-        eventsFragmentViewModel.eventMediaFlow.observe(this) { mediaList ->
+        viewModel.eventMediaFlow.observe(this) { mediaList ->
             mediaAdapter.setData(mediaList)
             mediaAdapter.notifyDataSetChanged()
             /*
@@ -534,15 +697,15 @@ class EventAdditionalMediaFragment(
             if (media != null) {
                 when (media.media_type) {
                     MediaTypesEnum.IMAGE -> {
-                        eventsFragmentViewModel.onImageAdded(media.file_name)
+                        viewModel.onImageAdded(media.file_name)
                     }
 
                     MediaTypesEnum.VIDEO -> {
-                        eventsFragmentViewModel.onVideoAdded(media.file_name, media.duration)
+                        viewModel.onVideoAdded(media.file_name, media.duration)
                     }
 
                     MediaTypesEnum.AUDIO -> {
-                        eventsFragmentViewModel.onAudioAdded(media.file_name, media.duration)
+                        viewModel.onAudioAdded(media.file_name, media.duration)
                     }
 
                     MediaTypesEnum.TEXT -> TODO()
@@ -574,13 +737,14 @@ class EventAdditionalMediaFragment(
         }
     }
 
-    private fun removeObservers() {
-        eventsFragmentViewModel.showNotificationListSelector.removeObservers(this)
-        eventsFragmentViewModel.postingEventStatus.removeObservers(this)
-        eventsFragmentViewModel.fixedLocation.removeObservers(this)
-        eventsFragmentViewModel.eventType.removeObservers(this)
-        eventsFragmentViewModel.eventMediaFlow.removeObservers(this)
+    private fun stopObservers() {
+        eventService.flow.removeObservers(this)
+        viewModel.showContactGroupSelector.removeObservers(this)
+        viewModel.fixedLocation.removeObservers(this)
+        viewModel.eventType.removeObservers(this)
+        viewModel.eventMediaFlow.removeObservers(this)
         mainActivityViewModel.newMedia.removeObservers(this)
+        mainActivityViewModel.recordingStatus.removeObservers(this)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -625,10 +789,10 @@ class EventAdditionalMediaFragment(
                 //      setCurrentLocationAsAddress(place)
                 eventLocation = EventLocation()
                 eventLocation!!.latitude = place.latLng.latitude
-                eventLocation!!.longitude = place.latLng.longitude
+                eventLocation!!.longitude = place.latLng?.longitude
                 eventLocation!!.formated_address = place.address
 
-                eventsFragmentViewModel.onFixedLocation(eventLocation)
+                viewModel.onFixedLocation(eventLocation)
                 requireContext().hideKeyboard(requireView())
 
             }
@@ -636,28 +800,13 @@ class EventAdditionalMediaFragment(
     }
 
     override fun onPublishEventDone(event: Event?) {
-        callback.onPublishEventDone(event)
-    }
-
-
-    fun newInstance(
-        thisEvent: Event, callback: OnPostFragmentInteractionCallback
-    ): EventAdditionalMediaFragment {
-        val fragment = EventAdditionalMediaFragment(
-            callback, eventsFragmentViewModel, mainActivityViewModel
-        )
-        val args = Bundle()
-        //     args.putString(ARG_PARAM1, param1)
-        //     args.putString(ARG_PARAM2, param2)
-        fragment.arguments = args
-        return fragment
+        // callback.onPublishEventDone(event)
+        Toast.makeText(requireContext(), "onPublishEventDone", Toast.LENGTH_SHORT).show()
     }
 
 
     companion object {
         // TODO: Rename parameter arguments, choose names that match
-        private const val ARG_PARAM1 = "param1"
-        private const val ARG_PARAM2 = "param2"
     }
 
 
@@ -722,7 +871,7 @@ class EventAdditionalMediaFragment(
             mediaPlayer.prepare()
             val duration = mediaPlayer.duration
 
-            eventsFragmentViewModel.onAudioAdded(recordingFilename!!, duration)
+            viewModel.onAudioAdded(recordingFilename!!, duration)
 
             recordSession = null
 
@@ -740,7 +889,7 @@ class EventAdditionalMediaFragment(
             requireContext().handleTouch()
             val clickListener = object : IAcceptDenyDialog {
                 override fun onAccept() {
-                    eventsFragmentViewModel.removeMedia(mediaFile)
+                    viewModel.removeMedia(mediaFile)
                 }
             }
             requireActivity().showConfirmationDialog(

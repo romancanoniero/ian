@@ -75,8 +75,8 @@ class LoginActivityViewModel(val context: Context) : ViewModel() {
     private val _loginMethod = MutableLiveData<LoginMethodsEnum>()
     val loginMethod: LiveData<LoginMethodsEnum> get() = _loginMethod
 
-    private val _loginStatus = MutableLiveData<Resource<*>>()
-    val loginStatus: LiveData<Resource<*>> get() = _loginStatus
+    private val _loginStatus = MutableLiveData<Resource<*>?>()
+    val loginStatus: LiveData<Resource<*>?> get() = _loginStatus
 
 
     private val _doesPhoneNumberExists = MutableLiveData<Boolean?>()
@@ -140,6 +140,7 @@ class LoginActivityViewModel(val context: Context) : ViewModel() {
     }
 
     fun onLoginMethodSelected(loginMethod: LoginMethodsEnum) {
+        _loginStatus.value = null
         when (loginMethod) {
             LoginMethodsEnum.EMAIL -> {
                 onEmailChanged(this.emailAddress, false)
@@ -158,6 +159,7 @@ class LoginActivityViewModel(val context: Context) : ViewModel() {
     }
 
     fun onLoginWithEmailAndPassword(email: String, password: String) {
+        _loginStatus.value = null
         _loginStatus.postValue(Resource.Loading<User>(null))
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -423,6 +425,10 @@ class LoginActivityViewModel(val context: Context) : ViewModel() {
 
     fun onUserAuthenticated(user: FirebaseUser) {
 
+    }
+
+    fun resetLoginStatus() {
+        _loginStatus.value = null
     }
 
 

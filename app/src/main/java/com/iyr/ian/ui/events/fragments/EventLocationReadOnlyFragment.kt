@@ -1,3 +1,5 @@
+@file:Suppress("UNNECESSARY_SAFE_CALL")
+
 package com.iyr.ian.ui.events.fragments
 
 import android.app.Activity
@@ -15,26 +17,25 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import at.markushi.ui.CircleButton
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.model.AddressComponentType
 import com.iyr.fewtouchs.utils.osrm.getCurrentLocationAsAddress
 import com.iyr.ian.BuildConfig
 import com.iyr.ian.Constants.Companion.AUTOCOMPLETE_REQUEST_CODE
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
-import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventLocation
 import com.iyr.ian.dao.models.TravelMode
 import com.iyr.ian.databinding.FragmentEventLocationReadOnlyBinding
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.ui.MainActivity
-import com.iyr.ian.ui.events.EventsFragmentViewModel
-import com.iyr.ian.ui.events.OnPostFragmentInteractionCallback
 import com.iyr.ian.utils.GoogleGeoCodingApiUtils
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.geo.GeoFunctions
@@ -42,20 +43,15 @@ import com.iyr.ian.utils.geo.models.CustomAddress
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getEventTypeName
 import com.iyr.ian.utils.hideKeyboard
-import com.iyr.ian.utils.px
 import com.iyr.ian.utils.showErrorDialog
+import com.iyr.ian.viewmodels.EventsFragmentViewModel
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class EventLocationReadOnlyFragment(
-    //  var thisEvent: Event,
-    val callback: OnPostFragmentInteractionCallback,
-    val eventsFragmentViewModel: EventsFragmentViewModel,
-    val mainActivityViewModel: MainActivityViewModel
-) : Fragment() {
+class EventLocationReadOnlyFragment() : Fragment() {
     private lateinit var binding: FragmentEventLocationReadOnlyBinding
     private var locationAsAddress: CustomAddress? = null
     private var lastLocationAquired: LatLng? = null
@@ -65,6 +61,19 @@ class EventLocationReadOnlyFragment(
 
     private var keyboardWasShownOnce: Boolean = false
     private var invisibleViewBottomDefault: Int? = null
+
+
+    //  var thisEvent: Event,
+    val eventsFragmentViewModel: EventsFragmentViewModel by lazy {
+        EventsFragmentViewModel.getInstance()
+    }
+    val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(
+            this.requireContext(),
+            FirebaseAuth.getInstance().uid.toString()
+        )
+    }
+
 
     private val onGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
         var keyboardVisible = false
@@ -80,27 +89,35 @@ class EventLocationReadOnlyFragment(
             val transparentViewRect = Rect()
             this.binding.transparentView?.getGlobalVisibleRect(transparentViewRect)
             keyboardVisible =
-                this.invisibleViewBottomDefault!! >= this.binding.transparentView?.bottom!!
+                this.invisibleViewBottomDefault!! > this.binding.transparentView.bottom!!
         }
         if (keyboardVisible) {
-            this.requireActivity().currentFocus?.let { objeto ->
-                val keypadHeight = this.binding.root.height!! - r.bottom
-                val scrollY = (objeto.bottom + keypadHeight) - r.bottom
-                this.binding?.avatarArea?.layoutParams?.height = 80.px
-                this.binding?.avatarArea?.requestLayout()
-                this.binding?.scrollView?.smoothScrollTo(0, scrollY)
-                this.binding?.confirmButton?.visibility = View.GONE
-                keyboardWasShownOnce = true
-            }
+            this.binding?.confirmButton?.visibility = View.GONE
+            /*
+                        this.requireActivity().currentFocus?.let { objeto ->
+                            val keypadHeight = this.binding.root.height!! - r.bottom
+                            val scrollY = (objeto.bottom + keypadHeight) - r.bottom
+                            this.binding?.avatarArea?.layoutParams?.height = 80.px
+                            this.binding?.avatarArea?.requestLayout()
+                            this.binding?.scrollView?.smoothScrollTo(0, scrollY)
+                            this.binding?.confirmButton?.visibility = View.GONE
+                            keyboardWasShownOnce = true
+                        }
+                        */
         } else {
-            if (keyboardWasShownOnce == true) {
-                this.binding?.confirmButton?.visibility = View.VISIBLE
-                this.binding.avatarArea?.layoutParams?.height =
-                    this.requireContext().resources.getDimension(R.dimen.box_xsuperbig).toInt()
-                this.binding?.avatarArea?.requestLayout()
-            }
+            this.binding?.confirmButton?.visibility = View.VISIBLE
+
+            /*
+                      if (keyboardWasShownOnce == true) {
+                          this.binding?.confirmButton?.visibility = View.VISIBLE
+                          this.binding.avatarArea?.layoutParams?.height =
+                              this.requireContext().resources.getDimension(R.dimen.box_xsuperbig).toInt()
+                          this.binding?.avatarArea?.requestLayout()
+                      }
+
+             */
         }
-  }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -138,7 +155,7 @@ class EventLocationReadOnlyFragment(
             this.binding.addressReadOnly.hint = this.getString(R.string.getting_location)
 
             this.lifecycleScope.launch(Dispatchers.IO) {
-            //    Looper.prepare()
+                //    Looper.prepare()
                 val address = this@EventLocationReadOnlyFragment.requireActivity()
                     .getCurrentLocationAsAddress()
                 when (address) {
@@ -146,8 +163,12 @@ class EventLocationReadOnlyFragment(
                         withContext(Dispatchers.Main) {
                             this@EventLocationReadOnlyFragment.mainActivityViewModel.onLocationSearchEnd()
                         }
-
-                        requireActivity().showErrorDialog("Error de GeoCoding", address.message.toString())
+                        withContext(Dispatchers.Main) {
+                            requireActivity().showErrorDialog(
+                                "Error de GeoCoding",
+                                address.message.toString()
+                            )
+                        }
                     }
 
                     is Resource.Loading -> {
@@ -263,8 +284,7 @@ class EventLocationReadOnlyFragment(
         }
     }
 
-    private fun setupObservers() {
-
+    private fun startObservers() {
         this.eventsFragmentViewModel.eventType.observe(this) { eventTypeName ->
 
             (AppClass.instance.getCurrentActivity() as MainActivity).setTitleBarTitle(
@@ -293,7 +313,6 @@ class EventLocationReadOnlyFragment(
             }
 
         }
-
         this.eventsFragmentViewModel.fixedLocation.observe(this) { location ->
             if (location != null) {
                 this.binding.addressReadOnly.setText(location.formated_address)
@@ -301,12 +320,10 @@ class EventLocationReadOnlyFragment(
                 this.binding.addressReadOnly.setText("")
             }
             this.binding.addressAptInputLayout.visibility = View.VISIBLE
-            this.binding.floorFieldApt.requestFocus()
         }
-
     }
 
-    private fun cancelObservers() {
+    private fun stopObservers() {
         this.eventsFragmentViewModel.eventType.removeObservers(this)
         this.eventsFragmentViewModel.fixedLocation.removeObservers(this)
     }
@@ -401,7 +418,8 @@ class EventLocationReadOnlyFragment(
       */
         if (!Places.isInitialized()) {
             Places.initialize(
-                this.requireContext(), BuildConfig.MAPS_API_KEY)
+                this.requireContext(), BuildConfig.MAPS_API_KEY
+            )
 
         }
 
@@ -444,18 +462,23 @@ class EventLocationReadOnlyFragment(
                 //   eventLocation?.formated_address = newAddress
                 this.eventsFragmentViewModel.setFormatedAddress(newAddress)
             }
-
-            this.callback.OnSwitchFragmentRequest(
-                R.id.event_fragment_aditional_media_selector, this.arguments
-            )
+            /*
+                        this.callback.OnSwitchFragmentRequest(
+                            R.id.event_fragment_aditional_media_selector, this.arguments
+                        )
+              */
+            val action =
+                EventLocationReadOnlyFragmentDirections.actionEventLocationReadOnlyFragmentToEventAdditionalMediaFragment()
+            findNavController().navigate(action)
         }
-
-        this.binding.editButton.setOnClickListener {
-            this.callback.OnSwitchFragmentRequest(
-                R.id.event_fragment_location_manual_input,
-                this.arguments
-            )
-        }
+        /*
+                this.binding.editButton.setOnClickListener {
+                    this.callback.OnSwitchFragmentRequest(
+                        R.id.event_fragment_location_manual_input,
+                        this.arguments
+                    )
+                }
+        */
 
 //        updateUI()
     }
@@ -545,6 +568,8 @@ class EventLocationReadOnlyFragment(
 
     }
 
+
+    /*
     fun newInstance(
         thisEvent: Event, callback: OnPostFragmentInteractionCallback
     ): EventLocationReadOnlyFragment {
@@ -558,11 +583,13 @@ class EventLocationReadOnlyFragment(
         fragment.arguments = args
         return fragment
     }
-
+*/
 
     override fun onResume() {
         super.onResume()
-        this.setupObservers()
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.updateTitle(getString(R.string.event_publish_location_input_title))
+        this.startObservers()
         this.binding.root.viewTreeObserver.addOnGlobalLayoutListener(this.onGlobalLayoutListener)
 
 
@@ -570,7 +597,7 @@ class EventLocationReadOnlyFragment(
 
     override fun onPause() {
         super.onPause()
-        this.cancelObservers()
+        this.stopObservers()
         this.binding.root.viewTreeObserver.removeOnGlobalLayoutListener(this.onGlobalLayoutListener)
 
     }

@@ -130,7 +130,7 @@
     <string name="friendship_invitation_message_done">We have sent a notification to %1$s to let them know that you want to add them to your Contact Network</string>
     <string name="delete_friendship">Cancel Friendship</string>
     <string name="delete_friendship_message">Are you sure you want to cancel your friendship with %1$s</string>
-    <string name="cancel_friendship_invitation">Cancel</string>
+    <string name="cancel_friendship_invitation">Cancelar Invitación</string>
 
     <string name="being_connected_is_fundamental">Being connected is better!</string>
     <string name="ian_is_the_first_social_netword">IAN is the first collaborative social network of security alerts in the world.\nYou can be part of it easily and thus assist and be assisted in difficult times.</string>
@@ -235,7 +235,11 @@
 
 
     <string name="panic_event_sms_message">%1s has pressed their Panic button. If you want to see where they are, click on the Link.</string>
-
+    <string name="bluetooth_not_supported">Your Device does not support Bluetooth</string>
+    <string name="bluetooth_not_enabled">Bluetooth is not enabled</string>
+    <string name="i_invite_you_to_try_this_app">I Invite you to IAN</string>
+    <string name="invite_a_friend">Invite a Friend</string>
+    <string name="delete_group">Delete Group</string>
 
 
 </resources>

@@ -214,7 +214,10 @@ class LoginActivity : AppCompatActivity(), LoginActivityCallback {
                             else -> status.message.toString()
                         }
                     showErrorDialog(errorMessage)
+                    viewModel.resetLoginStatus()
                 }
+
+                null -> {}
             }
         })
 

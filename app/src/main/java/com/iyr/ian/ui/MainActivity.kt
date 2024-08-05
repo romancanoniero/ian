@@ -43,8 +43,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
 import android.view.View.INVISIBLE
+import android.view.View.OnClickListener
 import android.view.View.VISIBLE
-import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.animation.AlphaAnimation
@@ -55,20 +55,28 @@ import android.view.animation.ScaleAnimation
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.NavController
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.navArgs
+import androidx.navigation.ui.AppBarConfiguration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
@@ -108,12 +116,12 @@ import com.iyr.ian.Constants.Companion.REQUEST_CODE_RECOVER_PLAY_SERVICES
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.app_lifecycle_listener.AppLifecycleListener
-import com.iyr.ian.callbacks.INotifications
 import com.iyr.ian.callbacks.MainActivityCommonDataInterface
 import com.iyr.ian.callbacks.MediaPickersInterface
 import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.callbacks.ViewersActionsCallback
 import com.iyr.ian.dao.models.Contact
+import com.iyr.ian.dao.models.ContactGroup
 import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventFollowed
 import com.iyr.ian.dao.models.EventFollower
@@ -122,12 +130,11 @@ import com.iyr.ian.dao.models.EventLocationType
 import com.iyr.ian.dao.models.EventNotificationModel
 import com.iyr.ian.dao.models.EventVisibilityTypes
 import com.iyr.ian.dao.models.GeoLocation
-import com.iyr.ian.dao.models.NotificationList
 import com.iyr.ian.dao.models.UnreadMessages
 import com.iyr.ian.dao.models.User
+import com.iyr.ian.dao.models.UserMinimum
 import com.iyr.ian.dao.repositories.EventsFollowedRepository
 import com.iyr.ian.dao.repositories.EventsRepository
-import com.iyr.ian.dao.repositories.NotificationsRepository
 import com.iyr.ian.databinding.ActivityMainBinding
 import com.iyr.ian.enums.DialogsEnum
 import com.iyr.ian.enums.EventStatusEnum
@@ -174,33 +181,27 @@ import com.iyr.ian.ui.chat.MessagesInEventFragment
 import com.iyr.ian.ui.dialogs.ArrivingDialog
 import com.iyr.ian.ui.dialogs.LeavingTrackingConfirmationDialogCallback
 import com.iyr.ian.ui.dialogs.NewEventNotificationDialog
-import com.iyr.ian.ui.dialogs.NotificationAdapterCallback
 import com.iyr.ian.ui.dialogs.OnYesNoButtonsListener
 import com.iyr.ian.ui.dialogs.VideoPlayerDialog
 import com.iyr.ian.ui.dialogs.iTagDialog
 import com.iyr.ian.ui.events.EventsFragment
-import com.iyr.ian.ui.events.fragments.EventAdditionalMediaFragment
-import com.iyr.ian.ui.events.fragments.EventLocationReadOnlyFragment
-import com.iyr.ian.ui.events.fragments.EventRealTimeTrackingFragment
-import com.iyr.ian.ui.events.fragments.EventTypeSelectorFragment
 import com.iyr.ian.ui.events.fragments.adapters.MediaHandlingCallback
 import com.iyr.ian.ui.friends.FriendsFragment
 import com.iyr.ian.ui.interfaces.EventsPublishingCallback
-import com.iyr.ian.ui.interfaces.INotificationPopup
 import com.iyr.ian.ui.interfaces.MainActivityInterface
 import com.iyr.ian.ui.login.LoginActivity
 import com.iyr.ian.ui.main.HomeFragment
+import com.iyr.ian.ui.main.HomeFragmentArgs
+import com.iyr.ian.ui.main.HomeFragmentDirections
 import com.iyr.ian.ui.map.MapSituationFragment
 import com.iyr.ian.ui.map.adapters.EventsTrackingCallback
 import com.iyr.ian.ui.map.enums.CameraModesEnum
 import com.iyr.ian.ui.map.models.CameraMode
 import com.iyr.ian.ui.notifications.NotificationsFragment
-import com.iyr.ian.ui.settings.SettingsFragment
 import com.iyr.ian.ui.settings.SettingsFragmentsEnum
-import com.iyr.ian.ui.settings.press_or_tap_setup.PressOrTapSetupFragment
-import com.iyr.ian.ui.setup.press_or_tap_setup.SOSActivationMethods
 import com.iyr.ian.ui.singletons.EventCloseToExpire
 import com.iyr.ian.ui.singletons.PulseValidation
+import com.iyr.ian.ui.toolbar.AppToolbar
 import com.iyr.ian.utils.ActivityResultsTarget
 import com.iyr.ian.utils.FileUtils
 import com.iyr.ian.utils.KeyboardUtil
@@ -225,7 +226,6 @@ import com.iyr.ian.utils.bluetooth.errors.ErrorsObservable
 import com.iyr.ian.utils.bluetooth.hasPermissions
 import com.iyr.ian.utils.bluetooth.requirePermissionsBLE
 import com.iyr.ian.utils.broadcastMessage
-import com.iyr.ian.utils.capitalizeWords
 import com.iyr.ian.utils.clearPendingNotifications
 import com.iyr.ian.utils.connectivity.NetworkStatusHelper
 import com.iyr.ian.utils.coroutines.Resource
@@ -282,6 +282,10 @@ import java.util.Date
 import java.util.UUID
 
 
+enum class ScreenModeEnum {
+    NORMAL, FULLSCREEN
+}
+
 interface EventsNotificationCallback {
     //   fun onAgreeToAssist(eventKey: String)
     fun onDenyToAssist(event: Event)
@@ -300,20 +304,24 @@ interface SpeedDialActionsCallback {
 }
 
 
-class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPopup,
-    EventsPublishingCallback, NotificationAdapterCallback, EventsTrackingCallback,
+class MainActivity : AppCompatActivity(), MainActivityCallback,
+    EventsPublishingCallback, EventsTrackingCallback,
     SpeedDialActionsCallback, MediaHandlingCallback, CountDownAnimation.CountDownListener,
     PulseValidationCallback, LeavingTrackingConfirmationDialogCallback,
     //  HomeFragmentInteractionCallback,
     EventsNotificationCallback, Callback, ViewersActionsCallback, EventCloseToExpireDialogCallback,
-    MainActivityInterface, INotifications, MediaPickersInterface, MainActivityCommonDataInterface,
+    MainActivityInterface, MediaPickersInterface, MainActivityCommonDataInterface,
     KeyboardHeightObserver {
 
     private var nonUI: NonUI? = null
 
+
+    private lateinit var navController: NavController
+
     //------- ViewModel -------------
     lateinit var viewModel: MainActivityViewModel
 
+    lateinit var appToolbar: AppToolbar
 
     //-------- Media recording
     private var recordSession: MediaRecorder? = null
@@ -771,7 +779,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             intent.putExtra("location_avalaible", true)
         )
         */
-    }/*
+    }
+
+    /*
         @SuppressLint("MissingPermission")
         private fun startLocationJobService(
             intensity: LocationIntensityEnum = LocationIntensityEnum.LOW,
@@ -897,13 +907,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             this as EventsPublishingCallback, viewModel
         )
     }
-    val mMapFragment by lazy { MapSituationFragment(this, viewModel) }
+    val mMapFragment by lazy { MapSituationFragment() }
     private val mFriendsFragment by lazy { FriendsFragment(this) }
-    private val mSettingsFragment by lazy { SettingsFragment(viewModel) }
+
+    //  private val mSettingsFragment by lazy { SettingsFragment(viewModel) }
     private val mNotificationsFragment by lazy {
-        NotificationsFragment(
-            this, this as INotifications
-        )
+        NotificationsFragment()
     }
 
     private val gnsStatus: GnssStatus.Callback = object : GnssStatus.Callback() {
@@ -963,7 +972,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                 }
 
                 BROADCAST_ACTION_SHOW_FOOTER_TOOLBAR -> {
-                    showFooterToolBar()
+                    //                   showFooterToolBar()
                 }
 
                 BROADCAST_ACTION_HIDE_FOOTER_TOOLBAR -> {
@@ -1185,7 +1194,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
                          */
                     } else {
-                        binding.itagsIndicator.visibility = GONE
+                        binding.root.findViewById<View>(R.id.itags_indicator).visibility = GONE
                     }
                 }
 
@@ -1559,6 +1568,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             }
         }
     */
+
     private fun eventExists(eventKey: String): Boolean {/*   var eventExists = false
            eventsFollowedArray.forEach { event ->
                if (event.event_key == eventKey) {
@@ -1590,16 +1600,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     private var fragmentContainer: FragmentContainerView? = null
 
 
-    /* CCCC
-    private lateinit var mHomeFragment: HomeFragment
-    private lateinit var mEventsFragment: EventsFragment
-    private lateinit var mMapFragment: MapSituationFragment
-    private lateinit var mFriendsFragment: FriendsFragment
-    private lateinit var mNotificationsFragment: NotificationsFragment
-*/
-
     override fun setToolbarTitle(title: String) {
-        binding.titleText.text = title
+        appToolbar.updateTitle(title)
     }
 
 
@@ -1616,20 +1618,81 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         super.onRestoreInstanceState(savedInstanceState)
     }
 
+    val callback = object : OnBackPressedCallback(true /* enabled by default */) {
+        override fun handleOnBackPressed() {
+            // Define aquí tu lógica personalizada
+            var pp = 3
+        }
+    }
+
+
+    val args: HomeFragmentArgs by navArgs()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+// TODO: Borrar toda referencia a la clase AppClass es decir , a la mainActivity y reemplazar por requireActivity
         AppClass.instance.setMainActivityRef(this)
+
+
+        onBackPressedDispatcher.addCallback(this, callback)
+
+
         hideStatusBar()
+
         //----------------------
 
+        if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            binding.eventsCounterText.visibility = GONE
+
+            // Obtain reference to the NavHostFragment
+            appToolbar =
+                AppToolbar.Companion.Builder().withBinding(binding.includeCustomToolbar).build()
+
+            appToolbar.onBackPressed {
+                this.findNavController(R.id.nav_host_fragment).popBackStack()
+            }
+            val navHostFragment =
+                supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+            // Get the NavController
+            navController = navHostFragment.navController
+            val appBarConfiguration = AppBarConfiguration(navController.graph)
+
+//            binding.toolbar.setupWithNavController(navController, appBarConfiguration)
+
+            setContentView(binding.root)
+
+            startCoreObservers()
+
+            /*
+            TODO: MOVER AL AREA DE INICIALIZCION DE LA APP
+            getIntentData()
+            val user = SessionForProfile.getInstance(this).getUserProfile()
+
+            viewModel = MainActivityViewModel(this, user.user_key)
+            viewModel.setUser(user)
+            AppClass.instance.mainViewModel = viewModel
+            setupUI()
+
+            startObservers()
+            runServices()
+            registerReceivers()
+            AppClass.instance.subscribeToUnreadMessages()
+            NonUI.getInstance(applicationContext).initialize()
+            setListnerToRootView()
+            adjustNavHostFragmentToLimits()
+*/
+            return@onCreate
+        }
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
 
         //----------------------
         val userParam = intent.extras?.getString("user")
         val user = Gson().fromJson(userParam, User::class.java)!!
         SessionForProfile.getInstance(applicationContext).storeUserProfile(user)
-        viewModel = MainActivityViewModel(this, user.user_key)
+        viewModel = MainActivityViewModel.getInstance(this, user.user_key)
         viewModel.setUser(user)
-        AppClass.instance.mainViewModel = viewModel
 
         //  speak("Bienvenido a IAN!!!")
 
@@ -1664,24 +1727,30 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
         permissionsReadWrite()
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
 
-        binding.tagsMiniaturesContainer.removeAllViews()
+        //    binding.root.findViewById<View>(R.id.tags_miniatures_container).removeAllViews()
 
-        KeyboardUtil(this, binding.container)
+        appToolbar.clearTagsMiniatures()
+        KeyboardUtil(this, binding.navHostFragment)
 
 
         //    val me = SessionForProfile.getInstance(this).getUserProfile()
         // AppClass.instance.mainViewModel = viewModel
         if (FirebaseAuth.getInstance().currentUser != null) {
 
+            if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == false) {
+                var navHostFragment = binding.root.findViewById<View>(R.id.nav_host_fragment)
+                navHostFragment.visibility = View.GONE
+            }
             setContentView(binding.root)
 
             getIntentData()
 
-            setupUI()
+            setupUIWhenReady()
 
-            setupObservers()
+            startCoreObservers()
+
+            startObservers()
 
             runServices()
             registerReceivers()
@@ -1694,7 +1763,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 //            setupTagsDisplay()
 
             setListnerToRootView()
-
+            AppClass.instance.logged = true
         } else {
             startActivity(LoginActivity::class.java, null)
         }
@@ -1803,8 +1872,16 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                 }
 
                 is Resource.Success -> {
+
+                    findNavController(R.id.nav_host_fragment).apply {
+                        popBackStack(R.id.homeFragment, false)
+                        navigate(R.id.homeFragment)
+                    }
                     hideLoader()
-                    viewModel.switchToModule(IANModulesEnum.MAIN.ordinal, "home")
+//                    viewModel.switchToModule(IANModulesEnum.MAIN.ordinal, "home")
+                  // volver a homescreen y borrar el stack para que no pueda volver atras
+
+
                 }
             }
         }
@@ -1874,6 +1951,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 //            locationService = LocationServiceManager.getInstance(requireContext()).bindLocationService()
 
     /*
+    popo
+
         fun onStartApplication() {
             val me = SessionForProfile.getInstance(this).getUserProfile()
             viewModel = MainActivityViewModel(this, me.user_key)
@@ -1913,8 +1992,80 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     private val lock = Any()
 
+    /**
+     * Estos son los observers que arrancan cuando la App se ejecuta sin importar el estado de loggeo.
+     */
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
-    fun setupObservers() {
+    fun startCoreObservers() {
+
+        viewModel = MainActivityViewModel.getInstance(this)
+        viewModel.appStatus.observe(this) { status ->
+            when (status) {
+                MainActivityViewModel.AppStatus.NOT_LOGGED -> Toast.makeText(
+                    this, "NOT_LOGGED", Toast.LENGTH_SHORT
+                ).show()
+
+
+                MainActivityViewModel.AppStatus.INITIALIZING -> {
+
+                    lifecycleScope.launch {
+                        Toast.makeText(this@MainActivity, "INITIALIZING", Toast.LENGTH_SHORT).show()
+
+                    }
+
+                    //                val me = SessionForProfile.getInstance(this).getUserProfile()
+                    //       viewModel = MainActivityViewModel(this, me.user_key)
+
+                    getIntentData()
+
+                    startObservers()
+                    registerReceivers()
+
+                    setupUIWhenReady()
+
+                    AppClass.instance.subscribeToUnreadMessages()
+
+                    nonUI = NonUI.getInstance(this)
+
+                    takeKeyEvents(true)
+                    // Inicializo el array de conexines
+                    initITags()
+
+                    setAppStatus(MainActivityViewModel.AppStatus.READY)
+                }
+
+                MainActivityViewModel.AppStatus.READY -> {
+                    Toast.makeText(this, "READY", Toast.LENGTH_SHORT).show()
+                }
+
+                null -> TODO()
+            }
+        }
+
+
+    }
+
+
+    fun stopCoreObservers() {
+        viewModel.appStatus.removeObservers(this)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
+    fun startObservers() {/*
+                viewModel.serverTime.observe(this) { time ->
+                    if (time != null) {
+                        setServerTime(time)
+                    }
+                }
+        */
+
+        viewModel.homeIconVisible.observe(this) { visible ->
+            if (visible) {
+                binding.actionHome.visibility = VISIBLE
+            } else {
+                binding.actionHome.visibility = GONE
+            }
+        }
 
         viewModel.initializationReady.observe(this) {
             //     requestLocationPermissions()
@@ -1930,6 +2081,103 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             if (permissionGranted == false) {
                 viewModel.setLocationNotAvailable()
                 // requestPermissions()
+            }
+        }
+
+
+
+        viewModel.userSubscriptionTypeAsFlow.observe(this) { resource ->
+            when (resource) {
+                is Resource.Error -> {}
+                is Resource.Loading -> {}
+                is Resource.Success -> {
+
+                    var subscriptionType = resource.data!!
+                    Toast.makeText(this, subscriptionType.toString(), Toast.LENGTH_SHORT).show()
+                    //  viewModel.updateUserSubscriptionType(subscriptionType)
+
+                    /*
+                    subscriptions?.let { list ->
+                        list.forEach { subscription ->
+                            // comparar si la fecha de hoy en milisegundos es mayor a la fecha de subscripcion (subscripted_on) y menor a la fecha de expiracion (expires_on)
+                            if (subscription.subscripted_on < System.currentTimeMillis() && subscription.expires_on > System.currentTimeMillis()) {
+                                var pp = 3
+                            }
+                        }
+                    }
+*/
+                }
+            }
+        }
+
+        viewModel.contactRequest.observe(this) { resource ->
+            when (resource) {
+                is Resource.Loading -> {
+                    showLoader()
+                }
+
+                is Resource.Success -> {
+                    hideLoader()
+                    findNavController(R.id.nav_host_fragment).navigate(
+                        R.id.contactAcceptInvitationDialog,
+                        bundleOf("contact" to resource.data as UserMinimum)
+                    )
+                }
+
+                is Resource.Error -> {
+                    hideLoader()
+                    when (resource.message) {
+                        "contact_not_found" -> {
+                            showErrorDialog(getString(R.string.contact_not_found))
+                        }
+
+                        "already_friends" -> {
+                            showErrorDialog(getString(R.string.already_friends))
+                        }
+
+                        else -> {
+                            showErrorDialog(resource.message.toString())
+                        }
+                    }
+
+
+                }
+            }
+        }
+
+        viewModel.contactAcceptance.observe(this) { resource ->
+            when (resource) {
+                is Resource.Loading -> {
+                    showLoader()
+                }
+
+                is Resource.Success -> {
+                    hideLoader()
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        findNavController(R.id.nav_host_fragment).navigate(
+                            R.id.newFriendDialog,
+                            bundleOf("contactsHashMap" to resource.data as HashMap<String, Contact>)
+                        )
+                    }
+                }
+
+                is Resource.Error -> {
+                    hideLoader()
+                    when (resource.message) {
+                        "contact_not_found" -> {
+                            showErrorDialog(getString(R.string.contact_not_found))
+                        }
+
+                        "already_friends" -> {
+                            showErrorDialog(getString(R.string.already_friends))
+                        }
+
+                        else -> {
+                            showErrorDialog(resource.message.toString())
+                        }
+                    }
+
+                }
             }
         }
 
@@ -1963,12 +2211,16 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
         viewModel.titleBarCardViewVisible.observe(this) { visible ->
             if (visible) {
-
-                binding.titleBar.visibility = VISIBLE
+                appToolbar.showTitle()
+//                binding.titleBar.visibility = VISIBLE
             } else {
-                binding.titleBar.visibility = GONE
+//                binding.titleBar.visibility = GONE
+                appToolbar.hideTitle()
             }
         }
+
+
+
 
         viewModel.dialogToShow.observe(this) { dialog ->
             when (dialog.dialogToShow) {
@@ -1992,13 +2244,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                 RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.ALL)
 
             Glide.with(this).asBitmap().load(imageReference).apply(requestOptions).submit()
-        }
+        }/*
+                viewModel.currentModule.observe(this) { moduleIndex ->
+                    switchToModule(moduleIndex, null)
 
-        viewModel.currentModule.observe(this) { moduleIndex ->
-            switchToModule(moduleIndex, null)
-
-        }
-
+                }
+        */
         viewModel.goBack.observe(this) { goBack ->
             handleGoBack()
         }
@@ -2007,6 +2258,27 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             showErrorDialog(message.toString())
         }
 
+
+        viewModel.postingEvent.observe(this) { status ->
+            when (status) {
+                is Resource.Loading -> {
+//                    showLoader(getString(R.string.message_posting_event))
+                    showLoader(R.raw.lottie_campana_emitiendo)
+                }
+
+                is Resource.Success -> {
+                    hideLoader()
+                    showEventRedirectorDialog(status.data.toString())
+                }
+
+                is Resource.Error -> {
+                    hideLoader()
+                    showErrorDialog(status.message.toString())
+                }
+
+                else -> {}
+            }
+        }
 
         viewModel.loader.observe(this) { visible ->
             if (visible == true) {
@@ -2086,39 +2358,30 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             }
         }
 
-        /*
-        * Forma Correcta de escuchar al viewmodel
-        */
-        viewModel.notificationsFlow.observe(this) { dataEvent ->
-            when (dataEvent) {
-                is NotificationsRepository.DataEvent.ChildAdded -> {
-                    onNotificationAdded(
-                        dataEvent.data, dataEvent.previousChildName
-                    )
-                }
 
-                is NotificationsRepository.DataEvent.ChildChanged -> {
-                    onNotificationChanged(dataEvent.data, dataEvent.previousChildName)
-                }
-
-                is NotificationsRepository.DataEvent.ChildRemoved -> {
-                    onNotificationRemoved(dataEvent.data)
-                }
-
-                is NotificationsRepository.DataEvent.onChildMoved -> {
-                    onNotificationChanged(dataEvent.data, dataEvent.previousChildName)
-                }
-
-                else -> {
-                }
-            }
+        viewModel.notifications.observe(this) { notifications ->
+            //  if (notifications.size > 0) appToolbar.showNotificationsBell() else appToolbar.hideNotificationsBell()
+            val unreadnotifications =
+                notifications.filter { notification -> notification.read == false }.size
+            appToolbar.updateNotificationsBell(notifications.size, unreadnotifications)
         }
+        viewModel.notificationsFlow.observe(this) { dataEvent -> }
 
         AppClass.instance.getEventsFollowedFlow.observe(this) { event ->
+
             when (event) {
-                is EventsFollowedRepository.EventsFollowedDataEvent.OnChildAdded -> onEventFollowedAdded(
-                    event.data
-                )
+                is EventsFollowedRepository.EventsFollowedDataEvent.OnChildAdded -> {
+                    onEventFollowedAdded(event.data)
+                    when (event.data.event_type) {
+                        EventTypesEnum.SEND_POLICE.name -> {
+                            playSound(R.raw.policesiren, null, null)
+                        }
+
+                        EventTypesEnum.SEND_FIREMAN.name -> {
+                            playSound(R.raw.fire_truck_siren, null, null)
+                        }
+                    }
+                }
 
                 is EventsFollowedRepository.EventsFollowedDataEvent.OnChildChanged -> onEventFollowedChanged(
                     event.data
@@ -2176,12 +2439,14 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
 
             //   withContext(Dispatchers.Main) {
-            if (unreadMessages > 0) {
-                binding.chatIndicator.visibility = VISIBLE
-                binding.messagesPendingCounterText.text = unreadMessages.toString()
-            } else {
-                binding.chatIndicator.visibility = GONE
-            }
+            appToolbar.updateChatCount(unreadMessages)/*
+                if (unreadMessages > 0) {
+                    binding.chatIndicator.visibility = VISIBLE
+                    binding.messagesPendingCounterText.text = unreadMessages.toString()
+                } else {
+                    binding.chatIndicator.visibility = GONE
+                }
+                */
             //     }
             //         }
 
@@ -2252,11 +2517,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         }
 
         viewModel.isInPanic.observe(this) { isInPanic ->
-            binding.settings.alpha = if (isInPanic) 0.4F else 1.0F
-            binding.settingsControl.isEnabled = !isInPanic
-            binding.userImage.alpha = if (isInPanic) 0.4F else 1.0F
-            binding.userImage.isEnabled = !isInPanic
-
+            /*
+             binding.settings.alpha = if (isInPanic) 0.4F else 1.0F
+             binding.settingsControl.isEnabled = !isInPanic
+             binding.userImage.alpha = if (isInPanic) 0.4F else 1.0F
+             binding.userImage.isEnabled = !isInPanic
+ */
             // Obtenemos un IBinder para el servicio
             val intent = Intent(this, ServiceLocation::class.java)
 
@@ -2365,9 +2631,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                     when (notification.notificationType) {
                         AppConstants.NOTIFICATION_TYPE_NEW_MESSAGE -> {
                             var bundle = Bundle()
-                            bundle.putString("action", AppConstants.NOTIFICATION_ACTION_OPEN_CHAT)
+                            bundle.putString(
+                                "action", AppConstants.NOTIFICATION_ACTION_OPEN_CHAT
+                            )
                             bundle.putString("message_id", myMap!!["message_key"].toString())
 
+                            /*
                             switchToModule(
                                 IANModulesEnum.EVENTS_TRACKING.ordinal,
                                 "events_tracking",
@@ -2375,6 +2644,13 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                                 notification.linkKey.toString(),
                                 bundle
                             )
+*/
+                            val action =
+                                HomeFragmentDirections.actionHomeFragmentToMapSituationFragment(
+                                    notification.linkKey.toString()
+                                )
+                            findNavController(R.id.nav_host_fragment).navigate(action)
+
                         }
 
                         AppConstants.NOTIFICATION_TYPE_PANIC_BUTTON -> {
@@ -2459,7 +2735,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                 viewModel.setUser(user)
 
                 lifecycleScope.launch(Dispatchers.Main) {
-                    binding.userName.text = user.display_name.capitalizeWords()
+                    //binding.userName.text = user.display_name.capitalizeWords()
+
+                    //    appToolbar.updateTitle(user.display_name.capitalizeWords())
                     try {
                         Log.d("STORAGEREFERENCE", "va a cargar 1")
                         var storageReference: Any? = null
@@ -2483,7 +2761,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
                                 GlideApp.with(this@MainActivity).asBitmap().load(storageReference)
                                     .placeholder(getDrawable(R.drawable.progress_animation))
-                                    .error(getDrawable(R.drawable.ic_error)).into(binding.userImage)
+                                    .error(getDrawable(R.drawable.ic_error))
+                                    .into(appToolbar.getUserAvatarRef())
                             } catch (exception: Exception) {
                                 showErrorDialog(exception.localizedMessage.toString())
                             }
@@ -2494,7 +2773,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
                             GlideApp.with(this@MainActivity).asBitmap().load("null")
                                 .placeholder(getDrawable(R.drawable.progress_animation))
-                                .error(getDrawable(R.drawable.ic_error)).into(binding.userImage)
+                                .error(getDrawable(R.drawable.ic_error))
+                                .into(appToolbar.getUserAvatarRef())
 
                         }
                         Log.d("STORAGEREFERENCE", "--------------------va a cargar 1")
@@ -2583,7 +2863,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     }
 
-
     private fun showPendingNotificationsPopups(pendingNotifications: ArrayList<NotificationsUtils.PushNotification>?) {
 //var newNotificationsPopup = NewEventNotificationDialog(pendingNotifications)
 
@@ -2592,7 +2871,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     private fun whenEventCloseSuccessfully(eventKey: String) {
         try {
-            //    mMapFragment.eventRemove(eventKey)
+
             updateLocationIntensity()
         } catch (ex: java.lang.Exception) {
             showErrorDialog(ex.localizedMessage.toString())
@@ -2623,7 +2902,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
 
     private fun onTagDisconnected(iTag: ITagInterface) {
-        val tagsContainer = binding.tagsMiniaturesContainer
+        val tagsContainer = binding.root.findViewById<LinearLayout>(R.id.tags_miniatures_container)
         val params: LinearLayout.LayoutParams = LinearLayout.LayoutParams(24.px, 24.px)
         var tagIcon = tagsRemembered.get(iTag.id())
         if (tagsRemembered.containsKey(iTag.id())) {
@@ -2654,7 +2933,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
 
     private fun onTagConnecting(itag: ITagInterface) {
-        val tagsContainer = binding.tagsMiniaturesContainer
+        val tagsContainer = binding.root.findViewById<LinearLayout>(R.id.tags_miniatures_container)
         val params: LinearLayout.LayoutParams = LinearLayout.LayoutParams(24.px, 24.px)
         var tagIcon = tagsRemembered.get(itag.id())
         if (tagsRemembered.containsKey(itag.id())) {
@@ -2696,7 +2975,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
 
     private fun onTagConnected(itag: ITagInterface) {
-        val tagsContainer = binding.tagsMiniaturesContainer
+
+        val tagsContainer = binding.root.findViewById<LinearLayout>(R.id.tags_miniatures_container)
         val params: LinearLayout.LayoutParams = LinearLayout.LayoutParams(24.px, 24.px)
         var tagIcon = tagsRemembered.get(itag.id())
         if (tagsRemembered.containsKey(itag.id())) {
@@ -2735,7 +3015,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
      */
     private fun updateTagsStatus() {
 
-        val tagsContainer = binding.tagsMiniaturesContainer
+        val tagsContainer = binding.root.findViewById<View>(R.id.tags_miniatures_container)
         // tagsContainer.removeAllViews()
 
         val params: LinearLayout.LayoutParams = LinearLayout.LayoutParams(24.px, 24.px)
@@ -2833,7 +3113,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                             connection.observableState().subscribe { state: BLEConnectionState? ->
 
                                     if (ITag.ble.state() == BLEState.OK) {
-                                        binding.tagsMiniaturesContainer.visibility = View.VISIBLE
+                                        binding.root.findViewById<View>(R.id.tags_miniatures_container).visibility = View.VISIBLE
 
                                         when (state) {
                                             BLEConnectionState.connected -> {
@@ -2916,7 +3196,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                                         statusTextId = R.string.bt_disabled
 
                                          */
-                                        binding.tagsMiniaturesContainer.visibility = View.GONE
+                                        binding.root.findViewById<View>(R.id.tags_miniatures_container).visibility = View.GONE
                                     }
 
                                 })
@@ -3158,88 +3438,69 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
 
     override fun onStart() {
-        super.onStart()
-        binding.chatIndicator.visibility = GONE
-        binding.bellControl.visibility = GONE
-        binding.itagsIndicator.visibility = GONE
-        binding.tagsMiniaturesContainer.visibility = GONE
+        super.onStart()/*
+            binding.chatIndicator.visibility = GONE
+            binding.bellControl.visibility = GONE
+            binding.itagsIndicator.visibility = GONE
+            */
+        binding.root.findViewById<View>(R.id.tags_miniatures_container).visibility = GONE
+
     }
 
     override fun onResume() {
 
-        super.onResume()
-        (application as AppClass).alreadyStarted = true
-        keyboardHeightProvider?.setKeyboardHeightObserver(this)
+        super.onResume()/*
+                if (AppClass.instance.logged) {
 
-        if (!hasPermissions("android.permission.SEND_SMS")) {
-            requestSMSPermissions()
+
+
+                    showFooterToolBar()
+
+                    (application as AppClass).alreadyStarted = true
+                    keyboardHeightProvider?.setKeyboardHeightObserver(this)
+
+                    if (!hasPermissions("android.permission.SEND_SMS")) {
+                        requestSMSPermissions()
+                    }
+
+
+
+                    if (!isGooglePlayInstalled()) {
+                        GoogleApiAvailability.getInstance().makeGooglePlayServicesAvailable(this)
+                    }
+                    this.isActivityVisible = true
+
+                    updateTagsStatus()
+                    //  onResumeITagService()
+                    var locationPermissionGranted: Boolean? = SessionForProfile.getInstance(this)
+                        .getProfileProperty("LocationPermissionsGranted") as Boolean?
+                    if (locationPermissionGranted == null) {
+                        if (!areLocationPermissionsGranted(true)) {
+                            requestPermissions()
+                        }
+                    } else if (locationPermissionGranted) {
+                        onLocationPermissionsGranted()
+                    } else {
+                        onLocationPermissionsRejected()
+                    }
+
+                    if (areLocationPermissionsGranted(true)) {
+                        viewModel.setLocationIsAvailable()
+                    } else {
+                        viewModel.setLocationNotAvailable()
+                    }
+
+
+                    handleDynamicLinks()
+
+
+                }
+                else
+                {*/
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            handleDynamicLinks()
         }
-
-
-        /*
-
-
-
-// solicitar permisos de envio de sms
-
-
-
-            Permiso.getInstance().setActivity(this)
-
-
-            if (multiPickerWrapper!!.pickerUtilListener == null) {
-                multiPickerWrapper!!.pickerUtilListener = multiPickerWrapperListener
-            }
-      */
-
-
-
-
-        if (!isGooglePlayInstalled()) {
-            GoogleApiAvailability.getInstance().makeGooglePlayServicesAvailable(this)
-        }
-        this.isActivityVisible = true
-
-        /*
-        handleDynamicLinks()
-        handleIntentExtras()
-
-        requestPermissions(
-            arrayOf("android.permission.SEND_SMS"), MY_PERMISSION_REQUEST_SEND_SMS
-        )
-
-
-
-        if (!areLocationPermissionsGranted(true)) {
-            requestPermissions()
-        }
-        */
-
-
-        //     registerObservers()
-        //    updateUI()
-
-
-        updateTagsStatus()
-        //  onResumeITagService()
-        var locationPermissionGranted: Boolean? = SessionForProfile.getInstance(this)
-            .getProfileProperty("LocationPermissionsGranted") as Boolean?
-        if (locationPermissionGranted == null) {
-            if (!areLocationPermissionsGranted(true)) {
-                requestPermissions()
-            }
-        } else if (locationPermissionGranted) {
-            onLocationPermissionsGranted()
-        } else {
-            onLocationPermissionsRejected()
-        }
-
-        if (areLocationPermissionsGranted(true)) {
-            viewModel.setLocationIsAvailable()
-        } else {
-            viewModel.setLocationNotAvailable()
-        }
-
+        //      }
     }
 
 
@@ -3343,6 +3604,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     }
 
+
     private fun onPauseItagService() {
         try {
             unbindService(mITagServiceConnection)
@@ -3422,101 +3684,62 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
 
+    /***
+     *  Configura la UI cuando la App esta lista para ser utilizada.
+     */
     @SuppressLint("MissingPermission")
-    private fun setupUI() {
-
-        /* CCCC
-
-                pagerAdapter = MainActivityPagerAdapter(this, getSupportFragmentManager())
-
-                binding.pager.setPageTransformer(false, FadePageTransformer())
-
-                binding.pager.offscreenPageLimit = 5
-                binding.pager.adapter = pagerAdapter
-
-
-                mHomeFragment = pagerAdapter.getFragmentAt(0) as HomeFragment
-                mEventsFragment = pagerAdapter.getFragmentAt(1) as EventsFragment
-                mMapFragment = pagerAdapter.getFragmentAt(2) as MapSituationFragment
-                mFriendsFragment = pagerAdapter.getFragmentAt(3) as FriendsFragment
-                //  mSettingsFragment = pagerAdapter.getFragmentAt(4) as SettingsFragment
-                mNotificationsFragment = pagerAdapter.getFragmentAt(5) as NotificationsFragment
-        */
+    private fun setupUIWhenReady() {
 
         prepareBeforeStart()
 
-        goHome()
-//        switchToModule(0, "home", true, null)
-
-        binding.bell.setOnClickListener {
-            if (mNotificationsFragment.getData().size > 0) {
-                handleTouch()
-                switchToModule(5, "notifications", true, null)
+        appToolbar.setBellOnClickListener(object : OnClickListener {
+            override fun onClick(v: View?) {
+                if (viewModel.notificationsList.size > 0) {
+                    handleTouch()
+                    findNavController(R.id.nav_host_fragment).navigate(R.id.notificationsFragment)
+                }
             }
-        }
-
-        binding.itagsIndicator.visibility = GONE
-
-        binding.contactListControl.setOnClickListener {
-            handleTouch()
-            showContactListPopupWindow(binding.contactListControl, this)
-        }
-
-
-        binding.backArrow.setOnClickListener {
-            handleGoBack()
-        }
-
-        binding.actionHome.setOnClickListener(View.OnClickListener {
-            handleTouch()
-//            switchToModule(0, "home")
-            goHome()
         })
 
         /*
-
-                if (AppClass.instance.isFreeUser()) {
-                    binding.actionPublish.visibility = View.GONE
-                } else {
-                    binding.actionPublish.visibility = View.VISIBLE
+                binding.bell.setOnClickListener {
+                    if (mNotificationsFragment.getData().size > 0) {
+                        handleTouch()
+                        switchToModule(5, "notifications", true, null)
+                    }
                 }
-
-                if (AppClass.instance.isFreeUser()) {
-                    binding.actionMap.visibility = View.GONE
-                } else {
-                    binding.actionMap.visibility = View.VISIBLE
-                }
-
-
         */
-        binding.actionPublish.setOnClickListener(View.OnClickListener {
 
-            handleTouch()
-
-            //         if (viewModel.userSubscription.value?.access_level ?: 0 >= AccessLevelsEnum.SOLIDARY.ordinal) {
-            requestLocationRequirements(object : LocationRequirementsCallback {
-                override fun onRequirementsComplete() {
-//                    switchToModule(1, "events")
-                    switchToFragment(mEventsFragment)
+        appToolbar.hideTagsMiniatures()
+//        binding.itagsIndicator.visibility = GONE
+        /*
+                binding.contactListControl.setOnClickListener {
+                    handleTouch()
+                    showContactListPopupWindow(binding.contactListControl, this)
                 }
-            })/*
-                      } else {
-                              var bundle = Bundle()
-                              bundle.putString("go_to", SettingsFragmentsEnum.PLAN_SETTINGS.name)
-                              switchToModule(
-                                  IANModulesEnum.SETTINGS.ordinal, "settings", false, "", bundle
-                              )
+        *//*
+                    binding.backArrow.setOnClickListener {
+                        handleGoBack()
+                    }
+            */
 
-                      }
-          */
+
+        binding.actionHome.setOnClickListener(View.OnClickListener {
+            handleTouch()
+            goHome()
         })
 
 
-
-
+        binding.actionPublish.setOnClickListener(View.OnClickListener {
+            handleTouch()
+            requestLocationRequirements(object : LocationRequirementsCallback {
+                override fun onRequirementsComplete() {
+                    navController.navigate(R.id.eventTypeSelectorFragment)
+                }
+            })
+        })
 
         binding.actionMap.setOnClickListener(View.OnClickListener {
-
 
             if (!AppClass.instance.isFreeUser()) {
 
@@ -3528,14 +3751,14 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                             if (AppClass.instance.lastLocation != null) {
                                 var eventKey = mMapFragment.getEventKey()
                                 if (eventKey == null) {
-                                    // CCCC eventKey = mMapFragment.getEvents().get(0).event_key
-//                                        eventKey = eventsFollowedArray[0].event_key
                                     eventKey = viewModel.getFirstEvent()?.event_key
                                 }
 
-                                switchToFragment(mMapFragment)
-                                //                           switchToModule(2, "scort", false, eventKey)
-                                //}
+                                val action =
+                                    HomeFragmentDirections.actionHomeFragmentToMapSituationFragment(
+                                        eventKey
+                                    )
+                                findNavController(R.id.nav_host_fragment).navigate(action)
                             }
 
                         }
@@ -3546,12 +3769,13 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                 //     if (versionPrefix() >= 2) {
 
                 var bundle = Bundle()
-                bundle.putString("go_to", SettingsFragmentsEnum.PLAN_SETTINGS.name)
-                switchToModule(
-                    IANModulesEnum.SETTINGS.ordinal, "settings", false, "", bundle
-                )
+                bundle.putString("go_to", SettingsFragmentsEnum.PLAN_SETTINGS.name)/*
+                              switchToModule(
+                                  IANModulesEnum.SETTINGS.ordinal, "settings", false, "", bundle
+                              )
+              */
 
-                /*
+                findNavController(R.id.nav_host_fragment).navigate(R.id.settingsFragment, bundle)/*
                    } else {
                        Toast.makeText(
                            this@MainActivity,
@@ -3569,31 +3793,22 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         binding.actionFriends.setOnClickListener(View.OnClickListener {
 
             handleTouch()
-
-//            viewModel.onBottomBarFriendsClicked()
-            switchToFragment(mFriendsFragment)
-
+            val action = HomeFragmentDirections.actionHomeFragmentToContactsFragment()
+            findNavController(R.id.nav_host_fragment).navigate(action)
         })
 
-        /*
-            binding.actionSettings.setOnClickListener(View.OnClickListener
-            {
+
+        appToolbar.setSettingsOnClickListener(object : OnClickListener {
+            override fun onClick(v: View?) {
                 handleTouch()
-                switchToModule(4, "settings")
-            })
-    */
-        binding.settingsControl.setOnClickListener(View.OnClickListener {
-            handleTouch()
-            switchToModule(4, "settings")
-            switchToFragment(mSettingsFragment)
+                findNavController(R.id.nav_host_fragment).navigate(R.id.settingsFragment)
+            }
         })
-
 
     }
 
     fun goHome() {
-        switchToFragment(mHomeFragment, true)
-
+        findNavController(R.id.nav_host_fragment).navigate(R.id.homeFragment)
     }
 
     private fun prepareBeforeStart() {
@@ -3615,13 +3830,16 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
 
-    fun onButtonPublish(view: View) {
-        //      switchToModule(1, "events")
-        switchToFragment(mEventsFragment)
-    }
-
     override fun onBackPressed() {
-        handleGoBack()
+        if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
+            if (findNavController(R.id.nav_host_fragment).currentDestination?.id != R.id.homeFragment) {
+                if (!navController.popBackStack()) {
+                    super.onBackPressed()
+                }
+            }
+        } else {
+            handleGoBack()
+        }
     }
 
     fun getVisibleFragment(fragmentManager: FragmentManager): Fragment? {
@@ -3663,8 +3881,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     override fun updateUI() {
         val me = SessionForProfile.getInstance(this).getUserProfile()
-        binding.userName.text = me.display_name
-
+        //binding.userName.text = me.display_name
+        appToolbar.updateTitle(me.display_name)
 
         try {
 
@@ -3691,7 +3909,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
                     GlideApp.with(this).asBitmap().load(storageReference)
                         .placeholder(getDrawable(R.drawable.progress_animation))
-                        .error(getDrawable(R.drawable.ic_error)).into(binding.userImage)
+                        .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
+
+
+//                    appToolbar.updateImage(storageReference.toString())
                 } catch (exception: Exception) {
 
                     Log.d("GLIDEAPP", "5")
@@ -3702,19 +3923,20 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             } else {
                 GlideApp.with(this).asBitmap().load("null")
                     .placeholder(getDrawable(R.drawable.progress_animation))
-                    .error(getDrawable(R.drawable.ic_error)).into(binding.userImage)
+                    .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
 
             }
         } catch (exception: Exception) {
             var pp = 33
         }
 
+
         //   pagerAdapter.getFragmentAt(1).updateUI()
 //        binding.bell.isVisible = mNotificationsFragment.getData().size > 0
         //updateBellVisibilityStatus()
-        mEventsFragment.updateUI()
+        //    mEventsFragment.updateUI()
         //       updateMapButton()
-        binding.actionHome.visibility = VISIBLE
+        //   binding.actionHome.visibility = VISIBLE
 
         when (currentModuleIndex) {
             IANModulesEnum.MAIN.ordinal -> {
@@ -4084,26 +4306,15 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
     private fun updateBellVisibilityStatus(_visible: Boolean) {
-        if (_visible) binding.bellControl.visibility = VISIBLE
-        else binding.bellControl.visibility = GONE
+        /*
+                if (_visible) binding.bellControl.visibility = VISIBLE
+                     else binding.bellControl.visibility = GONE
+             */
 
-        Log.d("TIEMPO", "updateBellStatus()  2")
     }
 
     private fun updateNotificationsCounter() {
 
-
-        val notificationsData = mNotificationsFragment.getData()
-
-        Log.d("TIEMPO", "updateBellStatus()  1")
-
-        if (notificationsData.size == 0) {
-            binding.notificationCounter.visibility = GONE
-        } else {
-            binding.notificationCounterText.text = notificationsData.size.toString()
-            binding.notificationCounterText.visibility = VISIBLE
-        }
-        Log.d("TIEMPO", "updateBellStatus()  2")
     }
 
 
@@ -4112,20 +4323,22 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
     fun setTitleBarTitle(title: String) {
-        binding.titleText.text = title
 
-    }
+        appToolbar.updateTitle(title)
 
+//        binding.titleText.text = title
 
-    fun switchToModule(index: Int, tag: String?) {
-        this.switchToModule(index, tag, false, null)
-    }
-
-    fun switchToModule(index: Int, tag: String?, key: String) {
-        this.switchToModule(index, tag, false, key)
     }
 
     /*
+        fun switchToModule(index: Int, tag: String?) {
+            this.switchToModule(index, tag, false, null)
+        }
+
+        fun switchToModule(index: Int, tag: String?, key: String) {
+            this.switchToModule(index, tag, false, key)
+        }
+    *//*
         public fun switchToModule(index: Int, tag: String?, force: Boolean, key: String?) {
             if (currentModuleIndex != index || force) {
                 if (currentModuleIndex != -1)
@@ -4191,7 +4404,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     /**
      * Cambia a un fragmento determinado cuando la aplicacion esta operativa y loggeada
-     */
+     *//*
     fun switchToFragment(fragment: Fragment, clearStack: Boolean = false) {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         transaction.replace(
@@ -4206,260 +4419,267 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         supportFragmentManager.executePendingTransactions()
 
     }
+    */
+
+    /*
+        fun switchToModule(
+            index: Int, tag: String?, force: Boolean, key: String?, arguments: Bundle? = null
+        ) {
+
+            if (currentModuleIndex != index || force) {
+                if (currentModuleIndex != -1) unSubscribeInModule(currentModuleIndex)
+                currentModuleIndex = index
 
 
-    fun switchToModule(
-        index: Int, tag: String?, force: Boolean, key: String?, arguments: Bundle? = null
-    ) {
 
-        if (currentModuleIndex != index || force) {
-            if (currentModuleIndex != -1) unSubscribeInModule(currentModuleIndex)
-            currentModuleIndex = index
-
-            getCurrentFragment()?.let {
-                //  AppClass.instance.removeViewFromStack(it)
-            }
-
-            lifecycleScope.launch(Dispatchers.Main) {
-                //        handleTouch()
-                val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-
-                if (binding.container.tag != null) {
-                    //   (binding.container.tag as Fragment).isDetached
-                }
-//                binding.container.childCount
-                subscribeInModule(index)
+                lifecycleScope.launch(Dispatchers.Main) {
+                    //        handleTouch()
+                    val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
 
 
-                when (index) {
-                    IANModulesEnum.MAIN.ordinal -> {
-                        binding.titleText.visibility = GONE
-                        //  binding.titleBarCardView.visibility = View.GONE
-                        binding.userNameSection.visibility = VISIBLE
-                        binding.titleText.setText(R.string.app_long_title)
-                        binding.bottomToolbar.visibility = VISIBLE
-
-//establece un margintop para binding.container en 10dp
+    //                binding.container.childCount
+                    subscribeInModule(index)
 
 
-                        val containerLayoutParams =
-                            binding.container.layoutParams as ViewGroup.MarginLayoutParams
-                        val marginTop = 20.px  // convertir dp a px
-                        containerLayoutParams.setMargins(
-                            containerLayoutParams.leftMargin,
-                            marginTop,
-                            containerLayoutParams.rightMargin,
-                            containerLayoutParams.bottomMargin
-                        )
-                        binding.container.layoutParams = containerLayoutParams
+                    when (index) {
+                        IANModulesEnum.MAIN.ordinal -> {
+                            appToolbar.hideTitle()
+    //                        binding.titleText.visibility = GONE
+                            //  binding.titleBarCardView.visibility = View.GONE
+                            //                      binding.userNameSection.visibility = VISIBLE
+                            //                      binding.titleText.setText(R.string.app_long_title)
+                            binding.bottomToolbar.visibility = VISIBLE
+
+    //establece un margintop para binding.container en 10dp
 
 
-                        showactionsSections(null)
-
-                        if (supportFragmentManager.fragments.contains(mHomeFragment)) {
-                            transaction.show(mHomeFragment)
-                        } else {
-                            transaction.replace(
-                                R.id.container, mHomeFragment
+                            val containerLayoutParams =
+                                binding.container.layoutParams as ViewGroup.MarginLayoutParams
+                            val marginTop = 20.px  // convertir dp a px
+                            containerLayoutParams.setMargins(
+                                containerLayoutParams.leftMargin,
+                                marginTop,
+                                containerLayoutParams.rightMargin,
+                                containerLayoutParams.bottomMargin
                             )
+                            binding.container.layoutParams = containerLayoutParams
+
+
+                            showactionsSections(null)
+
+                            if (supportFragmentManager.fragments.contains(mHomeFragment)) {
+                                transaction.show(mHomeFragment)
+                            } else {
+                                transaction.replace(
+                                    R.id.container, mHomeFragment
+                                )
+                            }
+                            binding.container.tag = mHomeFragment
                         }
-                        binding.container.tag = mHomeFragment
-                    }
 
-                    IANModulesEnum.POST_EVENTS.ordinal -> {
-                        if (isPanicButtonActive()) {
-                            showErrorDialog(
-                                getString(R.string.not_possible),
-                                getString(R.string.error_panic_event_is_running_close_first),
-                                getString(R.string.close),
-                                null
+                        IANModulesEnum.POST_EVENTS.ordinal -> {
+                            if (isPanicButtonActive()) {
+                                showErrorDialog(
+                                    getString(R.string.not_possible),
+                                    getString(R.string.error_panic_event_is_running_close_first),
+                                    getString(R.string.close),
+                                    null
+                                )
+                                return@launch
+                            } else {
+                                //binding.toolbar.visibility = VISIBLE
+                                /*
+                                                              binding.titleBarCardView.visibility = VISIBLE
+                                                              binding.titleText.visibility = VISIBLE
+                                                              binding.userNameSection.visibility = GONE
+                                                              binding.titleText.setText(R.string.select_your_event)
+                                  */
+                                hideactionsSections()
+                                transaction.replace(
+                                    R.id.container, mEventsFragment
+                                )
+                                binding.container.tag = mEventsFragment
+
+                            }
+                        }
+
+                        IANModulesEnum.EVENTS_TRACKING.ordinal -> {
+                            //binding.toolbar.visibility = VISIBLE
+
+                            /*
+                                binding.titleBarCardView.visibility = VISIBLE
+                                binding.titleText.visibility = VISIBLE
+                                binding.userNameSection.visibility = GONE
+                                binding.titleText.setText(R.string.action_events_map)
+                                */
+                            binding.bottomToolbar.visibility = GONE
+                            hideactionsSections()
+
+                            if (supportFragmentManager.fragments.contains(mMapFragment)) {
+                                transaction.show(mMapFragment)
+                            } else {
+                                transaction.replace(
+                                    R.id.container_full_screen, mMapFragment
+                                )
+                            }
+                            key?.let {
+                                //  mMapFragment.setEventKey(it)
+                                mMapFragment.startObserveEvent(it)
+                            }
+
+
+                            binding.container.tag = mMapFragment
+                        }
+
+                        IANModulesEnum.CONTACTS.ordinal -> {/*
+                                binding.titleBarCardView.visibility = VISIBLE
+                                binding.titleText.visibility = VISIBLE
+                                binding.userNameSection.visibility = GONE
+                                binding.titleText.setText(R.string.action_friends_list)
+                                */
+                            hideactionsSections()
+
+
+                            transaction.replace(
+                                R.id.container, mFriendsFragment
                             )
-                            return@launch
-                        } else {
-                            binding.titleBarCardView.visibility = VISIBLE
-                            binding.titleText.visibility = VISIBLE
-                            binding.userNameSection.visibility = GONE
-                            binding.titleText.setText(R.string.select_your_event)
+                            binding.container.tag = mFriendsFragment
+
+                        }
+
+                        IANModulesEnum.SETTINGS.ordinal -> {/*
+                                binding.titleBarCardView.visibility = VISIBLE
+                                binding.titleText.visibility = VISIBLE
+                                binding.userNameSection.visibility = GONE
+                                binding.titleText.setText(R.string.action_settings)
+        */
+                            //  val fragment = pagerAdapter.getFragmentAt(4) as SettingsFragment
+
 
                             hideactionsSections()
+
                             transaction.replace(
-                                R.id.container, mEventsFragment
+                                R.id.container, mSettingsFragment
                             )
-                            binding.container.tag = mEventsFragment
 
+                            binding.container.tag = mSettingsFragment
                         }
-                    }
 
-                    IANModulesEnum.EVENTS_TRACKING.ordinal -> {
+                        IANModulesEnum.NOTIFICATIONS.ordinal -> {/*
+                                binding.titleBarCardView.visibility = VISIBLE
+                                binding.titleText.visibility = VISIBLE
+                                binding.userNameSection.visibility = GONE
+                                binding.titleText.setText(R.string.action_notifications)
+                                */
+                            hideactionsSections()
 
-                        binding.titleBarCardView.visibility = VISIBLE
-                        binding.titleText.visibility = VISIBLE
-                        binding.userNameSection.visibility = GONE
-                        binding.titleText.setText(R.string.action_events_map)
-                        binding.bottomToolbar.visibility = GONE
-                        hideactionsSections()
-
-                        if (supportFragmentManager.fragments.contains(mMapFragment)) {
-                            transaction.show(mMapFragment)
-                        } else {
                             transaction.replace(
-                                R.id.container_full_screen, mMapFragment
+                                R.id.container, mNotificationsFragment
                             )
+                            binding.container.tag = mNotificationsFragment
+
                         }
-                        key?.let {
-                            //  mMapFragment.setEventKey(it)
-                            mMapFragment.startObserveEvent(it)
-                        }
-
-
-                        binding.container.tag = mMapFragment
                     }
 
-                    IANModulesEnum.CONTACTS.ordinal -> {
-                        binding.titleBarCardView.visibility = VISIBLE
-                        binding.titleText.visibility = VISIBLE
-                        binding.userNameSection.visibility = GONE
-                        binding.titleText.setText(R.string.action_friends_list)
-                        hideactionsSections()
+                    transaction.addToBackStack(null)
+                    transaction.commit()
+                    supportFragmentManager.executePendingTransactions()
 
-                        transaction.replace(
-                            R.id.container, mFriendsFragment
-                        )
-                        binding.container.tag = mFriendsFragment
+                    //-----------------
 
-                    }
+                    //---------
+                    when (index) {
 
-                    IANModulesEnum.SETTINGS.ordinal -> {
-                        binding.titleBarCardView.visibility = VISIBLE
-                        binding.titleText.visibility = VISIBLE
-                        binding.userNameSection.visibility = GONE
-                        binding.titleText.setText(R.string.action_settings)
+                        IANModulesEnum.MAIN.ordinal -> {
+                            //       registerAttachmentsContracts()
+                            /*
+                                                    pickImageContract
+                            toTakeVideoPermissionsRequest
+                            pickVideoContract
+        */
+                            //                   binding.containerFullScreen.visibility = GONE
+                            //                   binding.container.visibility = VISIBLE
 
-                        //  val fragment = pagerAdapter.getFragmentAt(4) as SettingsFragment
-
-
-                        hideactionsSections()
-
-                        transaction.replace(
-                            R.id.container, mSettingsFragment
-                        )
-
-                        binding.container.tag = mSettingsFragment
-                    }
-
-                    IANModulesEnum.NOTIFICATIONS.ordinal -> {
-                        binding.titleBarCardView.visibility = VISIBLE
-                        binding.titleText.visibility = VISIBLE
-                        binding.userNameSection.visibility = GONE
-                        binding.titleText.setText(R.string.action_notifications)
-                        hideactionsSections()
-                        transaction.replace(
-                            R.id.container, mNotificationsFragment
-                        )
-                        binding.container.tag = mNotificationsFragment
-
-                    }
-                }
-
-                transaction.addToBackStack(null)
-                transaction.commit()
-                supportFragmentManager.executePendingTransactions()
-
-                //-----------------
-
-                //---------
-                when (index) {
-
-                    IANModulesEnum.MAIN.ordinal -> {
-                        //       registerAttachmentsContracts()
-                        /*
-                                                pickImageContract
-                        toTakeVideoPermissionsRequest
-                        pickVideoContract
-    */
-                        binding.containerFullScreen.visibility = GONE
-                        binding.container.visibility = VISIBLE
-
-                        //            AppClass.instance.updateViewFromStack(IANModulesEnum.MAIN, mHomeFragment)
+                            //            AppClass.instance.updateViewFromStack(IANModulesEnum.MAIN, mHomeFragment)
 
 
-                    }
-
-                    IANModulesEnum.POST_EVENTS.ordinal -> {
-                        mEventsFragment.switchToFragment(
-                            R.id.event_fragment_event_type_selector, arguments
-                        )
-                        binding.containerFullScreen.visibility = GONE
-                        binding.container.visibility = VISIBLE
-
-                        //                    AppClass.instance.updateViewFromStack(IANModulesEnum.POST_EVENTS, mEventsFragment)
-                    }
-
-                    IANModulesEnum.EVENTS_TRACKING.ordinal -> {
-                        binding.containerFullScreen.visibility = VISIBLE
-                        binding.container.visibility = GONE
-                        if (mMapFragment.initialRenderDone) {
-                            mMapFragment.onResume()
-                        }
-                        mMapFragment.initialRenderDone = true
-                        key?.let {
-                            mMapFragment.connectToChat(it)
                         }
 
-                        arguments?.let {
-                            mMapFragment.doAction(arguments)
+                        IANModulesEnum.POST_EVENTS.ordinal -> {
+                            mEventsFragment.switchToFragment(
+                                R.id.event_fragment_event_type_selector, arguments
+                            )
+                            //    binding.containerFullScreen.visibility = GONE
+                            //   binding.container.visibility = VISIBLE
+
+                            //                    AppClass.instance.updateViewFromStack(IANModulesEnum.POST_EVENTS, mEventsFragment)
                         }
 
-                        //                     AppClass.instance.updateViewFromStack(IANModulesEnum.EVENTS_TRACKING, mMapFragment,key)
+                        IANModulesEnum.EVENTS_TRACKING.ordinal -> {
+                            binding.containerFullScreen.visibility = VISIBLE
+                            binding.container.visibility = GONE
+                            if (mMapFragment.initialRenderDone) {
+                                mMapFragment.onResume()
+                            }
+                            mMapFragment.initialRenderDone = true
+                            key?.let {
+                                mMapFragment.connectToChat(it)
+                            }
 
-                    }
+                            arguments?.let {
+                                mMapFragment.doAction(arguments)
+                            }
 
-                    IANModulesEnum.SETTINGS.ordinal -> {
-                        if (arguments == null || arguments.containsKey("go_to") == false) {
-                            mSettingsFragment.goToFragment(0)
-                        } else {
-                            var fragmentIndex = SettingsFragmentsEnum.valueOf(
-                                arguments.getString("go_to").toString()
-                            ).ordinal
-                            mSettingsFragment.goToFragment(fragmentIndex)
+                            //                     AppClass.instance.updateViewFromStack(IANModulesEnum.EVENTS_TRACKING, mMapFragment,key)
+
                         }
-                        binding.containerFullScreen.visibility = GONE
-                        binding.container.visibility = VISIBLE
 
-                        //                 AppClass.instance.updateViewFromStack(IANModulesEnum.SETTINGS, mSettingsFragment)
+                        IANModulesEnum.SETTINGS.ordinal -> {
+                            if (arguments == null || arguments.containsKey("go_to") == false) {
+                                mSettingsFragment.goToFragment(0)
+                            } else {
+                                var fragmentIndex = SettingsFragmentsEnum.valueOf(
+                                    arguments.getString("go_to").toString()
+                                ).ordinal
+                                mSettingsFragment.goToFragment(fragmentIndex)
+                            }
+                            //                  binding.containerFullScreen.visibility = GONE
+                            //                  binding.container.visibility = VISIBLE
 
+                            //                 AppClass.instance.updateViewFromStack(IANModulesEnum.SETTINGS, mSettingsFragment)
+
+                        }
+
+                        IANModulesEnum.CONTACTS.ordinal -> {
+                            //                binding.containerFullScreen.visibility = GONE
+                            //                binding.container.visibility = VISIBLE
+
+                            //                  AppClass.instance.updateViewFromStack(IANModulesEnum.CONTACTS, mFriendsFragment)
+
+
+                        }
+
+                        IANModulesEnum.NOTIFICATIONS.ordinal -> {
+                            //              binding.containerFullScreen.visibility = GONE
+                            //                binding.container.visibility = VISIBLE
+
+                            //         AppClass.instance.updateViewFromStack(IANModulesEnum.NOTIFICATIONS, mNotificationsFragment)
+
+                        }
                     }
 
-                    IANModulesEnum.CONTACTS.ordinal -> {
-                        binding.containerFullScreen.visibility = GONE
-                        binding.container.visibility = VISIBLE
 
-                        //                  AppClass.instance.updateViewFromStack(IANModulesEnum.CONTACTS, mFriendsFragment)
-
-
-                    }
-
-                    IANModulesEnum.NOTIFICATIONS.ordinal -> {
-                        binding.containerFullScreen.visibility = GONE
-                        binding.container.visibility = VISIBLE
-
-                        //         AppClass.instance.updateViewFromStack(IANModulesEnum.NOTIFICATIONS, mNotificationsFragment)
-
-                    }
                 }
 
 
+                /*
+                    binding.pager.setCurrentItem(index, true)
+                    currentModuleIndex = binding.pager.currentItem
+
+                     */
             }
-
-
-            /*
-                binding.pager.setCurrentItem(index, true)
-                currentModuleIndex = binding.pager.currentItem
-
-                 */
         }
-    }
-
+    *//*
     fun getCurrentFragment(): Fragment? {
 
         when (currentModuleIndex) {
@@ -4496,151 +4716,150 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         }
     }
 
-
+*/
     private fun handleGoBack(arguments: Bundle? = null) {
         handleTouch()
 
         supportFragmentManager.popBackStack()
 
         var currentFragment = getVisibleFragment(this@MainActivity.supportFragmentManager)
-        return
+        return/*
+                when (currentModuleIndex) {
+                    IANModulesEnum.POST_EVENTS.ordinal -> {/* CCCC
+                                            var internalFragment =
+                                                getVisibleFragment(pagerAdapter.getFragmentAt(binding.pager.currentItem).childFragmentManager)
+                            */
+                        val internalFragment =
+                            getVisibleFragment(getCurrentFragment()?.childFragmentManager!!)
 
-        when (currentModuleIndex) {
-            IANModulesEnum.POST_EVENTS.ordinal -> {/* CCCC
-                                    var internalFragment =
-                                        getVisibleFragment(pagerAdapter.getFragmentAt(binding.pager.currentItem).childFragmentManager)
-                    */
-                val internalFragment =
-                    getVisibleFragment(getCurrentFragment()?.childFragmentManager!!)
-
-                if (internalFragment != null && internalFragment is EventTypeSelectorFragment) {
-                    currentModuleIndex = 0
-                    supportFragmentManager.popBackStack()
-                    // CCCC binding.pager.currentItem = 0
-                    showactionsSections(null)
-                } else {
-                    when (internalFragment?.parentFragmentManager?.fragments?.get(0)?.javaClass) {
-                        EventRealTimeTrackingFragment::class.java -> {
-                            mEventsFragment.switchToFragment(
-                                R.id.event_fragment_event_type_selector, arguments
-                            )
-                        }/*
-                            EventLocationManualInputFragment::class.java -> {
-                                mEventsFragment.switchToFragment(R.id.event_fragment_location_read_only_selector)
-                            }*/
-                        EventLocationReadOnlyFragment::class.java -> {
+                        if (internalFragment != null && internalFragment is EventTypeSelectorFragment) {
+                            currentModuleIndex = 0
+                            supportFragmentManager.popBackStack()
+                            // CCCC binding.pager.currentItem = 0
+                            showactionsSections(null)
+                        } else {
+                            when (internalFragment?.parentFragmentManager?.fragments?.get(0)?.javaClass) {
+                                EventRealTimeTrackingFragment::class.java -> {
+                                    mEventsFragment.switchToFragment(
+                                        R.id.event_fragment_event_type_selector, arguments
+                                    )
+                                }/*
+                                    EventLocationManualInputFragment::class.java -> {
+                                        mEventsFragment.switchToFragment(R.id.event_fragment_location_read_only_selector)
+                                    }*/
+                                EventLocationReadOnlyFragment::class.java -> {
 
 
-                            val eventType = EventTypesEnum.valueOf(
-                                (internalFragment.parentFragmentManager.fragments.get(0) as EventLocationReadOnlyFragment).eventsFragmentViewModel.eventType.value.toString()
-                            )
+                                    val eventType = EventTypesEnum.valueOf(
+                                        (internalFragment.parentFragmentManager.fragments.get(0) as EventLocationReadOnlyFragment).eventsFragmentViewModel.eventType.value.toString()
+                                    )
 
-                            if (eventType == EventTypesEnum.KID_LOST || eventType == EventTypesEnum.PET_LOST || eventType == EventTypesEnum.SCORT_ME) {
-                                mEventsFragment.switchToFragment(
-                                    R.id.event_fragment_event_type_selector,
-                                    internalFragment.arguments
-                                )
-                            } else {
-                                mEventsFragment.switchToFragment(
-                                    R.id.event_fragment_realtime_selector,
-                                    internalFragment.arguments
-                                )
+                                    if (eventType == EventTypesEnum.KID_LOST || eventType == EventTypesEnum.PET_LOST || eventType == EventTypesEnum.SCORT_ME) {
+                                        mEventsFragment.switchToFragment(
+                                            R.id.event_fragment_event_type_selector,
+                                            internalFragment.arguments
+                                        )
+                                    } else {
+                                        mEventsFragment.switchToFragment(
+                                            R.id.event_fragment_realtime_selector,
+                                            internalFragment.arguments
+                                        )
+                                    }
+                                }
+
+                                EventAdditionalMediaFragment::class.java -> {
+
+                                    var viewModel =
+                                        (internalFragment as EventAdditionalMediaFragment).eventsFragmentViewModel
+                                    var eventType: EventTypesEnum =
+                                        EventTypesEnum.valueOf(viewModel.eventType.value!!)
+
+                                    if (eventType == EventTypesEnum.KID_LOST || eventType == EventTypesEnum.PET_LOST || eventType == EventTypesEnum.SCORT_ME) {
+
+                                        mEventsFragment.switchToFragment(
+                                            R.id.event_fragment_location_read_only_selector,
+                                            internalFragment.arguments
+                                        )
+                                    } else {
+
+                                        if (mEventsFragment.getEvent().event_location_type == EventLocationType.FIXED.name) mEventsFragment.switchToFragment(
+                                            R.id.event_fragment_location_read_only_selector,
+                                            internalFragment.arguments
+                                        )
+                                        else mEventsFragment.switchToFragment(
+                                            R.id.event_fragment_realtime_selector,
+                                            internalFragment.arguments
+                                        )
+                                    }
+                                }
+
+                                else -> { // Note the block
+                                    internalFragment?.parentFragmentManager?.popBackStack()
+
+                                }
                             }
-                        }
-
-                        EventAdditionalMediaFragment::class.java -> {
-
-                            var viewModel =
-                                (internalFragment as EventAdditionalMediaFragment).eventsFragmentViewModel
-                            var eventType: EventTypesEnum =
-                                EventTypesEnum.valueOf(viewModel.eventType.value!!)
-
-                            if (eventType == EventTypesEnum.KID_LOST || eventType == EventTypesEnum.PET_LOST || eventType == EventTypesEnum.SCORT_ME) {
-
-                                mEventsFragment.switchToFragment(
-                                    R.id.event_fragment_location_read_only_selector,
-                                    internalFragment.arguments
-                                )
-                            } else {
-
-                                if (mEventsFragment.getEvent().event_location_type == EventLocationType.FIXED.name) mEventsFragment.switchToFragment(
-                                    R.id.event_fragment_location_read_only_selector,
-                                    internalFragment.arguments
-                                )
-                                else mEventsFragment.switchToFragment(
-                                    R.id.event_fragment_realtime_selector,
-                                    internalFragment.arguments
-                                )
-                            }
-                        }
-
-                        else -> { // Note the block
-                            internalFragment?.parentFragmentManager?.popBackStack()
 
                         }
                     }
 
-                }
-            }
+                    IANModulesEnum.SETTINGS.ordinal -> {/*
+                                   var internalFragment =
+                                       getVisibleFragment(pagerAdapter.getFragmentAt(IANModulesEnum.SETTINGS.ordinal).childFragmentManager)
+                   */
 
-            IANModulesEnum.SETTINGS.ordinal -> {/*
-                           var internalFragment =
-                               getVisibleFragment(pagerAdapter.getFragmentAt(IANModulesEnum.SETTINGS.ordinal).childFragmentManager)
-           */
+                        when (mSettingsFragment.currentFragment) {
+                            SettingsFragmentsEnum.LANDING -> {
+        //                        switchToModule(0, "home")
+                                goHome()
+                            }
 
-                when (mSettingsFragment.currentFragment) {
-                    SettingsFragmentsEnum.LANDING -> {
-//                        switchToModule(0, "home")
+                            SettingsFragmentsEnum.PROFILE_SETTINGS -> {
+                                mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
+                            }
+
+                            SettingsFragmentsEnum.SOS_SETTINGS -> {
+                                val me = SessionForProfile.getInstance(this).getUserProfile()
+                                if (me.sos_invocation_count >= 3) {
+
+                                    val sosSettings: PressOrTapSetupFragment =
+                                        mSettingsFragment.getFragment(SettingsFragmentsEnum.SOS_SETTINGS.ordinal)!! as PressOrTapSetupFragment
+
+                                    sosSettings.save(
+                                        SOSActivationMethods.valueOf(me.sos_invocation_method),
+                                        me.sos_invocation_count
+                                    )
+        //                            moduleFragment.selectFragment(SettingsFragmentsEnum.LANDING.ordinal)
+                                    mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
+                                }
+                            }
+
+                            SettingsFragmentsEnum.NOTIFICATION_GROUPS -> {
+                                mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
+                            }
+
+                            SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS -> {
+                                mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
+                            }
+
+                            SettingsFragmentsEnum.NOTIFICATION_LIST -> {
+                                mSettingsFragment.goToFragment(SettingsFragmentsEnum.NOTIFICATION_GROUPS.ordinal)
+                            }
+
+
+                            SettingsFragmentsEnum.PLAN_SETTINGS -> {
+                                mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
+                            }
+
+                        }
+                    }
+
+                    else -> {
+        //                switchToModule(0, "home")
                         goHome()
                     }
-
-                    SettingsFragmentsEnum.PROFILE_SETTINGS -> {
-                        mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
-                    }
-
-                    SettingsFragmentsEnum.SOS_SETTINGS -> {
-                        val me = SessionForProfile.getInstance(this).getUserProfile()
-                        if (me.sos_invocation_count >= 3) {
-
-                            val sosSettings: PressOrTapSetupFragment =
-                                mSettingsFragment.getFragment(SettingsFragmentsEnum.SOS_SETTINGS.ordinal)!! as PressOrTapSetupFragment
-
-                            sosSettings.save(
-                                SOSActivationMethods.valueOf(me.sos_invocation_method),
-                                me.sos_invocation_count
-                            )
-//                            moduleFragment.selectFragment(SettingsFragmentsEnum.LANDING.ordinal)
-                            mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
-                        }
-                    }
-
-                    SettingsFragmentsEnum.NOTIFICATION_GROUPS -> {
-                        mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
-                    }
-
-                    SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS -> {
-                        mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
-                    }
-
-                    SettingsFragmentsEnum.NOTIFICATION_LIST -> {
-                        mSettingsFragment.goToFragment(SettingsFragmentsEnum.NOTIFICATION_GROUPS.ordinal)
-                    }
-
-
-                    SettingsFragmentsEnum.PLAN_SETTINGS -> {
-                        mSettingsFragment.goToFragment(SettingsFragmentsEnum.LANDING.ordinal)
-                    }
-
                 }
-            }
 
-            else -> {
-//                switchToModule(0, "home")
-                goHome()
-            }
-        }
-
-
+        */
     }
 
 
@@ -4691,7 +4910,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             }
 
             3 -> {
-             //   mFriendsFragment.unSubscribe()
+                //   mFriendsFragment.unSubscribe()
             }
 
             4 -> {
@@ -4714,13 +4933,20 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
     private fun showBackArrow() {
-        binding.backArrow.visibility = VISIBLE
-        binding.actionSettings.visibility = GONE
+        appToolbar.enableBackBtn(true)/*
+            binding.backArrow.visibility = VISIBLE
+            binding.actionSettings.visibility = GONE
+
+             */
     }
 
     private fun hideBackArrow() {
+        appToolbar.enableBackBtn(false)
+
+        /*
         binding.backArrow.visibility = GONE
         binding.actionSettings.visibility = VISIBLE
+        */
     }
 
 
@@ -4876,7 +5102,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         broadcastIntentFilter.addAction("ON_NOTIFICATION_INCOME") // Para que escuche los pedidos de actualizacion del indicador
         LocalBroadcastManager.getInstance(applicationContext).registerReceiver(
             broadcastReceiver, broadcastIntentFilter
-        )/*
+        )
+
+
+        /*
                     //----------------- EXPIRATION RECEIVERS ----------------------------------------------
                     val eventExpirationIntentFilter = IntentFilter()
                     eventExpirationIntentFilter.addAction(Constants.BROADCAST_EVENT_CLOSE_TO_EXPIRE)
@@ -5071,7 +5300,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                 val action = deepLink?.getQueryParameter("action")
                 val key = deepLink?.getQueryParameter("key").toString()
 
-                if (key.compareTo(SessionForProfile.getInstance(this).getUserId()) == 0) {
+                if ((key + "--").compareTo(SessionForProfile.getInstance(this).getUserId()) == 0) {
                     showErrorDialog(
                         getString(
                             R.string.error_cannot_send_it_to_you
@@ -5081,10 +5310,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                     when (action) {
                         DYNAMIC_LINK_ACTION_FRIENDSHIP -> {
                             //     mPresenter.onSharingContactByUserKey(key)
-                            showSnackBar(
-                                binding.root,
-                                "Implementar en el viewmodel onSharingContactByUserKey"
-                            )
+
+                            viewModel.onContactByUserKey(key)
+
+
                         }
 
                         DYNAMIC_LINK_ACTION_FRIENDSHIP_AND_SPEED_DIAL -> {
@@ -5118,40 +5347,39 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
 
-// Data Listener
+    // Data Listener
+    /*
+        fun onNotificationAdded(
+            notification: EventNotificationModel, previousChildName: String?
+        ) {/*
+                        Log.d("TIEMPO", "onNotificationAdded")
+                        val notification = snapshot.getValue(EventNotificationModel::class.java)!!
+                        notification.notification_key = snapshot.key!!
+                  */
+            onNotificationAddedInternal(notification)
+            if (notification.time > AppClass.instance.startTime) {
+                playSound(R.raw.intro_bell)
+            }
 
-    fun onNotificationAdded(
-        notification: EventNotificationModel, previousChildName: String?
-    ) {/*
-                    Log.d("TIEMPO", "onNotificationAdded")
-                    val notification = snapshot.getValue(EventNotificationModel::class.java)!!
-                    notification.notification_key = snapshot.key!!
-              */
-        onNotificationAddedInternal(notification)
-        if (notification.time > AppClass.instance.startTime) {
-            playSound(R.raw.intro_bell)
         }
-
-    }
-
+    */
+    /*
     fun onNotificationAddedInternal(notification: EventNotificationModel) {
 
         Log.d("TIEMPO", "onNotificationAddedInternal")
 
 
-        var notificationsFragment = mNotificationsFragment
-        val notificationsAdapter = mNotificationsFragment.getAdapter()
-        val notificationsData = mNotificationsFragment.getData()
+   //     var notificationsFragment = mNotificationsFragment
+      //  val notificationsAdapter = mNotificationsFragment.getAdapter()
+       // val notificationsData = mNotificationsFragment.getData()
 
         if (!notificationsData.contains(notification)) {
-
-
             notificationsData.add(notification)
             if (notificationsData.size == 1) {
                 updateBellVisibilityStatus(true)
             }
 
-            if (getCurrentFragment() is NotificationsFragment) {
+            if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
                 notificationsAdapter.notifyItemInserted(notificationsData.size - 1)
             }
 
@@ -5165,8 +5393,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             }
 
             when (eventType) {
-
-
                 EventTypesEnum.SEND_POLICE.name -> {
                     playSound(R.raw.policesiren, null, null)
                 }
@@ -5179,13 +5405,15 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
 
     }
-
+*/
+    /*
     fun onNotificationChanged(
         notification: EventNotificationModel, previousChildName: String?
     ) {
         onNotificationAddedChangedInternal(notification)
     }
-
+*/
+    /*
     fun onNotificationAddedChangedInternal(notification: EventNotificationModel) {
 
         var notificationsFragment = mNotificationsFragment
@@ -5195,7 +5423,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         val index = notificationsData.indexOf(notification)
         if (index > -1) {
             notificationsData[index] = notification
-            if (getCurrentFragment() is NotificationsFragment) {
+            if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
                 notificationsAdapter.notifyItemChanged(index)
             }
 //            updateBellVisibilityStatus()
@@ -5203,7 +5431,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     }
 
-
+*/
+    /*
     fun onNotificationRemoved(notification: EventNotificationModel) {/*
                 val event = snapshot.getValue(EventNotificationModel::class.java)!!
                 event.notification_key = snapshot.key!!
@@ -5217,31 +5446,31 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             if (notificationsData.size == 0) {
                 updateBellVisibilityStatus(false)
             }
-            if (getCurrentFragment() is NotificationsFragment) {
+            if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
                 notificationsAdapter.notifyItemRemoved(index)
             }
 
-            //Toast.makeText(this, "modifico la notificacion", Toast.LENGTH_LONG).show()
         }
     }
-
-
-    private fun onNotificationRemoveInternal(event: EventNotificationModel) {
-        // var notificationsFragment = mNotificationsFragment
-        val notificationsAdapter = mNotificationsFragment.getAdapter()
-        val notificationsData = mNotificationsFragment.getData()
-        val indexInDialog = notificationsData.indexOf(event)
-        if (indexInDialog != -1) {
-            notificationsData.removeAt(indexInDialog)
-            if (getCurrentFragment() is NotificationsFragment) {
-                notificationsAdapter.notifyItemRemoved(indexInDialog)
-            }
-            if (notificationsData.size == 0) {
-                updateBellVisibilityStatus(false)
+*/
+    /*
+        private fun onNotificationRemoveInternal(event: EventNotificationModel) {
+            // var notificationsFragment = mNotificationsFragment
+            val notificationsAdapter = mNotificationsFragment.getAdapter()
+            val notificationsData = mNotificationsFragment.getData()
+            val indexInDialog = notificationsData.indexOf(event)
+            if (indexInDialog != -1) {
+                notificationsData.removeAt(indexInDialog)
+                if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
+                    notificationsAdapter.notifyItemRemoved(indexInDialog)
+                }
+                if (notificationsData.size == 0) {
+                    updateBellVisibilityStatus(false)
+                }
             }
         }
-    }
-
+    */
+    /*
     override fun notificationDeleteByKey(
         notification: EventNotificationModel, viewPressed: View
     ) {
@@ -5273,7 +5502,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         }
 
     }
-
+*/
+    /*
     override fun notificationsDeleteByEvent(
         notification: EventNotificationModel, viewPressed: View
     ) {
@@ -5304,8 +5534,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             Toast.makeText(this, "No molestes mosquito!", Toast.LENGTH_LONG).show()
         }
     }
-
-    override fun onGoToChatPressed(channelKey: String, messageKey: String) {
+*/
+    fun onGoToChatPressed(channelKey: String, messageKey: String) {
         viewModel.onGoToChatPressed(channelKey, messageKey)
     }
 
@@ -5527,7 +5757,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
 
-    override fun showNotificationsDialog() {/*
+    fun showNotificationsDialog() {/*
                     if (!notificationDetail.isShowing) {
                         //   notificationDetail.setData(notificationDetail.getData())
                         notificationDetail.show()
@@ -5536,7 +5766,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
              */
     }
 
-    override fun onAgreeToAssist(notificationKey: String, eventKey: String) {
+    fun onAgreeToAssist(notificationKey: String, eventKey: String) {
 //        mPresenter.onAgreeToAssist(notificationKey, eventKey)
         viewModel.onAgreeToAssist(notificationKey, eventKey)
         showSnackBar(binding.root, "Implementar en el viewmodel onAgreeToAssist")
@@ -5546,22 +5776,23 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     override fun onAgreeToAssistDone(eventKey: String) {
         showEventRedirectorDialog(eventKey)
     }
+    /*
+        override fun onNotificationDismiss(notification: EventNotificationModel) {
 
-    override fun onNotificationDismiss(notification: EventNotificationModel) {
+        //    onNotificationRemoveInternal(notification)
+    //        mPresenter.onNotificationDismiss(notification)
 
-        onNotificationRemoveInternal(notification)
-//        mPresenter.onNotificationDismiss(notification)
+            showSnackBar(binding.root, "Implementar en el viewmodel onNotificationDismiss")
+        }
+    */
 
-        showSnackBar(binding.root, "Implementar en el viewmodel onNotificationDismiss")
-    }
-
-
+    /*
     override fun onStartToFollow(eventKey: String) {
         //   mPresenter.onStartToFollow(eventKey)
         showSnackBar(binding.root, "Implementar en el viewmodel onStartToFollow")
 
     }
-
+*/
     override fun onDenyToAssist(event: Event) {
         event.event_key.let {
 //            mPresenter.onDenyToAssist(it)
@@ -5585,7 +5816,11 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     override fun onSwitchToEvent(eventKey: String) {
 
-        switchToModule(2, "scort", false, eventKey)
+//        switchToModule(2, "scort", false, eventKey)
+        val bundle = bundleOf("eventKey" to eventKey)
+
+        findNavController(R.id.nav_host_fragment).navigate(R.id.mapSituationFragment, bundle)
+
         // mMapFragment.selectEvent(eventKey)
     }
 
@@ -5981,7 +6216,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     fun addButtonToToolbar(controlResId: Int, image: Any): View {
         if (getToolbarButton(controlResId) == null) {
             val newButton = ToolbarUtils().createToolbarButton(this, controlResId, image)
-            binding.rightSection.addView(newButton)
+            // binding.rightSection.addView(newButton)
             newButton.setOnClickListener {
                 //            mMapFragment.togleMapOptionsButton(newButton)
             }
@@ -5991,7 +6226,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
     fun removeButtonInToolbar(controlResId: Int) {
-        binding.rightSection.removeView(getToolbarButton(controlResId))
+        //binding.rightSection.removeView(getToolbarButton(controlResId))
 
     }
 
@@ -6166,7 +6401,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         recyclerContactList.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
 
-        val auxList = NotificationList()
+        val auxList = ContactGroup()
         auxList.list_key = AppConstants.NEW_CONTACT_LIST_KEY
         auxList.list_name = getString(R.string.new_contact_list)
 
@@ -6178,7 +6413,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
     }
 
 
-    override fun contactRequestAccept(contact: Contact) {
+    fun contactRequestAccept(contact: Contact) {
         viewModel.onAcceptContactRequest(contact.user_key.toString())
         //      mFriendsFragment.contactRequestAccept(contact)
     }
@@ -6187,14 +6422,14 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         snapshot: DataSnapshot, previousChildName: String?
     ) {
         val data = contactListAdapter.getData()
-        val newList = snapshot.getValue(NotificationList::class.java)!!
+        val newList = snapshot.getValue(ContactGroup::class.java)!!
         newList.list_key = snapshot.key.toString()
         if (!data.contains(newList)) {
             data.add(0, newList)
             contactListAdapter.notifyItemInserted(0)
         }
 
-        val auxList = NotificationList()
+        val auxList = ContactGroup()
         auxList.list_key = ""
         auxList.list_name = "new Contact List"
         if (!data.contains(auxList)) {
@@ -6207,7 +6442,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         snapshot: DataSnapshot, previousChildName: String?
     ) {
         val data = contactListAdapter.getData()
-        val existingList = snapshot.getValue(NotificationList::class.java)!!
+        val existingList = snapshot.getValue(ContactGroup::class.java)!!
         existingList.list_key = snapshot.key.toString()
         val index = data.indexOf(existingList)
         if (index > -1) {
@@ -6219,7 +6454,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     override fun onContactListRemoved(snapshot: DataSnapshot) {
         val data = contactListAdapter.getData()
-        val existingList = snapshot.getValue(NotificationList::class.java)!!
+        val existingList = snapshot.getValue(ContactGroup::class.java)!!
         existingList.list_key = snapshot.key.toString()
         val index = data.indexOf(existingList)
         if (index > -1) {
@@ -6255,25 +6490,28 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
         }
     }
 
-    private fun updateUnreadMessagesIndicator(map: HashMap<String, UnreadMessages>) {
-
-        if (map.size == 0) {
-            binding.chatIndicator.visibility = GONE
-        } else {
-            var unreadMessagesQty: Long = 0
-            map.forEach { room ->
-                if (!mMapFragment.isVisible || !mMapFragment.chatFragment?.isVisible!!) {
-                    unreadMessagesQty += room.value.qty
-                }
-            }
-            if (unreadMessagesQty > 0) {
-                binding.messagesPendingCounterText.text = unreadMessagesQty.toString()
-                binding.chatIndicator.visibility = VISIBLE
-            } else {
-                binding.chatIndicator.visibility = GONE
+    private fun updateUnreadMessagesIndicator(map: HashMap<String, UnreadMessages>) {/*
+                    if (map.size == 0) {
+                        binding.chatIndicator.visibility = GONE
+                    } else {
+            */
+        var unreadMessagesQty: Long = 0
+        map.forEach { room ->
+            if (!mMapFragment.isVisible || !mMapFragment.chatFragment?.isVisible!!) {
+                unreadMessagesQty += room.value.qty
             }
         }
+        appToolbar.updateChatCount(unreadMessagesQty.toInt())/*
+                    if (unreadMessagesQty > 0) {
+                        binding.messagesPendingCounterText.text = unreadMessagesQty.toString()
+                        binding.chatIndicator.visibility = VISIBLE
+                    } else {
+                        binding.chatIndicator.visibility = GONE
+                    }
+
+             */
     }
+    //  }
 
     override fun recordVideo() {
         if (Build.VERSION.SDK_INT <= 32) {
@@ -6320,6 +6558,18 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
 
     fun showFooterToolBar() {
         binding.bottomToolbar.visibility = VISIBLE
+    }
+
+
+    fun showTitleBar() {
+        binding.includeCustomToolbar.toolbarRootLayout.visibility = VISIBLE
+
+        binding.toolbar.visibility = VISIBLE
+    }
+
+    fun hideTitleBar() {
+        binding.includeCustomToolbar.toolbarRootLayout.visibility = GONE
+        binding.toolbar.visibility = GONE
     }
 
     companion object {
@@ -6417,6 +6667,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
                         viewModel.onKeyboardClosed()
                     }
                 }
+
+
+
+                binding.navHostFragment
                 //     }
             }
         })
@@ -6435,13 +6689,31 @@ class MainActivity : AppCompatActivity(), MainActivityCallback, INotificationPop
             unreadMessages = (unreadMessages + record.qty).toInt()
         }
         //   withContext(Dispatchers.Main) {
-        if (unreadMessages > 0) {
-            binding.chatIndicator.visibility = VISIBLE
-            binding.messagesPendingCounterText.text = unreadMessages.toString()
-        } else {
-            binding.chatIndicator.visibility = GONE
-        }
 
+        appToolbar.updateChatCount(unreadMessages)/*
+             if (unreadMessages > 0) {
+                 binding.chatIndicator.visibility = VISIBLE
+                 binding.messagesPendingCounterText.text = unreadMessages.toString()
+             } else {
+                 binding.chatIndicator.visibility = GONE
+             }
+     */
+    }
+
+    fun adjustNavHostFragmentToLimits() {
+        // binding.toolbar.height
+    }
+
+
+    private val _appStatus = MutableLiveData<MainActivityViewModel.AppStatus?>()
+    val appStatus: LiveData<MainActivityViewModel.AppStatus?> = _appStatus
+
+    /**
+     * Set the app status
+     */
+    fun setAppStatus(status: MainActivityViewModel.AppStatus) {
+
+        viewModel.setAppStatus(status)
     }
 
 

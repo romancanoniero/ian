@@ -23,6 +23,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
+import com.iyr.ian.BuildConfig
 import com.iyr.ian.Constants
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
@@ -98,6 +99,8 @@ class SplashActivity : AppCompatActivity(), SplashActivityCallback, IAuthenticat
 
         //   setupSystemConfigs()
 
+        Log.d("SCREEN_DENSITY", getDensityName(this).toString())
+
 
         Log.d("PUSH_MESSAGE_SPLASH", "entro por SplashActivity")
         intent.extras?.let { extras ->
@@ -120,27 +123,8 @@ class SplashActivity : AppCompatActivity(), SplashActivityCallback, IAuthenticat
             pushNotificationInfo.action = extras.getString("action") ?: "????"
             pushNotificationInfo.notificationType = extras.getString("notification_type") ?: "????"
             pushNotificationInfo.linkKey = extras.getString("eventKey") ?: "????"
-
-            /*
-                        var prefs : HashMap<String, NotificationsUtils.PushNotification> = getSharePreferencesMessages("notifications") as HashMap<String, NotificationsUtils.PushNotification>
-
-                        if (prefs==null)
-                        {
-                            prefs = HashMap<String, NotificationsUtils.PushNotification>()
-                        }
-                        prefs.put(System.currentTimeMillis().toString(), pushNotificationInfo)
-
-                        Log.d("PUSH_NOTIFICATIONS", prefs.toString())
-            */
-
             storeInSharedPreferencesMessages("notifications", pushNotificationInfo)
         }
-
-
-
-
-
-        Log.d("SCREEN_DENSITY", getDensityName(this).toString())
 
         // viewModel = ViewModelProvider(this).get(SplashScreenViewModel::class.java)
 
@@ -151,11 +135,21 @@ class SplashActivity : AppCompatActivity(), SplashActivityCallback, IAuthenticat
         analytics = Firebase.analytics
 
         hideStatusBar()
-        /*
-                binding = ActivitySplashBinding.inflate(layoutInflater)
-                setContentView(binding.root)
-                setupUI()
-        */
+
+        if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
+            Log.d("NAVIGATION_HOST_MODE", "true")
+            val newIntent = Intent(this, MainActivity::class.java)
+            if (this.intent.extras != null) {
+                newIntent.putExtras(this.intent.extras!!)
+            }
+            startActivity(newIntent)
+            return@onCreate
+        } else {
+            Log.d("NAVIGATION_HOST_MODE", "false")
+
+        }
+
+
         mContext = this
         var senderId: String
         var linkKey: String

@@ -10,15 +10,11 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.gson.Gson
-import com.iyr.ian.ui.contacts_groups.adapters.ContactsGroupsAdapter
-import com.iyr.ian.ui.contacts_groups.dialogs.ContactGroupCreationDialog
-import com.iyr.ian.ui.contacts_groups.dialogs.OnCreationGroupCallback
 import com.iyr.ian.R
-import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.callbacks.OnErrorCallback
-import com.iyr.ian.dao.models.NotificationList
+import com.iyr.ian.dao.models.ContactGroup
 import com.iyr.ian.databinding.FragmentContactsGroupsBinding
+import com.iyr.ian.ui.contacts_groups.adapters.ContactsGroupsAdapter
 import com.iyr.ian.ui.interfaces.MainActivityInterface
 import com.iyr.ian.ui.settings.ISettingsFragment
 import com.iyr.ian.ui.settings.SettingsFragmentsEnum
@@ -43,6 +39,10 @@ interface ContactsGroupsFragmentCallback : OnErrorCallback,
 
 }
 
+interface OnCreationGroupCallback {
+
+}
+
 
 class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private val _interface: ISettingsFragment) : Fragment(),
     OnCreationGroupCallback,
@@ -53,7 +53,7 @@ class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private v
 
 
 
-    private val viewModel = ContactsGroupsFragmentViewModel(mainViewModel.userKey)
+    private val viewModel = ContactsGroupsFragmentViewModel(mainViewModel.userKey!!)
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
@@ -96,8 +96,8 @@ class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private v
         binding.recyclerList.adapter = adapter
 
         binding.createButton.setOnClickListener {
-            val creationDialog = ContactGroupCreationDialog(requireActivity(), this)
-            creationDialog.show()
+            //val creationDialog = ContactGroupCreationDialog(requireActivity(), this)
+            //creationDialog.show()
         }
 
     }
@@ -114,7 +114,7 @@ class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private v
         requireActivity().showSnackBar(binding.root, "Implementar el subscribe")
 //        presenter.subscribe()
     }
-
+/*
     override fun createGroup(listName: String) {
 
         requireActivity().showSnackBar(binding.root, "Implementar la actualizacion de los grupos")
@@ -142,7 +142,7 @@ class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private v
     override fun onCanceled() {
 
     }
-
+*/
     override fun openGroup(notificationListKey: String, listName: String) {
 
         val extras = Bundle()
@@ -153,19 +153,19 @@ class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private v
     }
 
     override fun onGroupAdded(snapshot: DataSnapshot, previousChildName: String?) {
-        val notificationList = snapshot.getValue(NotificationList::class.java)!!
-        if (!adapter.getData().contains(notificationList)) {
-            adapter.getData().add((notificationList))
+        val contactGroup = snapshot.getValue(ContactGroup::class.java)!!
+        if (!adapter.getData().contains(contactGroup)) {
+            adapter.getData().add((contactGroup))
             adapter.notifyItemInserted(adapter.getData().size - 1)
         }
     }
 
     override fun onGroupChanged(snapshot: DataSnapshot, previousChildName: String?) {
 
-        val notificationList = snapshot.getValue(NotificationList::class.java)!!
-        val index = adapter.getData().indexOf(notificationList)
+        val contactGroup = snapshot.getValue(ContactGroup::class.java)!!
+        val index = adapter.getData().indexOf(contactGroup)
         if (index > -1) {
-            adapter.getData()[index] = notificationList
+            adapter.getData()[index] = contactGroup
             adapter.notifyItemChanged(index)
         } else {
             onGroupAdded(snapshot, previousChildName)
@@ -173,8 +173,8 @@ class ContactsGroupsFragment(val mainViewModel: MainActivityViewModel, private v
     }
 
     override fun onGroupRemoved(snapshot: DataSnapshot) {
-        val notificationList = snapshot.getValue(NotificationList::class.java)!!
-        val index = adapter.getData().indexOf(notificationList)
+        val contactGroup = snapshot.getValue(ContactGroup::class.java)!!
+        val index = adapter.getData().indexOf(contactGroup)
         if (index > -1) {
             adapter.getData().removeAt(index)
             adapter.notifyItemRemoved(index)

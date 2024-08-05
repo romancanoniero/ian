@@ -1,6 +1,8 @@
 package com.iyr.ian.dao.repositories
 
 import com.iyr.ian.dao.models.Contact
+import com.iyr.ian.dao.models.ContactGroup
+import com.iyr.ian.dao.models.UserMinimum
 import com.iyr.ian.utils.coroutines.Resource
 import kotlinx.coroutines.flow.Flow
 
@@ -9,7 +11,7 @@ interface ContactsInterface {
     suspend fun putOnPendingInvitationList(userWhoInviteKey: String, phoneNumber: String): Boolean
     suspend fun postContactInvitation( userWhoInvitesKey: String, userToInviteKey: String ): Resource<Boolean?> // Crea invitacion de contacto a un usuario que ya existe en la App
     suspend fun searchContacts( myKey : String , searchString: String): Resource<ArrayList<Contact>?>
-    suspend fun contactAcceptInvitation(userWhoAccept: String,userToAcceptKey: String): Resource<Boolean?>
+    suspend fun contactAcceptInvitation(userWhoAccept: String,userToAcceptKey: String): Resource<HashMap<String, Contact>?>
     suspend fun contactsByUserFlow(userKey: String): Flow<ContactsRepository.DataEvent>
 
     suspend fun searchContactsFromPhone(
@@ -17,6 +19,21 @@ interface ContactsInterface {
         searchString: String
     ): Resource<ArrayList<Contact>?>
 
+
+    suspend fun contactsByUserListFlow(userKey: String): Flow<ArrayList<Contact>>
+    suspend fun inviteByTelephone(user: UserMinimum, telephoneNumber: String): Resource<Contact?>
+    suspend fun inviteByEmail(user: UserMinimum, email: String): Resource<Contact?>
+    suspend fun contactCancelInvitation(userKey: String, userInvitedKey: String): Resource<Boolean?>
+    suspend fun contactCancelFriendship(
+        userKey: String,
+        userFriendshipToRevokeKey: String
+    ): Resource<Boolean?>
+
+    suspend fun selectUnselectContactGroup(    userKey: String,
+                                               contact: Contact,
+                                               group: ContactGroup,
+                                               included: Boolean) : Resource<Boolean?>
+    suspend fun alreadyFriends(userKey: String, otherUserKey: String): Resource<Boolean?>
 
 }
 

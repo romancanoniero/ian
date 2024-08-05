@@ -30,8 +30,8 @@ class OtpVerificationActivityViewModel : ViewModel() {
         action: OTPActionsEnum,
         credential: PhoneAuthCredential,
         storedVerificationId : String,
-        code : String,
-        userDataMap: HashMap<String, String>
+        code : String
+//        , userDataMap: HashMap<String, String>
     ) {
 
         viewModelScope.launch(Dispatchers.IO) {

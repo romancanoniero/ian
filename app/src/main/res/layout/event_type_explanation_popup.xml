@@ -29,7 +29,8 @@
             app:layout_constraintBottom_toBottomOf="@id/circular_bg"
             app:layout_constraintDimensionRatio="h,1:1"
             app:layout_constraintEnd_toEndOf="@id/circular_bg"
-            app:layout_constraintStart_toStartOf="@id/circular_bg" />
+            app:layout_constraintStart_toStartOf="@id/circular_bg"
+            />
 
         <TextView
             android:id="@+id/circular_bg"

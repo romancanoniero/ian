@@ -3,11 +3,11 @@ package com.iyr.ian.dao.models
 import com.google.firebase.database.Exclude
 import com.google.gson.Gson
 import com.iyr.ian.utils.support_models.MediaFile
-import java.util.*
+import java.io.Serializable
+import java.util.Objects
 
 
-
-class Contact {
+class Contact : Serializable {
 
 
     var notification_key: String = ""
@@ -15,19 +15,20 @@ class Contact {
     @Exclude
     var user_key: String? = null
     var author_key: String? = null
-    var display_name: String = ""
+    var display_name: String? = null
     var image: MediaFile? = null
     var status: String? = null
-    var telephone_number: String = ""
-    var email: String = ""
-    var have_phone: Boolean = false
-    var add_to_speed_dial: Boolean = false
+    var telephone_number: String? = null
+    var email: String? = null
+    var have_phone: Boolean? = null
+    var add_to_speed_dial: Boolean? = null
+    var groups: HashMap<String, ContactGroup>? = null
 
     @Exclude
-    var _search_match_by: String = ""
+    var _search_match_by: String? = null
 
     @Exclude
-    var _search_status: String = ""
+    var _search_status: String? = null
 
 
     override fun equals(o: Any?): Boolean {

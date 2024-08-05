@@ -7,22 +7,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
 import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.databinding.FragmentSettingsBinding
-import com.iyr.ian.ui.contacts_groups.ContactsGroupsFragment
-import com.iyr.ian.ui.contacts_groups.NotificationListFragment
+import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.interfaces.MainActivityInterface
-import com.iyr.ian.ui.settings.landing_fragment.SettingsLandingFragment
 import com.iyr.ian.ui.settings.pager_adapters.SettingsFragmentPagerAdapter
-import com.iyr.ian.ui.settings.press_or_tap_setup.PressOrTapSetupFragment
-import com.iyr.ian.ui.settings.profile_settings.ProfileSettingsFragment
-import com.iyr.ian.ui.settings.push_button.PushButtonSetupFragment
-import com.iyr.ian.ui.settings.subscription_plan.PlanSubscriptionFragment
 import com.iyr.ian.utils.broadcastMessage
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import kotlin.math.abs
 
 
@@ -45,15 +39,18 @@ private const val ARG_PARAM2 = "param2"
  * Use the [SettingsFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragment(),
-    ISettingsFragment {
+class SettingsFragment() : Fragment(){
+
+
+        private val mainActivityViewModel: MainActivityViewModel by lazy {  MainActivityViewModel.getInstance(requireContext(), UserViewModel.getInstance().getUser()?.user_key.toString() ) }
 
     private var viewModel: SettingsFragmentViewModel = SettingsFragmentViewModel()
     private fun setupObservers() {
+      /*
         viewModel.fragmentVisible.observe(viewLifecycleOwner) { fragment ->
             goToFragment(fragment.ordinal)
         }
-
+*/
         mainActivityViewModel.user.observe(this){ user ->
             viewModel.onUserChanged(user)
         }
@@ -67,7 +64,7 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
     var currentFragment: SettingsFragmentsEnum = SettingsFragmentsEnum.LANDING
     private lateinit var binding: FragmentSettingsBinding
     private lateinit var pagerAdapter: SettingsFragmentPagerAdapter
-
+/*
     private val mSettingsLandingFragment by lazy {
         SettingsLandingFragment(
             mainActivityViewModel,
@@ -91,8 +88,8 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
     }
     private val mPushButtonConfigFragment by lazy {
         PushButtonSetupFragment(mainActivityViewModel,this) }
-    private val mSubscriptionsPlanFragment by lazy { PlanSubscriptionFragment(this) }
-
+    private val mSubscriptionsPlanFragment by lazy { PlanSubscriptionFragment() }
+*/
 
     // TODO: Rename and change types of parameters
     private var param1: String? = null
@@ -124,7 +121,7 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        goToFragment(0)
+      //  goToFragment(0)
     }
 
     companion object {
@@ -146,7 +143,7 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
             param1: String,
             param2: String
         ) =
-            SettingsFragment(mainActivityViewModel).apply {
+            SettingsFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)
@@ -160,6 +157,15 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
         {
             (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.action_settings))
         }
+
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.enableBackBtn(true)
+        appToolbar.updateTitle(getString(R.string.action_settings))
+
+        val bottomToolBar = (requireActivity() as MainActivity).binding.bottomToolbar
+        bottomToolBar.visibility = View.GONE
+
+
         setupObservers()
     }
 
@@ -180,10 +186,13 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
         //  binding.pager.setPageTransformer(false, FadePageTransformer())
         //   binding.pager.offscreenPageLimit = 3
 //    binding.pager.setCurrentItem(0, true)
-        goToFragment(0)
+      //  goToFragment(0)
+
+      //  val action  = SettingsFragmentDirections.
 
     }
 
+    /*
     fun getFragment(index: Int): Fragment? {
         when (index) {
             SettingsFragmentsEnum.LANDING.ordinal -> {
@@ -311,7 +320,7 @@ class SettingsFragment(val mainActivityViewModel: MainActivityViewModel) : Fragm
         }
         currentFragment = SettingsFragmentsEnum.values()[index]
     }
-
+*/
 
     fun pagerAdapter(): SettingsFragmentPagerAdapter {
         return pagerAdapter

@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -27,19 +28,44 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.fragment.findNavController
+import com.budiyev.android.codescanner.AutoFocusMode
+import com.budiyev.android.codescanner.CodeScanner
+import com.budiyev.android.codescanner.CodeScannerView
+import com.budiyev.android.codescanner.DecodeCallback
+import com.budiyev.android.codescanner.ErrorCallback
+import com.budiyev.android.codescanner.ScanMode
+import com.github.alexzhirkevich.customqrgenerator.QrData
+import com.github.alexzhirkevich.customqrgenerator.vector.QrCodeDrawable
+import com.github.alexzhirkevich.customqrgenerator.vector.QrVectorOptions
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorBackground
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorBallShape
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorColor.Solid
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorColors
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorFrameShape
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorLogo
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorLogoPadding
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorLogoShape
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorPixelShape
+import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorShapes
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.storage.FirebaseStorage
+import com.google.zxing.BarcodeFormat
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REFRESH_PANIC_BUTTON
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_SHOW_FOOTER_TOOLBAR
@@ -69,6 +95,7 @@ import com.iyr.ian.ui.views.home.fragments.main.adapters.SpeedDialAdapter
 import com.iyr.ian.utils.FileUtils
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.SMSUtils
+import com.iyr.ian.utils.UIUtils
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.areLocationPermissionsGranted
 import com.iyr.ian.utils.broadcastMessage
@@ -78,9 +105,11 @@ import com.iyr.ian.utils.connectivity.NetworkStatusHelper
 import com.iyr.ian.utils.connectivity.makeNetworkRequest
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.createDirectoryStructure
+import com.iyr.ian.utils.dp
 import com.iyr.ian.utils.getBitmapFromVectorDrawable
 import com.iyr.ian.utils.getJustFileName
 import com.iyr.ian.utils.hasOpenedDialogs
+import com.iyr.ian.utils.loadImageFromCache
 import com.iyr.ian.utils.loaders.hideLoader
 import com.iyr.ian.utils.loaders.showLoader
 import com.iyr.ian.utils.makeAPhoneCall
@@ -93,6 +122,7 @@ import com.iyr.ian.utils.permissionsReadWrite
 import com.iyr.ian.utils.permissionsVibration
 import com.iyr.ian.utils.playSound
 import com.iyr.ian.utils.requestPermissionsLocation
+import com.iyr.ian.utils.saveImageToCache
 import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.utils.showSnackBar
 import com.iyr.ian.utils.support_models.MediaFile
@@ -132,8 +162,8 @@ interface HomeFragmentInteractionCallback {
 }
 
 class HomeFragment(
-    val homeActivityCallback: EventsPublishingCallback?,
-    val mainActivityViewModel: MainActivityViewModel?
+    val homeActivityCallback: EventsPublishingCallback? = null,
+    var mainActivityViewModel: MainActivityViewModel? = null
 ) : Fragment(), NetworkStateReceiver.NetworkStateReceiverListener, HomeFragmentInteractionCallback,
     ISpeedDialAdapter {
 
@@ -436,6 +466,25 @@ class HomeFragment(
         super.onCreate(savedInstanceState)
         Log.d("EVENT_CREATION", this.javaClass.name)
 
+//        val navController = findNavController()
+        findNavController().popBackStack(findNavController().currentDestination?.id!!, false)
+
+        mainActivityViewModel = MainActivityViewModel.getInstance()
+        mainActivityViewModel?.setUser(
+            SessionForProfile.getInstance(requireContext()).getUserProfile()
+        )
+        if (mainActivityViewModel?.appStatus?.value != MainActivityViewModel.AppStatus.READY) {
+
+            val mainActivity = requireActivity() as MainActivity
+            mainActivity.setAppStatus(MainActivityViewModel.AppStatus.INITIALIZING)
+        }
+        /*
+                {
+
+
+                }
+
+         */
         eventService = EventService.getInstance(requireContext())
 
         startNetworkBroadcastReceiver(requireContext())
@@ -462,13 +511,6 @@ class HomeFragment(
 
     private fun startObservers(userKey: String) {
 
-        AppClass.instance.lastLocation.observe(viewLifecycleOwner) { location ->
-            if (location != null) {/*
-                     Toast.makeText(requireContext(), "Location changed ${location}", Toast.LENGTH_SHORT)
-                         .show()
-                     */
-            }
-        }
 
         AppClass.instance.panic.observe(viewLifecycleOwner) { isInPanic ->
             if (isInPanic) {
@@ -605,7 +647,7 @@ class HomeFragment(
       */
         mainActivityViewModel?.isLocationAvailable?.observe(viewLifecycleOwner) { available ->
             if (available) {
-                if (mainActivityViewModel.isInPanic.value == true) {
+                if (mainActivityViewModel?.isInPanic?.value == true) {
                     switchPanicButtonToPanic()
                 } else {
                     switchPanicButtonToReady()
@@ -823,6 +865,19 @@ class HomeFragment(
     private fun setupUI() {
 
         var me = SessionForProfile.getInstance(requireContext()).getUserProfile()
+
+
+        binding.buttonQr.setOnClickListener {
+            requireContext().handleTouch()
+            showQRPopup()
+/*
+            if (requireContext().loadImageFromCache("qr_code", "images") == null) {
+                prepareQrCode()
+            } else
+                findNavController().navigate(R.id.qrCodeDisplayPopup)
+*/
+        }
+
 
         binding.recyclerContacts.adapter = speedDialAdapter
         binding.recyclerContacts.setItemTransformer(
@@ -1279,7 +1334,7 @@ class HomeFragment(
                 Log.d("_PROGRESS_", progress.toString())
                 if (progress >= counter!!.max) {
                     binding.seekCounter.isEnabled = false
-                    lifecycleScope.launch(Dispatchers.IO){
+                    lifecycleScope.launch(Dispatchers.IO) {
 /*
                         withContext(Dispatchers.Main){
                             binding.seekCounter.progress = 0
@@ -1338,7 +1393,22 @@ class HomeFragment(
 
         registerReceivers()
         startObservers(FirebaseAuth.getInstance().uid.toString())
-        (requireActivity() as MainActivity).setTitleBarTitle(R.string.app_long_title)
+
+        var mainActivityBindings = (requireActivity() as MainActivity).binding
+
+
+//        (requireActivity() as MainActivity).setTitleBarTitle(R.string.app_long_title)
+
+        if (findNavController().currentDestination?.id == R.id.homeFragment) {
+            var appToolbar = (requireActivity() as MainActivity).appToolbar
+            appToolbar.enableBackBtn(false)
+            appToolbar.updateTitle(getString(R.string.app_long_title))
+
+            mainActivityBindings.includeCustomToolbar.root.visibility = View.VISIBLE
+            mainActivityBindings.bottomToolbar.visibility = View.VISIBLE
+        }
+
+
     }
 
     override fun onAttach(context: Context) {
@@ -1440,7 +1510,7 @@ class HomeFragment(
 
             val hasNetworkAccess = requireContext().makeNetworkRequest()
 
-            withContext(Dispatchers.Main){
+            withContext(Dispatchers.Main) {
                 binding.seekCounter.progress = 0
                 if (binding.seekCounter.isVisible) {
                     binding.seekCounter.visibility = View.INVISIBLE
@@ -1464,7 +1534,7 @@ class HomeFragment(
 
 //                binding.redButton.isEnabled = true
 
-                mainActivityViewModel.setButtonToPanic()
+                mainActivityViewModel?.setButtonToPanic()
 
                 if (hasNetworkAccess) {
                     // Actualiza la UI para mostrar que hay acceso a datos
@@ -1520,59 +1590,59 @@ class HomeFragment(
 
             var nonUI = NonUI.getInstance(requireContext())
 
-   //         lifecycleScope.launch(Dispatchers.IO) {
+            //         lifecycleScope.launch(Dispatchers.IO) {
 
-/*
-                withContext(Dispatchers.Main) {
-                    if (hasNetworkAccess) {
-                        // Actualiza la UI para mostrar que hay acceso a datos
-                        preparePanicEvent()
-                    } else {
-                        // Actualiza la UI para mostrar que no hay acceso a datos
-                        val locationManager: LocationManager =
-                            requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            /*
+                            withContext(Dispatchers.Main) {
+                                if (hasNetworkAccess) {
+                                    // Actualiza la UI para mostrar que hay acceso a datos
+                                    preparePanicEvent()
+                                } else {
+                                    // Actualiza la UI para mostrar que no hay acceso a datos
+                                    val locationManager: LocationManager =
+                                        requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-                        val locationListener = object : LocationListener {
-                            override fun onLocationChanged(location: Location) {
-                                locationManager.removeUpdates(this)
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    var myName =
-                                        (requireActivity() as MainActivity).viewModel.user.value?.first_name + " " + (requireActivity() as MainActivity).viewModel.user.value?.last_name
+                                    val locationListener = object : LocationListener {
+                                        override fun onLocationChanged(location: Location) {
+                                            locationManager.removeUpdates(this)
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                var myName =
+                                                    (requireActivity() as MainActivity).viewModel.user.value?.first_name + " " + (requireActivity() as MainActivity).viewModel.user.value?.last_name
 
-                                    viewModel.speedDialFlow.value?.data?.forEach { contact ->
-                                        if (contact.telephone_number?.length ?: 0 >= 10) {
-                                            Toast.makeText(
-                                                requireContext(),
-                                                "Enviando mensaje a ${contact.display_name} - (${contact.telephone_number})",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            SMSUtils.sendLocationSMS(
-                                                myName, contact.telephone_number, location
-                                            )
+                                                viewModel.speedDialFlow.value?.data?.forEach { contact ->
+                                                    if (contact.telephone_number?.length ?: 0 >= 10) {
+                                                        Toast.makeText(
+                                                            requireContext(),
+                                                            "Enviando mensaje a ${contact.display_name} - (${contact.telephone_number})",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        SMSUtils.sendLocationSMS(
+                                                            myName, contact.telephone_number, location
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
+
+                                        override fun onLocationChanged(locations: MutableList<Location>) {
+                                            super.onLocationChanged(locations)
+                                        }
+
+                                        override fun onStatusChanged(
+                                            provider: String?, status: Int, extras: Bundle?
+                                        ) {
+                                            // super.onStatusChanged(provider, status, extras)
+                                        }
+
                                     }
+                                    locationManager.requestLocationUpdates(
+                                        LocationManager.GPS_PROVIDER, 30, 0F, locationListener
+                                    )
+
                                 }
                             }
-
-                            override fun onLocationChanged(locations: MutableList<Location>) {
-                                super.onLocationChanged(locations)
-                            }
-
-                            override fun onStatusChanged(
-                                provider: String?, status: Int, extras: Bundle?
-                            ) {
-                                // super.onStatusChanged(provider, status, extras)
-                            }
-
-                        }
-                        locationManager.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER, 30, 0F, locationListener
-                        )
-
-                    }
-                }
-            */
- //           }
+                        */
+            //           }
         } else {
             Toast.makeText(requireContext(), "You already are in PANIC!!!", Toast.LENGTH_SHORT)
                 .show()
@@ -1587,33 +1657,33 @@ class HomeFragment(
         val locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
                 locationManager.removeUpdates(this)
-   //             CoroutineScope(Dispatchers.IO).launch {
+                //             CoroutineScope(Dispatchers.IO).launch {
 
 
-                    val newEvent = Event()
-                    newEvent.author_key =
-                        SessionForProfile.getInstance(requireContext()).getUserId()
-                    newEvent.event_type = EventTypesEnum.PANIC_BUTTON.name
-                    newEvent.status = EventStatusEnum.DANGER.name
-                    newEvent.event_location_type = EventLocationType.REALTIME.name
-                    newEvent.time = System.currentTimeMillis()
+                val newEvent = Event()
+                newEvent.author_key =
+                    SessionForProfile.getInstance(requireContext()).getUserId()
+                newEvent.event_type = EventTypesEnum.PANIC_BUTTON.name
+                newEvent.status = EventStatusEnum.DANGER.name
+                newEvent.event_location_type = EventLocationType.REALTIME.name
+                newEvent.time = System.currentTimeMillis()
 
-                    val latLng = LatLng(
-                        location.latitude, location.longitude
-                    )
+                val latLng = LatLng(
+                    location.latitude, location.longitude
+                )
 
-                    newEvent.location = EventLocation()
-                    newEvent.location?.latitude = latLng.latitude
-                    newEvent.location?.longitude = latLng.longitude
-                    val geoLocationAtCreation = GeoLocation()
-                    geoLocationAtCreation.l = ArrayList<Double>()
-                    (geoLocationAtCreation.l as ArrayList<Double>).add(latLng.latitude)
-                    (geoLocationAtCreation.l as ArrayList<Double>).add(latLng.longitude)
-                    geoLocationAtCreation.event_time = newEvent.time
-                    newEvent.location_at_creation = geoLocationAtCreation
-                    eventService?.fireEvent(newEvent)
+                newEvent.location = EventLocation()
+                newEvent.location?.latitude = latLng.latitude
+                newEvent.location?.longitude = latLng.longitude
+                val geoLocationAtCreation = GeoLocation()
+                geoLocationAtCreation.l = ArrayList<Double>()
+                (geoLocationAtCreation.l as ArrayList<Double>).add(latLng.latitude)
+                (geoLocationAtCreation.l as ArrayList<Double>).add(latLng.longitude)
+                geoLocationAtCreation.event_time = newEvent.time
+                newEvent.location_at_creation = geoLocationAtCreation
+                eventService?.fireEvent(newEvent)
 
- //               }
+                //               }
             }
 
             override fun onLocationChanged(locations: MutableList<Location>) {
@@ -1759,5 +1829,230 @@ class HomeFragment(
     fun unRegisterReceivers() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(commonReceiver)
     }
+
+
+    fun prepareQrCode() {
+        Toast.makeText(
+            requireContext(),
+            "Generando QR Code - Modificar para que se genere al hacer el setup y se haga una sola vez.",
+            Toast.LENGTH_SHORT
+        ).show()
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            val map: java.util.HashMap<String, String> = java.util.HashMap<String, String>()
+            map["action"] = AppConstants.DYNAMIC_LINK_ACTION_FRIENDSHIP
+            map["key"] = FirebaseAuth.getInstance().uid.toString()
+            val dinamicLink = UIUtils.createShortDynamicLink(requireContext(), map)
+            when (dinamicLink) {
+                is Resource.Success -> {
+                    val totalText = StringBuffer()
+                    totalText.append(dinamicLink.data.toString())
+                    generateQRCode(totalText.toString())
+
+                }
+
+                is Resource.Error -> {
+                    requireActivity().showErrorDialog(dinamicLink.message.toString())
+                }
+
+                else -> {}
+            }
+
+
+        }
+
+    }
+
+    private fun generateQRCode(link: String): Bitmap {
+        val data = QrData.Url(link)
+
+        val options = QrVectorOptions.Builder()
+            .setPadding(.3f)
+            .setLogo(
+                QrVectorLogo(
+                    drawable = ContextCompat
+                        .getDrawable(requireContext(), R.drawable.logo_vertical),
+                    size = .25f,
+                    padding = QrVectorLogoPadding.Natural(.2f),
+                    shape = QrVectorLogoShape.RoundCorners(.25f)
+
+                )
+            )
+            .setBackground(
+                QrVectorBackground(
+                    drawable = ContextCompat
+                        .getDrawable(requireContext(), R.drawable.qr_frame),
+                )
+            )
+            .setColors(
+                QrVectorColors(
+                    dark = Solid(ContextCompat.getColor(requireContext(), R.color.colorPrimary)),
+                    ball = Solid(
+                        ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+                    )
+                )
+            )
+            .setShapes(
+                QrVectorShapes(
+                    darkPixel = QrVectorPixelShape
+                        .RoundCorners(.5f),
+                    ball = QrVectorBallShape
+                        .RoundCorners(.25f),
+                    frame = QrVectorFrameShape
+                        .RoundCorners(.25f),
+                )
+            )
+            .build()
+
+        val bitmap: Bitmap = QrCodeDrawable(data, options).toBitmap(800, 800)
+        bitmap.saveImageToCache(requireContext(), "qr_code.png")
+        lifecycleScope.launch(Dispatchers.Main) {
+            findNavController().navigate(R.id.qrCodeDisplayPopup)
+        }
+        return bitmap
+    }
+
+
+    private lateinit var codeScanner: CodeScanner
+    private lateinit var qrPopupWindow: PopupWindow
+    fun showQRPopup() {
+
+        val inflater =
+            requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupView = inflater.inflate(R.layout.popup_qr, null)
+
+        val width = LinearLayout.LayoutParams.WRAP_CONTENT
+        val height = LinearLayout.LayoutParams.WRAP_CONTENT
+        qrPopupWindow = PopupWindow(popupView, width, height, true)
+
+        val buttonQr = popupView.findViewById<ImageView>(R.id.show_qr_button)
+        val buttonScanQr = popupView.findViewById<ImageView>(R.id.scan_qr_button)
+
+        buttonQr.setOnClickListener {
+            qrPopupWindow.dismiss()
+
+            if (requireContext().loadImageFromCache("qr_code.png", "images") != null) {
+                findNavController().navigate(R.id.qrCodeDisplayPopup)
+            }
+            else
+            {
+                prepareQrCode()
+            }
+
+        }
+
+        buttonScanQr.setOnClickListener {
+
+
+
+            qrPopupWindow.dismiss()
+
+           findNavController().navigate(R.id.qrCodeScanningFragment)
+            /*
+            val scannerView = requireActivity().findViewById<CodeScannerView>(R.id.scanner_view)
+            scannerView.visibility = View.VISIBLE
+
+            if (!::codeScanner.isInitialized) {
+                codeScanner = CodeScanner(requireContext(), scannerView)
+
+                // Parameters (default values)
+                codeScanner.camera =
+                    CodeScanner.CAMERA_BACK // or CAMERA_FRONT or specific camera id
+                codeScanner.formats = listOf(BarcodeFormat.QR_CODE)
+                codeScanner.autoFocusMode = AutoFocusMode.SAFE // or CONTINUOUS
+                codeScanner.scanMode = ScanMode.SINGLE // or CONTINUOUS or PREVIEW
+                codeScanner.isAutoFocusEnabled = true // Whether to enable auto focus or not
+                codeScanner.isFlashEnabled = false // Whether to enable flash or not
+
+                // Callbacks
+                codeScanner.decodeCallback = DecodeCallback {
+
+                    requireActivity().runOnUiThread {
+                        scannerView.visibility = View.GONE
+
+                        FirebaseDynamicLinks.getInstance().getDynamicLink(Uri.parse(it.text))
+                            .addOnSuccessListener(
+                                requireActivity()
+                            ) { pendingDynamicLinkData ->
+                                // Get deep link from result (may be null if no link is found)
+                                var deepLink: Uri?
+                                if (pendingDynamicLinkData != null) {
+                                    deepLink = pendingDynamicLinkData.link
+
+                                    val action = deepLink?.getQueryParameter("action")
+                                    val key = deepLink?.getQueryParameter("key").toString()
+
+                                    if ((key).compareTo(
+                                            SessionForProfile.getInstance(requireContext()).getUserId()
+                                        ) == 0
+                                    ) {
+                                        requireActivity().showErrorDialog(
+                                            getString(
+                                                R.string.error_cannot_send_it_to_you
+                                            )
+                                        )
+                                    } else {
+                                        when (action) {
+                                            AppConstants.DYNAMIC_LINK_ACTION_FRIENDSHIP -> {
+                                                MainActivityViewModel.getInstance()
+                                                    .onContactByUserKey(key)
+                                            }
+
+                                            AppConstants.DYNAMIC_LINK_ACTION_FRIENDSHIP_AND_SPEED_DIAL -> {
+
+                                                requireActivity().showSnackBar(
+                                                    binding.root,
+                                                    "Implementar en el viewmodel onFriendshipRequestAndSpeedDialByUserKey"
+                                                )
+
+                                            }
+                                        }
+                                    }
+                                    Toast.makeText(requireContext(), action, Toast.LENGTH_LONG).show()
+                                }
+
+
+                                // Handle the deep link. For example, open the linked content,
+                                // or apply promotional credit to the user's account.
+                                // ...
+
+                                // ...
+                            }.addOnFailureListener(
+                                requireActivity()
+                            ) { e -> Log.w("DYNAMIC-LINKS", "getDynamicLink:onFailure", e) }
+                        /*
+                                                MainActivityViewModel.getInstance().onContactByUserKey(key)
+                                                Toast.makeText(
+                                                    requireContext(),
+                                                    "Scan result: ${it.text}",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                        */
+                    }
+
+
+                }
+                codeScanner.errorCallback = ErrorCallback { // or ErrorCallback.SUPPRESS
+
+                    requireActivity().runOnUiThread {
+
+                        scannerView.visibility = View.GONE
+                        Toast.makeText(
+                            requireContext(), "Camera initialization error: ${it.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            // scannerView.setOnClickListener {
+            codeScanner.startPreview()*/
+
+        }
+
+        val offsetX = binding.buttonQr.width - qrPopupWindow.width
+        qrPopupWindow.showAsDropDown(binding.buttonQr, offsetX, 4.dp)
+
+    }
+
 
 }

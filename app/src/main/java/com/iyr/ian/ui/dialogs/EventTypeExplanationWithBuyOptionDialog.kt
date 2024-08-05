@@ -1,16 +1,19 @@
 package com.iyr.ian.ui.dialogs
 
-import android.app.Activity
-import android.content.Context
+import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.navigation.fragment.findNavController
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventNotificationModel
@@ -18,15 +21,7 @@ import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.utils.UIUtils.handleTouch
 
 
-interface EventTypeExplanationCallback {
-    fun onAgreeToAssist(notificationKey: String, eventKey: String)
-    fun onDenyToAssist(event: Event)
-    fun onDenyToAssist(eventKey: String)
-    fun onStartToFollow(eventKey: String)
-    fun onNotificationDismiss(notificationKey: EventNotificationModel)
-    //  fun contactRequestAccept(eventKey: String, user: UserMinimum)
 
-}
 
 enum class DialogFunctionEnum {
     SUBSCRIPTION_REQUIRED,
@@ -35,93 +30,41 @@ enum class DialogFunctionEnum {
 }
 
 class EventTypeExplanationDialog(
-    private val mContext: Context,
-    mActivity: Activity,
-    eventType: EventTypesEnum,
-    val dialogType: DialogFunctionEnum
-) :
-    AlertDialog(
-        mContext
-    ) {
+
+) : AppCompatDialogFragment() {
 
     private var mButton1Callback: View.OnClickListener? = null
-    private val mDialoglayout: View
+
+    //private val mDialoglayout: View
     private var mTitle: String? = null
     private var mLegend: String? = null
     private var mButton1Caption: String? = null
     private val mButton2Caption: String? = null
+    //  private   val args : EventTypeExplanationDialogArgs by navArgs()
 
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (mTitle != null) {
-            val title = mDialoglayout.findViewById<TextView>(R.id.title)
-            title.text = mTitle
-        }
-        if (mLegend != null) {
-            val legend = mDialoglayout.findViewById<TextView>(R.id.legend)
-            legend.text = mLegend
-        }
-        if (mButton1Caption != null) {
-      //      val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
-            buttonOne?.text = mButton1Caption
-        }
-        if (mButton1Callback != null) {
-      //      val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
-            buttonOne?.setOnClickListener(mButton1Callback)
-        }
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        return super.onCreateDialog(savedInstanceState)
     }
 
-    fun setAvatarRes(resId: Int) {
-        val avatar = mDialoglayout.findViewById<ImageView>(R.id.avatar_image)
-        avatar.setImageResource(resId)
-    }
-
-    override fun setTitle(resId: Int) {
-        mTitle = mContext.getString(resId)
-    }
-
-    fun setTitle(title: String?) {
-        mTitle = title
-    }
-
-    fun setLegend(resId: Int) {
-        mLegend = mContext.getString(resId)
-    }
-
-    fun setLegend(message: String?) {
-        mLegend = message
-    }
-
-    fun setButton1Caption(resId: Int) {
-        mButton1Caption = mContext.getString(resId)
-    }
-
-    fun setButton1Caption(text: String?) {
-        mButton1Caption = text
-    }
-
-    fun setButton1Callback(onClickListener: View.OnClickListener) {
-        mButton1Callback = onClickListener
-    }
-
-    var buttonOne : Button? = null
-    var buttonTwo : Button? = null
-    var legend: TextView? = null
-    var buySuggestionLegend: TextView? = null
-    var checkboxNoShowAgain : Button? = null
+    lateinit var dialogView: View
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
 
+        dialogView = inflater.inflate(R.layout.event_type_explanation_popup, container, false)
 
-    init {
-        val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.event_type_explanation_popup, null)
-        this.setView(mDialoglayout)
-        buttonOne = mDialoglayout.findViewById<Button>(R.id.button_one)
-        buttonTwo = mDialoglayout.findViewById<Button>(R.id.button_two)
-        legend = mDialoglayout.findViewById<Button>(R.id.legend)
-        buySuggestionLegend = mDialoglayout.findViewById<Button>(R.id.buy_suggestion_text)
-        checkboxNoShowAgain = mDialoglayout.findViewById<Button>(R.id.checkbox_no_show_again)
+        buttonOne = dialogView?.findViewById<Button>(R.id.button_one)
+        buttonTwo = dialogView?.findViewById<Button>(R.id.button_two)
+        legend = dialogView?.findViewById<TextView>(R.id.legend)
+        buySuggestionLegend = dialogView?.findViewById<TextView>(R.id.buy_suggestion_text)
+        checkboxNoShowAgain = dialogView?.findViewById<Button>(R.id.checkbox_no_show_again)
+
+
+        var window = this.dialog?.window
         val lp = WindowManager.LayoutParams()
         lp.copyFrom(window!!.attributes)
         lp.gravity = Gravity.CENTER
@@ -130,6 +73,8 @@ class EventTypeExplanationDialog(
         window!!.setGravity(Gravity.CENTER)
         window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
+
+        var eventType = arguments?.getSerializable("eventType")
         var eventAvatar: Int? = null
         when (eventType) {
             EventTypesEnum.SEND_POLICE -> {
@@ -180,6 +125,7 @@ class EventTypeExplanationDialog(
             else -> {}
         }
 
+        var dialogType = arguments?.getSerializable("dialogType")
         when (dialogType) {
             DialogFunctionEnum.SUBSCRIPTION_REQUIRED -> {
                 checkboxNoShowAgain?.visibility = View.GONE
@@ -192,27 +138,128 @@ class EventTypeExplanationDialog(
             }
 
             DialogFunctionEnum.AS_PREVIOUS -> {
-                buttonOne?.text = mContext.getString(R.string.lets_continue)
+                buttonOne?.text = requireContext().getString(R.string.lets_continue)
             }
         }
 
         buttonOne?.setOnClickListener { view ->
-            context.handleTouch()
+/*
+            requireContext().handleTouch()
             if (mButton1Callback != null) {
                 mButton1Callback!!.onClick(view)
             }
             dismiss()
+*/
+
+            var action =
+                EventTypeExplanationDialogDirections.actionEventTypeExplanationDialogToPlanSubscriptionFragment()
+            findNavController().navigate(action)
+
+
         }
 
         buttonTwo?.setOnClickListener { view ->
-            context.handleTouch()
+            requireContext().handleTouch()
             dismiss()
         }
+
+
+        if (mTitle != null) {
+            val title = dialogView?.findViewById<TextView>(R.id.title)
+            title?.text = mTitle
+        }
+        if (mLegend != null) {
+            val legend = dialogView?.findViewById<TextView>(R.id.legend)
+            legend?.text = mLegend
+        }
+        if (mButton1Caption != null) {
+            //      val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
+            buttonOne?.text = mButton1Caption
+        }
+        if (mButton1Callback != null) {
+            //      val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
+            buttonOne?.setOnClickListener(mButton1Callback)
+        }
+
+
+
+        return dialogView
+    }
+
+    /*
+   override fun onAttachedToWindow() {
+       super.onAttachedToWindow()
+       if (mTitle != null) {
+           val title = mDialoglayout.findViewById<TextView>(R.id.title)
+           title.text = mTitle
+       }
+       if (mLegend != null) {
+           val legend = mDialoglayout.findViewById<TextView>(R.id.legend)
+           legend.text = mLegend
+       }
+       if (mButton1Caption != null) {
+     //      val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
+           buttonOne?.text = mButton1Caption
+       }
+       if (mButton1Callback != null) {
+     //      val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
+           buttonOne?.setOnClickListener(mButton1Callback)
+       }
+   }
+*/
+    fun setAvatarRes(resId: Int) {
+
+
+        val avatar = dialogView?.findViewById<ImageView>(R.id.avatar_image)
+        avatar?.setImageResource(resId)
+    }
+
+    fun setTitle(resId: Int) {
+        mTitle = getString(resId)
+    }
+
+    fun setTitle(title: String?) {
+        mTitle = title
+    }
+
+    fun setLegend(resId: Int) {
+        mLegend = getString(resId)
+    }
+
+    fun setLegend(message: String?) {
+        mLegend = message
+    }
+
+    fun setButton1Caption(resId: Int) {
+        mButton1Caption = getString(resId)
+    }
+
+    fun setButton1Caption(text: String?) {
+        mButton1Caption = text
+    }
+
+    fun setButton1Callback(onClickListener: View.OnClickListener) {
+        mButton1Callback = onClickListener
+    }
+
+    var buttonOne: Button? = null
+    var buttonTwo: Button? = null
+    var legend: TextView? = null
+    var buySuggestionLegend: TextView? = null
+    var checkboxNoShowAgain: Button? = null
+
+
+    init {
+        /*
+              val inflater = mActivity.layoutInflater
+              mDialoglayout = inflater.inflate(R.layout.event_type_explanation_popup, null)
+              this.setView(mDialoglayout)
+      */
 
     }
 
     private fun setFunctionalityDescription(functionalityDescriptionSendPolice: Int) {
-        mLegend = mContext.getString(functionalityDescriptionSendPolice)
+        mLegend = getString(functionalityDescriptionSendPolice)
 
     }
 

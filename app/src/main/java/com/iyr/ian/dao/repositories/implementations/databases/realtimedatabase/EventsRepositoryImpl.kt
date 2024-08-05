@@ -324,7 +324,12 @@ class EventsRepositoryImpl : EventsRepository() {
                         (call.data as HashMap<String, Any>).get("data").toString()
 
                     var eventReturned = Gson().fromJson<Event>(dataReturned, Event::class.java)
-                    return Resource.Success<Event?>(eventReturned)
+                    if (eventReturned != null) {
+                        return Resource.Success<Event?>(eventReturned)
+                    } else {
+                        return Resource.Error<Event?>((call.data as HashMap<String, Any>).get("message").toString())
+                    }
+                //    return Resource.Success<Event?>(eventReturned)
 
                 } catch (exception: Exception) {
                     return Resource.Error<Event?>(exception.message.toString())

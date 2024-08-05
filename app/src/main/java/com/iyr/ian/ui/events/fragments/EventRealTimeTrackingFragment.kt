@@ -5,30 +5,35 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import com.google.firebase.auth.FirebaseAuth
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
-import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventLocationType
 import com.iyr.ian.databinding.FragmentEventRealTimeTrackerSelectorBinding
 import com.iyr.ian.ui.MainActivity
-import com.iyr.ian.ui.events.EventsFragmentViewModel
-import com.iyr.ian.ui.events.OnPostFragmentInteractionCallback
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getEventTypeName
+import com.iyr.ian.viewmodels.EventsFragmentViewModel
 import com.iyr.ian.viewmodels.MainActivityViewModel
 
 
-class EventRealTimeTrackingFragment(
-    // var thisEvent: Event,
-    val callback: OnPostFragmentInteractionCallback,
-    val eventsFragmentViewModel: EventsFragmentViewModel,
-    val mainActivityViewModel: MainActivityViewModel
-) :
+class EventRealTimeTrackingFragment() :
     Fragment() {
+
+
     private lateinit var binding: FragmentEventRealTimeTrackerSelectorBinding
 
-    private fun setupObservers() {
+    val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(requireContext(), FirebaseAuth.getInstance().uid.toString())
+    }
+
+    val eventsFragmentViewModel: EventsFragmentViewModel by lazy {
+        EventsFragmentViewModel.getInstance()
+    }
+
+    private fun startObservers() {
         eventsFragmentViewModel.eventType.observe(this) { eventTypeName ->
             (AppClass.instance.getCurrentActivity() as MainActivity).setTitleBarTitle(
                 requireContext().getEventTypeName(
@@ -40,7 +45,7 @@ class EventRealTimeTrackingFragment(
     }
 
 
-    private fun cancelObservers() {
+    private fun stopObservers() {
         eventsFragmentViewModel.eventType.removeObservers(this)
     }
 
@@ -65,12 +70,16 @@ class EventRealTimeTrackingFragment(
     private fun setupUI() {
         binding.buttonFixedLocation.setOnClickListener {
             eventsFragmentViewModel.setEventLocationMode(EventLocationType.FIXED)
+            /*
             arguments?.putString("event_location_type", EventLocationType.FIXED.toString())
             requireContext().handleTouch()
             callback.OnSwitchFragmentRequest(
                 R.id.event_fragment_location_read_only_selector,
                 arguments
             )
+            */
+            val action = EventRealTimeTrackingFragmentDirections.actionEventRealTimeTrackingFragmentToEventLocationReadOnlyFragment()
+        findNavController().navigate(action)
         }
 
 
@@ -79,10 +88,16 @@ class EventRealTimeTrackingFragment(
             arguments?.putString("event_location_type", EventLocationType.REALTIME.toString())
             arguments?.remove("location")
             requireContext().handleTouch()
+  /*
             callback.OnSwitchFragmentRequest(
                 R.id.event_fragment_aditional_media_selector,
                 arguments
             )
+*/
+            val action = EventRealTimeTrackingFragmentDirections.actionEventRealTimeTrackingFragmentToEventAdditionalMediaFragment()
+            findNavController().navigate(action)
+
+
         }
     }
 
@@ -95,6 +110,7 @@ class EventRealTimeTrackingFragment(
         */
     }
 
+    /*
     fun newInstance(
         thisEvent: Event,
         callback: OnPostFragmentInteractionCallback
@@ -105,18 +121,20 @@ class EventRealTimeTrackingFragment(
         fragment.arguments = args
         return fragment
     }
-
+*/
     companion object;
 
 
     override fun onResume() {
         super.onResume()
-        setupObservers()
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.updateTitle(getString(R.string.event_publish_location_type_title))
+        startObservers()
     }
 
     override fun onPause() {
         super.onPause()
-        cancelObservers()
+        stopObservers()
     }
 
 }

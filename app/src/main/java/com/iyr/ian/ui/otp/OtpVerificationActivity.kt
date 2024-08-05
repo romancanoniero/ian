@@ -286,8 +286,7 @@ getIntentData()
                         action,
                         credential,
                         storedVerificationId,
-                        code,
-                        userDataMap
+                        code
                     )
 
 

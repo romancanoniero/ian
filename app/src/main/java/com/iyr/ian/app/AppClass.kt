@@ -144,9 +144,10 @@ import kotlin.collections.set
 
 class AppClass : Application(), LifecycleEventObserver, LifecycleObserver {
 
+    var logged: Boolean = false
     private var currentFragment: androidx.fragment.app.Fragment? = null
     private var mainActivityRef: MainActivity? = null
-    lateinit var mainViewModel: MainActivityViewModel
+
     var alreadyStarted = false
 
     @SuppressLint("StaticFieldLeak")
@@ -695,7 +696,6 @@ class AppClass : Application(), LifecycleEventObserver, LifecycleObserver {
                         userReturned = response.data!!
                         _user.postValue(userReturned!!)
                         var intent: Intent? = null
-
                         SessionForProfile.getInstance(this@AppClass).storeUserProfile(userReturned)
 
                         _initializationReady.postValue(true)
@@ -2591,7 +2591,7 @@ class AppClass : Application(), LifecycleEventObserver, LifecycleObserver {
         //   var eventsRef = FirebaseDatabase.getInstance()
         //       .getReference(TABLE_EVENTS_LOCATIONS)
 
-        mainViewModel.postPanicEvent(event)
+        MainActivityViewModel.getInstance().postPanicEvent(event)
 
 
         /*

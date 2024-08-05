@@ -75,10 +75,10 @@ class FriendsAdapter(
 
         val contact = list[position]
 
-        if (Validators.isValidMail(contact.display_name.toString())) {
-            holder.userName.text = contact.display_name.lowercase()
+        if (Validators.isValidMail((contact.display_name ?: "").toString())) {
+            holder.userName.text = (contact.display_name ?: "").lowercase()
         } else {
-            holder.userName.text = contact.display_name.uppercase()
+            holder.userName.text = (contact.display_name ?: "").uppercase()
         }
 
 
@@ -197,9 +197,9 @@ class FriendsAdapter(
 
 //                holder.secondaryActionButton.visibility = View.GONE
                 holder.secondLine.visibility = GONE
-                if (contact.have_phone && !contact.telephone_number.isEmpty()) {
+                if ((contact.have_phone ?: false) && !(contact.telephone_number ?: "").isEmpty()) {
                     holder.switchSpeedDialSection.visibility = View.VISIBLE
-                    holder.switchSpeedDial.isChecked = contact.add_to_speed_dial
+                    holder.switchSpeedDial.isChecked = contact.add_to_speed_dial ?: false
                 } else
                     holder
                         .switchSpeedDialSection.visibility = View.INVISIBLE

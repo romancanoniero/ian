@@ -17,10 +17,9 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
 
+        <item name="cardViewStyle">@style/MyCardViewStyle</item>
         <item name="android:windowAnimationStyle">@style/MyWindowAnimationStyle</item>
-
-
-    <item name="android:statusBarColor">#ff0000</item>
+        <item name="android:statusBarColor">#ff0000</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowTranslucentNavigation">false</item>
@@ -39,6 +38,10 @@
         <item name="otpViewStyle">@style/OtpWidget.OtpView</item>
     </style>
 
+
+    <style name="DialogStyle" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowBackground">@drawable/dialog_background</item>
+    </style>
 
     <style name="AutoCompleteTextViewAppTheme" parent="Base.Widget.AppCompat.EditText">
         <item name="android:fontFamily">@font/app_font_family</item>
@@ -272,6 +275,35 @@
         <item name="android:activityCloseExitAnimation">@anim/exit_to_right</item>
     </style>
 
+    <style name="MyCardViewStyle" parent="CardView">
+        <!-- Personaliza tu CardView aquí. Por ejemplo: -->
+        <item name="cardCornerRadius">10dp</item>
+        <item name="cardElevation">6dp</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="cardPreventCornerOverlap">true</item>
+        <item name="android:padding">20dp</item>
+    </style>
+
+    <style name="MyCircleImageViewStyle">
+        <item name="civ_border_width">1dp</item>
+        <item name="civ_border_color">#E1DEDE</item>
+        <item name="civ_circle_background_color">@color/white</item>
+    </style>
+
     <dimen name="thumb_size">64dp</dimen>
     <color name="stroke_color">#C1C1C1</color>
+
+
+        <style name="EventsSelectionCustomCardViewStyle" parent="Widget.MaterialComponents.CardView">
+            <item name="shapeAppearance">@style/CustomShapeAppearance</item>
+        </style>
+
+        <style name="CustomShapeAppearance" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+            <item name="cornerFamily">rounded</item>
+            <item name="cornerSizeTopLeft">0dp</item>
+            <item name="cornerSizeTopRight">0dp</item>
+            <item name="cornerSizeBottomLeft">16dp</item>
+            <item name="cornerSizeBottomRight">16dp</item>
+        </style>
+
 </resources>

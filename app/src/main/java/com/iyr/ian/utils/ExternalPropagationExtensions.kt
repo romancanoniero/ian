@@ -12,7 +12,6 @@ class ExternalPropagationExtensions {
 //    Constants.DYNAMIC_LINK_ACTION_FRIENDSHIP
 
 
-
     /*
     fun Context.generateInvitationLink() {
 
@@ -43,6 +42,7 @@ suspend fun Activity.generateInvitationLink(
             invitationText.plus(System.getProperty("line.separator"))
             invitationText.plus(dinamicLink.data)
         }
+
         is Resource.Error -> {
             showErrorDialog(dinamicLink.message.toString())
         }
@@ -73,5 +73,66 @@ suspend fun Activity.generateInvitationLink(
     }
     )
 
+
+}
+
+
+suspend fun Activity.generateInvitationLink2(
+    action: String,
+    stringResId: Int,
+    sharingInfo: SharingContents
+): Resource<String?> {
+    val map: java.util.HashMap<String, String> = java.util.HashMap<String, String>()
+    map["action"] = action
+    map["key"] = FirebaseAuth.getInstance().uid.toString()
+    val dinamicLink = UIUtils.createShortDynamicLink(this, map)
+    when (dinamicLink) {
+        is Resource.Success -> {
+            var invitationText = String.format(
+                getText(stringResId).toString(),
+                getString(R.string.app_name)
+            )
+            val totalText = StringBuffer()
+            totalText.append(invitationText)
+            totalText.append("\n")
+            totalText.append(" ")
+            totalText.append("\n")
+            totalText.append(dinamicLink.data.toString())
+
+            return Resource.Success(totalText.toString())
+        }
+
+        is Resource.Error -> {
+            return Resource.Error(dinamicLink.message.toString())
+        }
+
+        else -> {}
+    }
+    return Resource.Success("")
+    /*
+        UIUtils.createShortDynamicLink(this, map, object :
+            OnCompleteCallback {
+
+            override fun onComplete(success: Boolean, shortlink: Any?) {
+
+                var invitationText = String.format(
+                    getText(R.string.app_installation_invitation_message)
+                        .toString(),
+                    getString(R.string.app_name)
+                )
+
+                invitationText =
+                    invitationText.plus(System.getProperty("line.separator"))
+                invitationText =
+                    invitationText.plus(System.getProperty("line.separator"))
+                invitationText = invitationText.plus(shortlink)
+            }
+
+            override fun onError(exception: Exception) {
+                showErrorDialog(exception.localizedMessage)
+            }
+        }
+        )
+    */
 
 }

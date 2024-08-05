@@ -5,11 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ServerValue
-import com.google.firebase.database.ValueEventListener
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.dao.models.SubscriptionTypes
 import com.iyr.ian.dao.models.User
@@ -24,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class SplashScreenViewModel(val messagingToken: String?) : ViewModel() {
+class SplashScreenViewModel(val messagingToken: String? = null) : ViewModel() {
 
     private val _user = MutableLiveData<User?>()
     val user: LiveData<User?> get() = _user
@@ -143,7 +138,7 @@ class SplashScreenViewModel(val messagingToken: String?) : ViewModel() {
 
 
     fun prepareForMainScreen(user: User) {
-
+/*
         suspend fun getServerTime(): Resource<Long?> {
             withContext(Dispatchers.Main) {
 //                _progressText.postValue("Obteniendo hora del servidor")
@@ -155,6 +150,7 @@ class SplashScreenViewModel(val messagingToken: String?) : ViewModel() {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val serverTime = dataSnapshot.getValue(Long::class.java)
                             println("Server time: $serverTime")
+                            var localTime = System.currentTimeMillis()
                             _serverTime.postValue(serverTime)
                             Resource.Success(serverTime)
                         }
@@ -169,45 +165,45 @@ class SplashScreenViewModel(val messagingToken: String?) : ViewModel() {
 
             return Resource.Loading<Long?>(0)
         }
-
+*/
         suspend fun getSubscriptionPlan(): Resource<SubscriptionTypes?> {
 //            withContext(Dispatchers.Main) {
-                withContext(Dispatchers.IO) {
-                    val subscriptionPlan =
-                        subscriptionTypesRepository.getSubscriptionType(user.subscription_type_key)
-                    if (subscriptionPlan.data != null) {
-                        AppClass.instance.setUserSubscription(subscriptionPlan.data!!)
-                        Resource.Success(subscriptionPlan.data)
-                    } else {
+            withContext(Dispatchers.IO) {
+                val subscriptionPlan =
+                    subscriptionTypesRepository.getSubscriptionType(user.subscription_type_key)
+                if (subscriptionPlan.data != null) {
+                    AppClass.instance.setUserSubscription(subscriptionPlan.data!!)
+                    Resource.Success(subscriptionPlan.data)
+                } else {
 
-                        var call = subscriptionTypesRepository.getSubscriptionTypeByAccessLevel(
-                            AccessLevelsEnum.FREE
-                        )
-                        when (call) {
-                            is Resource.Error -> {
-                                AppClass.instance.getCurrentActivity()
-                                    ?.showErrorDialog(call.message.toString())
-                            }
-
-                            is Resource.Loading -> {}
-                            is Resource.Success -> {
-                                var subscriptionType = call.data!!
-                                var subscriptionTypeKey =
-                                    subscriptionType.subscription_type_key // ponerle la basica.
-                                AppClass.instance.setUserSubscription(subscriptionType)
-                                usersRepository.updateSubscriptionType(
-                                    FirebaseAuth.getInstance().uid.toString(),
-                                    subscriptionType.subscription_type_key
-                                )
-                                Resource.Error<SubscriptionTypes?>("Error obteniendo el tipo de subscripcion")
-
-                            }
+                    var call = subscriptionTypesRepository.getSubscriptionTypeByAccessLevel(
+                        AccessLevelsEnum.FREE
+                    )
+                    when (call) {
+                        is Resource.Error -> {
+                            AppClass.instance.getCurrentActivity()
+                                ?.showErrorDialog(call.message.toString())
                         }
 
-                    }
-                }
+                        is Resource.Loading -> {}
+                        is Resource.Success -> {
+                            var subscriptionType = call.data!!
+                            var subscriptionTypeKey =
+                                subscriptionType.subscription_type_key // ponerle la basica.
+                            AppClass.instance.setUserSubscription(subscriptionType)
+                            usersRepository.updateSubscriptionType(
+                                FirebaseAuth.getInstance().uid.toString(),
+                                subscriptionType.subscription_type_key
+                            )
+                            Resource.Error<SubscriptionTypes?>("Error obteniendo el tipo de subscripcion")
 
-  //          }
+                        }
+                    }
+
+                }
+            }
+
+            //          }
             return Resource.Loading<SubscriptionTypes?>(null)
         }
 
@@ -219,7 +215,7 @@ class SplashScreenViewModel(val messagingToken: String?) : ViewModel() {
             "Obteniendo plan de suscripción",
             "Obteniendo Eventos actuales"
         )
-        val tasks = listOf(::getServerTime, ::getSubscriptionPlan, ::getFollowingEvents)
+        val tasks = listOf( ::getSubscriptionPlan, ::getFollowingEvents)
 
         viewModelScope.launch(Dispatchers.IO) {
             val totalTasks = tasks.size

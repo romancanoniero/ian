@@ -8,6 +8,7 @@ plugins {
     id("kotlin-android")
     id("kotlin-kapt")
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    id("androidx.navigation.safeargs.kotlin")
 
 }
 
@@ -35,6 +36,7 @@ android {
 
         // Set API keys in BuildConfig
         buildConfigField("String", "MAPS_API_KEY", properties.getProperty("MAPS_API_KEY"))
+        buildConfigField("Boolean", "NAVIGATION_HOST_MODE", properties.getProperty("NAVIGATION_HOST_MODE"))
 
 
     }
@@ -154,7 +156,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.github.marlonlom:timeago:4.0.3")
     implementation("com.facebook.shimmer:shimmer:0.5.0")
-
+    implementation ("com.github.alexzhirkevich:custom-qr-generator:2.0.0-alpha01")  // Generador de codigos QR para compartir la aplicacion.
+    implementation ("com.github.yuriy-budiyev:code-scanner:2.3.0") //Scanner de codigos QR
 
     // RecyclerViews Layouts
     implementation("androidx.gridlayout:gridlayout:1.0.0")

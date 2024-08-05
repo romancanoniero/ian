@@ -25,15 +25,15 @@ import com.iyr.ian.ui.callback.MainActivityCallback
 import com.iyr.ian.ui.dialogs.NotificationAdapterCallback
 import com.iyr.ian.ui.interfaces.FriendsMainActivityInterface
 import com.iyr.ian.ui.interfaces.INotificationPopup
-import com.iyr.ian.ui.notifications.NotificationsFragment
 import com.iyr.ian.utils.UIUtils.handleTouch
+import com.iyr.ian.utils.assignFileImageTo
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getHtmlStyledText
 import com.iyr.ian.utils.support_models.MediaFile
 import java.util.Locale
 
 
-class NotificationsAdapter(val context: Context, callback: NotificationsFragment) :
+class NotificationsAdapter(val context: Context,val callback: INotifications) :
     RecyclerView.Adapter<NotificationsAdapter.NotificationViewHolder>() {
     private var mList: java.util.ArrayList<EventNotificationModel>? =
         ArrayList<EventNotificationModel>()
@@ -58,15 +58,17 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
 
         var notificationType =
             record.notification_type // i copy the value of this variable to assign manually to other variable.
-        if (notificationType == EventNotificationType.NOTIFICATION_TYPE_SEND_POLICE.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_SEND_FIREMAN.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_SEND_AMBULANCE.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_ROBBER_ALERT.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_PERSECUTION.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_SCORT_ME.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_KID_LOST.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_PET_LOST.name ||
-            notificationType == EventNotificationType.NOTIFICATION_TYPE_PANIC_BUTTON.name
+        if (notificationType in listOf(
+                EventNotificationType.NOTIFICATION_TYPE_SEND_POLICE.name,
+                EventNotificationType.NOTIFICATION_TYPE_SEND_FIREMAN.name,
+                EventNotificationType.NOTIFICATION_TYPE_SEND_AMBULANCE.name,
+                EventNotificationType.NOTIFICATION_TYPE_ROBBER_ALERT.name,
+                EventNotificationType.NOTIFICATION_TYPE_PERSECUTION.name,
+                EventNotificationType.NOTIFICATION_TYPE_SCORT_ME.name,
+                EventNotificationType.NOTIFICATION_TYPE_KID_LOST.name,
+                EventNotificationType.NOTIFICATION_TYPE_PET_LOST.name,
+                EventNotificationType.NOTIFICATION_TYPE_PANIC_BUTTON.name
+            )
         ) {
             notificationType = EventNotificationType.NOTIFICATION_TYPE_EVENT_NOTIFICATION.name
         }
@@ -82,35 +84,22 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
 
                 var notificationRecord = record.event_data
 
-                holder.title.text =
-                    context.getText(R.string.new_messages)
-
-
+                holder.title.text = context.getText(R.string.new_messages)
                 var userKey: String = record.event_info?.get("user_key").toString()
-                val displayName: String =
-                    record.event_info?.get("user_name").toString()
+                val displayName: String = record.event_info?.get("user_name").toString()
+                context.assignFileImageTo(record.event_info?.get("profile_image_path").toString(), "images", holder.userImage)
+/*
 
                 var userProfileFileName: String =
                     record.event_info?.get("profile_image_path").toString()
-
-              var qty = record.qty
-
-                //   displayUserImage(userKey, userProfileFileName, holder)
-
-//                displayDrawable(R.drawable.ic_toolbar_chat, holder)
-
                 displayUserImage(userKey, userProfileFileName, holder)
-
-
-
-                var textMessage = ""
-                formatRichTextMessage(
+*/
+                var qty = record.qty
+                var textMessage = formatRichTextMessage(
                     holder,
                     R.string.notification_unread_messages_html,
                     qty.toString(), displayName
                 )
-
-
                 // aca hay que ver si el evento esta en seguimiento y mostrar el icono
                 // para ir o que decida si lo va a seguir o lo abandona
 
@@ -120,21 +109,11 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                         context.handleTouch()
 
                         var firstUnreadMessageKey =(record.event_data?.get("messages") as List<HashMap<String, Any?>>).first().get("message_key").toString()
-                        
 
-//                        (record.event_data?.get("messages") as Array)
-
-                        (context as INotificationPopup).onGoToChatPressed(
+                        callback.onGoToChatPressed(
                             record.event_key,
                             firstUnreadMessageKey
                         )
-                        /*
-                        (context as INotificationPopup).notificationDeleteByKey(
-                            record,
-                            holder.secondaryButton
-                        )
-
-                         */
                     }
                 }
                 holder.secondaryButton.visibility = GONE
@@ -169,7 +148,7 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                 holder.primaryButton.setOnClickListener {
                     if (context is INotificationPopup) {
                         context.handleTouch()
-                        (context as INotificationPopup).notificationDeleteByKey(
+                        callback.notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -207,11 +186,6 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                 val alreadyFollowed =
                     (context as MainActivityCallback).isFollingEvent(record.event_key)
 
-
-                /*
-                                holder.primaryButton.setBackgroundColor(context.getColor(R.color.white))
-                                holder.actionButtonIcon.setImageResource(R.drawable.ic_viewers)
-                */
                 if (!alreadyFollowed) {
                     holder.primaryButton.text = context.getText(R.string.follow)
                 } else {
@@ -237,7 +211,7 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                 holder.secondaryButton.setOnClickListener {
                     if (context is INotificationPopup) {
                         context.handleTouch()
-                        (context as INotificationPopup).notificationDeleteByKey(
+                        callback.notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -307,7 +281,7 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                 holder.secondaryButton.setOnClickListener {
                     if (context is FriendsMainActivityInterface) {
                         context.handleTouch()
-                        (context as INotificationPopup).notificationDeleteByKey(
+                        callback.notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -389,7 +363,7 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                 holder.primaryButton.setOnClickListener {
                     if (context is INotificationPopup) {
                         context.handleTouch()
-                        (context as INotificationPopup).notificationsDeleteByEvent(
+                        callback.notificationsDeleteByEvent(
                             record,
                             holder.primaryButton
                         )
@@ -866,7 +840,7 @@ class NotificationsAdapter(val context: Context, callback: NotificationsFragment
                 .into(holder.userImage)
 
         } catch (exception: Exception) {
-            var pp = 33
+            callback.onError(exception)
         }
 
     }

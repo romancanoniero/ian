@@ -97,13 +97,13 @@ class SpeedDialAdapter(val activity: Activity, val callback: ISpeedDialAdapter) 
                 var pp = 33
             }
 
-            holder.userName.text = record.display_name.uppercase()
+            holder.userName.text = (record.display_name ?: "").uppercase()
             holder.userPhoneNumber.text = record.telephone_number
 
             holder.frame.setOnClickListener {
                 Log.d("SPEED_DIAL", "Click")
 //                activity.makeAPhoneCall(record.telephone_number)
-                callback.makeAPhoneCall(record.telephone_number)
+                callback.makeAPhoneCall(record.telephone_number ?: "")
             }
 
 

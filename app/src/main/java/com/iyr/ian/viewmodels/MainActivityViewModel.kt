@@ -4,68 +4,108 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.MainThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ServerValue
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
+import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.NOTIFICATION_TYPE_NEW_MESSAGE
 import com.iyr.ian.app.AppClass
+import com.iyr.ian.dao.models.Contact
 import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventFollowed
 import com.iyr.ian.dao.models.EventNotificationModel
+import com.iyr.ian.dao.models.Subscription
 import com.iyr.ian.dao.models.SubscriptionTypes
 import com.iyr.ian.dao.models.UnreadMessages
 import com.iyr.ian.dao.models.User
+import com.iyr.ian.dao.models.UserMinimum
 import com.iyr.ian.dao.repositories.NotificationsRepository
 import com.iyr.ian.enums.AccessLevelsEnum
 import com.iyr.ian.enums.DialogsEnum
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.enums.IANModulesEnum
 import com.iyr.ian.enums.RecordingStatusEnum
+import com.iyr.ian.glide.GlideApp
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.ChatRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.ContactsRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.EventRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.EventsRepositoryImpl
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.NotificationListRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.NotificationsRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.SubscriptionTypeRepositoryImpl
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.UsersRepositoryImpl
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.UsersSubscriptionsRepositoryImpl
+import com.iyr.ian.services.eventservice.EventService
 import com.iyr.ian.sharedpreferences.SessionApp
 import com.iyr.ian.ui.base.PulseValidationRequest
 import com.iyr.ian.ui.settings.SettingsFragmentsEnum
 import com.iyr.ian.utils.NotificationsUtils
 import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.getCacheLocation
 import com.iyr.ian.utils.getFileExtension
+import com.iyr.ian.utils.getJustFileName
+import com.iyr.ian.utils.loadImageFromCache
 import com.iyr.ian.utils.models.DialogToShowModel
 import com.iyr.ian.utils.models.ViewAttributes
 import com.iyr.ian.utils.multimedia.MultimediaUtils
+import com.iyr.ian.utils.saveImageToCache
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MainActivityViewModel(val context: Context, val userKey: String) : ViewModel() {
+class MainActivityViewModel private constructor(
+    val context: Context? = null, var userKey: String? = null
+) : ViewModel() {
 
+    enum class AppStatus {
+        NOT_LOGGED, INITIALIZING, READY
+    }
+
+
+    private var serverTimeRef: Long? = 0
     private var usersRepository: UsersRepositoryImpl = UsersRepositoryImpl()
+    private var usersSubscriptionsRespository: UsersSubscriptionsRepositoryImpl =
+        UsersSubscriptionsRepositoryImpl()
     private var eventsRepository: EventsRepositoryImpl = EventsRepositoryImpl()
     private var eventRepository: EventRepositoryImpl = EventRepositoryImpl()
     private var notificationsRepository: NotificationsRepositoryImpl = NotificationsRepositoryImpl()
     private var chatRepository: ChatRepositoryImpl = ChatRepositoryImpl()
     private var contactsRepository: ContactsRepositoryImpl = ContactsRepositoryImpl()
+    private val contactsGroupsRepository = NotificationListRepositoryImpl()
+
 
     private val storageRepositoryImpl: StorageRepositoryImpl = StorageRepositoryImpl()
     private val subscriptionsRepository: SubscriptionTypeRepositoryImpl =
         SubscriptionTypeRepositoryImpl()
 
+
+    private val _homeIconVisible = MutableLiveData<Boolean>(false)
+    val homeIconVisible: LiveData<Boolean> = _homeIconVisible
+
     private lateinit var userFlowJob: Job
 
+
+    private val _appStatus = MutableLiveData<AppStatus?>()
+    val appStatus: LiveData<AppStatus?> = _appStatus
 
     private val _bluetoothStatus = MutableLiveData<Boolean>()
     val bluetoothStatus: LiveData<Boolean> = _bluetoothStatus
@@ -77,7 +117,6 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
 
     private val _newMedia = MutableLiveData<MediaFile?>()
     val newMedia: LiveData<MediaFile?> = _newMedia
-
 
     private val _bottomBarVisibilityStatus = MutableLiveData<Boolean?>()
     val bottomBarVisibilityStatus: LiveData<Boolean?> = _bottomBarVisibilityStatus
@@ -176,13 +215,11 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
     val eventsFollowed: LiveData<ArrayList<EventFollowed>> = _eventsFollowed
 
     private val _onNotificationClicked = MutableLiveData<Resource<HashMap<String, Any?>>>()
-    val onNotificationClicked: LiveData<Resource<HashMap<String, Any?>>> =
-        _onNotificationClicked
+    val onNotificationClicked: LiveData<Resource<HashMap<String, Any?>>> = _onNotificationClicked
 
 
     private val _newEventPopupToShow = MutableLiveData<Resource<HashMap<String, Any?>>?>()
-    val newEventPopupToShow: LiveData<Resource<HashMap<String, Any?>>?> = _newEventPopupToShow
-    /*
+    val newEventPopupToShow: LiveData<Resource<HashMap<String, Any?>>?> = _newEventPopupToShow/*
         fun listenNotifications() = liveData<NotificationsRepository.DataEvent>(Dispatchers.IO) {
             notificationsRepository.getDataFlow(userKey).collect { notifications ->
                 _notificationsFlow.value = notifications
@@ -192,23 +229,129 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
         }
     */
 
+    companion object {
+        private lateinit var instance: MainActivityViewModel
+
+        @MainThread
+        fun getInstance(context: Context? = null, userKey: String? = null): MainActivityViewModel {
+            instance = if (::instance.isInitialized) instance else {
+                if (context == null) throw Exception("Context and userKey must be provided")
+                else MainActivityViewModel(context, userKey)
+            }
+            return instance
+        }
+
+
+    }
+
 
     init {
         _bluetoothStatus.postValue(SessionApp.getInstance(context).isBTPanicButtonEnabled)
         _recordingStatus.postValue(RecordingStatusEnum.NONE)
         _eventsFollowed.value = ArrayList<EventFollowed>()
         _isInPanic.postValue(false)
-
-
     }
+
+    /*
+    fun fetchServerTime() {
+        viewModelScope.launch(Dispatchers.IO) {
+            this@MainActivityViewModel.serverTimeRef = fetchServerTime()
+        }
+    }
+*/
+    //    private fun getServerTime() {
+
+
+    var timeDifference: Long = 0
+
+    private val _serverTime = MutableLiveData<Long?>()
+    val serverTime: LiveData<Long?> = _serverTime
+    suspend fun fetchServerTime(): Long? {
+        viewModelScope.launch(Dispatchers.IO) {
+            val rootRef = FirebaseDatabase.getInstance().reference
+            rootRef.child("serverTime").setValue(ServerValue.TIMESTAMP).await()
+            val serverTime = rootRef.child("serverTime").get().await().getValue(Long::class.java)
+            val deviceTime = System.currentTimeMillis()
+            // Calcula la diferencia entre la hora del servidor y la hora local del dispositivo
+            timeDifference = (serverTime ?: 0) - deviceTime
+            _serverTime.postValue(serverTime)
+        }
+        return null
+    }
+
+
+    // Función para obtener la hora del servidor usando la hora local del dispositivo y la diferencia de tiempo
+    fun getServerTimeUsingDeviceTime(): Long {
+        val currentDeviceTime = System.currentTimeMillis()
+        return currentDeviceTime - timeDifference
+    }
+
+    // Función para verificar si un horario establecido en el servidor está dentro de un rango de tiempo
+    fun isServerTimeInRange(startTime: Long, endTime: Long): Boolean {
+        val currentServerTime = getServerTimeUsingDeviceTime()
+        return currentServerTime in startTime..endTime
+    }
+
+
+//        return Resource.Loading<Long?>(0)
+
+    //  }
+
+    val notificationsList = ArrayList<EventNotificationModel>()
+    private val _notifications = MutableLiveData<ArrayList<EventNotificationModel>>()
+    val notifications: LiveData<ArrayList<EventNotificationModel>> = _notifications
 
     /**
      * Forma correcta de escuchar los cambios en la base de datos
      */
-    val notificationsFlow = liveData<NotificationsRepository.DataEvent>(Dispatchers.IO)
-    {
-        notificationsRepository.getDataFlow(userKey).collect { notifications ->
-            emit(notifications)
+    val notificationsFlow = liveData<NotificationsRepository.DataEvent>(Dispatchers.IO) {
+        notificationsRepository.getDataFlow(userKey!!).collect { event ->
+            emit(event)
+            when (event) {
+                is NotificationsRepository.DataEvent.ChildAdded -> {
+                    if (!notificationsList.contains(event.data)) {
+                        notificationsList.add(event.data)
+                    }
+                }
+
+                is NotificationsRepository.DataEvent.ChildChanged -> {
+                    val index = notificationsList.indexOf(event.data)
+                    if (index == -1) {
+                        notificationsList.add(event.data)
+                    } else {
+                        notificationsList[index] = event.data
+                    }
+                }
+
+                is NotificationsRepository.DataEvent.ChildRemoved -> {
+                    val index = notificationsList.indexOf(event.data)
+                    if (index > -1) {
+                        notificationsList.removeAt(index)
+                    }
+                }
+
+                else -> {}
+            }
+            _notifications.postValue(notificationsList)
+        }
+    }
+
+
+    val userSubscriptionsFlow = liveData<Resource<List<Subscription>?>>(Dispatchers.IO) {
+        usersSubscriptionsRespository.getUserSubscriptionsAsFlow(userKey!!)
+            .collect { subscriptions ->
+                emit(subscriptions)
+            }
+    }
+
+
+    private val _subscriptionType = MutableLiveData<SubscriptionTypes>()
+    val subscriptionType: LiveData<SubscriptionTypes> = _subscriptionType
+    val userSubscriptionTypeAsFlow = liveData<Resource<SubscriptionTypes?>>(Dispatchers.IO) {
+        usersSubscriptionsRespository.getUserSubscriptionTypeAsFlow(userKey!!).collect { resource ->
+            _subscriptionType.postValue(resource.data!!)
+
+            emit(resource)
         }
     }
 
@@ -318,7 +461,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
             Log.d("ITags", "Termine de publicar el evento")
             event.media?.forEach { event ->
                 if (event.media_type == MediaTypesEnum.VIDEO || event.media_type == MediaTypesEnum.AUDIO || event.media_type == MediaTypesEnum.IMAGE) {
-                    val fileExtension = event.file_name.getFileExtension(context)
+                    val fileExtension = event.file_name.getFileExtension(context!!)
                     var fileUri = event.file_name
                     if (fileExtension?.lowercase(Locale.getDefault()) == "jpg") {
                         fileUri = "file:" + event.file_name
@@ -377,7 +520,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
 
     fun extendEvent(eventKey: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val result = eventRepository.extendEvent(userKey, eventKey)
+            val result = eventRepository.extendEvent(userKey!!, eventKey)
             if (result is Resource.Success) {
                 _dialogToShow.postValue(
                     DialogToShowModel(
@@ -391,7 +534,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
     fun onCloseEventRequest(eventKey: String, code: String) {
         _closingEventStatus.postValue(Resource.Loading<Boolean?>())
         viewModelScope.launch(Dispatchers.IO) {
-            val result = eventRepository.closeEvent(userKey, eventKey, code)
+            val result = eventRepository.closeEvent(userKey!!, eventKey, code)
             if (result is Resource.Success) {
                 _closingEventStatus.postValue(Resource.Success<Boolean?>(true))
 
@@ -409,7 +552,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
 
     fun securityPINIntroduced(pin: String, location: LatLng) {
         viewModelScope.launch(Dispatchers.IO) {
-            val result = usersRepository.updateUserStatus(userKey, pin, location)
+            val result = usersRepository.updateUserStatus(userKey!!, pin, location)
             if (result is Resource.Success) {
                 _dialogToShow.postValue(
                     DialogToShowModel(
@@ -449,6 +592,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
     fun setUser(user: User) {
         //_user.postValue(user)
         _user.value = user
+        this.userKey = user.user_key
     }
 
     fun setLocationIsAvailable() {
@@ -513,7 +657,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
     //--------- BOTTOM BAR ---------
     fun onBottomBarFriendsClicked() {
 
-        var subscriptionLevel: Int = _userSubscription.value?.access_level ?: 0
+        var subscriptionLevel: Int = _subscriptionType.value?.access_level ?: 0
         if (subscriptionLevel >= AccessLevelsEnum.SOLIDARY.ordinal) {
             switchToModule(3, "friends")
         } else {
@@ -566,7 +710,9 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
     fun onAcceptContactRequest(userKey: String) {
         _notificationsStatus.postValue(Resource.Loading<Boolean?>())
         viewModelScope.launch(Dispatchers.IO) {
-            val call = contactsRepository.contactAcceptInvitation(FirebaseAuth.getInstance().uid.toString(),userKey)
+            val call = contactsRepository.contactAcceptInvitation(
+                FirebaseAuth.getInstance().uid.toString(), userKey
+            )
             if (call.message == null) {
                 _notificationsStatus.postValue(Resource.Success<Boolean?>(true))
             } else {
@@ -590,6 +736,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
 
     fun updateUserSubscriptionType(subscriptionType: SubscriptionTypes) {
         _userSubscription.postValue(subscriptionType)
+        _subscriptionType.postValue(subscriptionType)
     }
 
     fun updateFollowedEvents(events: ArrayList<EventFollowed>) {
@@ -610,8 +757,7 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
     }
 
     fun onKeyboardClosed() {
-        if (_isKeyboardOpen.value != null)
-            _isKeyboardOpen.postValue(false)
+        if (_isKeyboardOpen.value != null) _isKeyboardOpen.postValue(false)
     }
 
     /*
@@ -744,8 +890,137 @@ class MainActivityViewModel(val context: Context, val userKey: String) : ViewMod
         // borro el mensaje de la lista de mensajes sin notificar.
 
         viewModelScope.launch(Dispatchers.IO) {
-            var result = notificationsRepository.onMessageRead(userKey, eventKey, messageKey)
-            var pp = 33
+            var result = notificationsRepository.onMessageRead(userKey!!, eventKey, messageKey)
+
         }
     }
+
+    fun setAppStatus(status: MainActivityViewModel.AppStatus) {
+        _appStatus.postValue(status)
+        if (status == MainActivityViewModel.AppStatus.INITIALIZING) {
+            viewModelScope.launch(Dispatchers.IO) {
+                fetchServerTime()
+            }
+        }
+    }
+
+
+    private val _contactRequest = MutableLiveData<Resource<UserMinimum?>>()
+    val contactRequest: LiveData<Resource<UserMinimum?>> = _contactRequest
+
+    /***
+     * Gestiona cuando llega una invitacion de contacto
+     */
+    fun onContactByUserKey(otherUserKey: String) {
+
+        _contactRequest.postValue(Resource.Loading<UserMinimum?>())
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val alreadyContactedCall = contactsRepository.alreadyFriends(
+                UserViewModel.getInstance().getUser()?.user_key ?: "",
+                otherUserKey
+            )
+            val alreadyContacted = alreadyContactedCall.data ?: false
+            if (!alreadyContacted) {
+                val userCall = usersRepository.getUserRemote(otherUserKey)
+                when (userCall) {
+                    is Resource.Success -> {
+                        var user = userCall.data
+                        if (user != null) {
+
+                            val context = AppClass.instance.context!!
+                            // me aseguro de conseguir la imagen del usuario
+
+                            val userAvatar = user.image.file_name
+                            var destinationPath =
+                                context.getCacheLocation(AppConstants.PROFILE_IMAGES_STORAGE_PATH + userAvatar)
+
+                            var localPath = userAvatar.toString()
+
+                            var fileName = userAvatar.getJustFileName()
+
+                            try {
+
+                                var imageBitmap = context.loadImageFromCache(
+                                    fileName,
+                                    "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${user.user_key}"
+                                )
+
+                                if (imageBitmap == null) { // No esta en el cache, lo busco en el servidor local
+                                    val storageReference =
+                                        FirebaseStorage.getInstance().reference.child(
+                                            "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${user.user_key}/${
+                                                fileName.substringAfterLast("/")
+                                                    .substringBefore(".")
+                                            }.jpg"
+                                        )
+                                    try {
+                                        // Comprueba si la imagen existe en Firebase Storage
+                                        storageReference.metadata.await()
+
+                                        // Descarga la imagen y la guarda en el caché
+                                        val requestOptions = RequestOptions().diskCacheStrategy(
+                                            DiskCacheStrategy.ALL
+                                        )
+
+                                        val result = withContext(Dispatchers.IO) {
+                                            GlideApp.with(context).asBitmap().load(storageReference)
+                                                .apply(requestOptions)
+                                                .submit().get()
+                                        }
+                                        result.saveImageToCache(
+                                            context,
+                                            fileName,
+                                            AppConstants.PROFILE_IMAGES_STORAGE_PATH
+                                        )
+
+                                    } catch (e: StorageException) {
+                                        var pp = 3
+                                    }
+                                }
+                                _contactRequest.postValue(Resource.Success<UserMinimum?>(user))
+                            } catch (ex: Exception) {
+                                _contactRequest.postValue(Resource.Error<UserMinimum?>(ex.message.toString()))
+                            }
+
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        _contactRequest.postValue(Resource.Error<UserMinimum?>(userCall.message.toString()))
+                    }
+
+                    is Resource.Loading -> TODO()
+                }
+
+            } else {
+                _contactRequest.postValue(Resource.Error<UserMinimum?>("already_friends"))
+
+            }
+        }
+    }
+
+    private val _contactAcceptance = MutableLiveData<Resource<HashMap<String, Contact>?>>()
+    val contactAcceptance: LiveData<Resource<HashMap<String, Contact>?>> = _contactAcceptance
+    fun acceptContactInvitation(userToAcceptKey: String) {
+        val meKey = UserViewModel.getInstance().getUser()?.user_key ?: ""
+        _contactAcceptance.postValue(Resource.Loading())
+        viewModelScope.launch {
+            val call = contactsRepository.contactAcceptInvitation(meKey, userToAcceptKey)
+            _contactAcceptance.postValue(call)
+        }
+    }
+
+
+    private val _postingEvent = MutableLiveData<Resource<Event?>>()
+    val postingEvent: LiveData<Resource<Event?>> = _postingEvent
+
+    /**
+     * Cuando el evento esta completo, lo dispara
+     */
+    fun onEventReadyToFire(event: Event) {
+        val eventService = EventService.getInstance(context!!)
+        eventService.fireEvent(event)
+    }
+
 }

@@ -1,19 +1,17 @@
 package com.iyr.ian.repository.implementations.databases.realtimedatabase
 
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.functions.FirebaseFunctions
 import com.iyr.ian.dao.models.Contact
-import com.iyr.ian.dao.models.NotificationList
+import com.iyr.ian.dao.models.ContactGroup
 import com.iyr.ian.dao.repositories.ContactGroupsRepository
-import com.iyr.ian.dao.repositories.ContactsRepository
 import com.iyr.ian.utils.coroutines.Resource
 import kotlinx.coroutines.tasks.await
 
 class ContactGroupsRepositoryImpl : ContactGroupsRepository() {
 
 
-    override suspend fun postContactGroup(userKey: String, groupName: String) : Resource<NotificationList?>{
+    override suspend fun postContactGroup(userKey: String, groupName: String) : Resource<ContactGroup?>{
         return try {
             val token = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
             if (token != null) {
@@ -28,19 +26,19 @@ class ContactGroupsRepositoryImpl : ContactGroupsRepository() {
                         .call(data).await()
 
                     if (call.data != null) {
-                        var newGroup = call.data as NotificationList
-                        Resource.Success<NotificationList?>(newGroup)
+                        var newGroup = call.data as ContactGroup
+                        Resource.Success<ContactGroup?>(newGroup)
                     } else {
-                        Resource.Error<NotificationList?>("Error: Error looking for contacts")
+                        Resource.Error<ContactGroup?>("Error: Error looking for contacts")
                     }
                 } catch (exception: Exception) {
-                    Resource.Error<NotificationList?>(exception.message.toString())
+                    Resource.Error<ContactGroup?>(exception.message.toString())
                 }
             } else {
-                Resource.Error<NotificationList?>("error_getting_token")
+                Resource.Error<ContactGroup?>("error_getting_token")
             }
         } catch (exception: Exception) {
-            Resource.Error<NotificationList?>(exception.message.toString())
+            Resource.Error<ContactGroup?>(exception.message.toString())
         }
     }
 

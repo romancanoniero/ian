@@ -1,6 +1,7 @@
 <resources>
 
 
+    <dimen name="box_xxxsuperbig">264dp</dimen>
     <dimen name="box_xxsuperbig">225dp</dimen>
     <dimen name="box_xsuperbig">180dp</dimen>
     <dimen name="box_superbig">157.5dp</dimen>

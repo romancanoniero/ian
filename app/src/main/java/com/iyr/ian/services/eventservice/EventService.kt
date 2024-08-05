@@ -16,6 +16,7 @@ import com.iyr.ian.utils.getCurrentLocation
 import com.iyr.ian.utils.getFileExtension
 import com.iyr.ian.utils.multimedia.MultimediaUtils
 import com.iyr.ian.utils.support_models.MediaTypesEnum
+import com.iyr.ian.viewmodels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,72 +58,79 @@ class EventService : Service, IEventService {
 
     override fun fireEvent(event: Event, notificationListKey: String?) {
 
-        scope.launch {
+        val userViewModel = UserViewModel.getInstance()
 
-            flow.postValue(Resource.Loading<Event?>())
+        userViewModel.getUser()?.let {
+            event.author_key = it.user_key
 
-            var currentLocationResource = context!!.getCurrentLocation()
+            scope.launch(Dispatchers.IO) {
 
-            var currentLocation = currentLocationResource.data!!
-            val geoLocationAtCreation = GeoLocation()
-            geoLocationAtCreation.l = ArrayList<Double>()
-            (geoLocationAtCreation.l as ArrayList<Double>).add(currentLocation.latitude)
-            (geoLocationAtCreation.l as ArrayList<Double>).add(currentLocation.longitude)
-            geoLocationAtCreation.event_time = Date().time
-            event.location_at_creation =  geoLocationAtCreation
+                flow.postValue(Resource.Loading<Event?>())
 
-            if (event.event_location_type.compareTo(EventLocationType.REALTIME.name) == 0) {
-                event.location = EventLocation().apply {
-                    latitude = event.location?.latitude
-                    longitude = event.location?.longitude
-                }
-            }
+                var currentLocationResource = context!!.getCurrentLocation()
 
-            event.media?.forEach { media ->
-                if (media.media_type == MediaTypesEnum.VIDEO ||
-                    media.media_type == MediaTypesEnum.AUDIO ||
-                    media.media_type == MediaTypesEnum.IMAGE
-                ) {
-                    val fileExtension = media.file_name.getFileExtension(context!!)
-                    var fileUri = media.file_name
-                    if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" ||
-                        fileExtension?.lowercase(Locale.getDefault()) == "png"
-                    ) {
-                        fileUri = "file:" + media.file_name
+                var currentLocation = currentLocationResource.data!!
+                val geoLocationAtCreation = GeoLocation()
+                geoLocationAtCreation.l = ArrayList<Double>()
+                (geoLocationAtCreation.l as ArrayList<Double>).add(currentLocation.latitude)
+                (geoLocationAtCreation.l as ArrayList<Double>).add(currentLocation.longitude)
+                geoLocationAtCreation.event_time = Date().time
+                event.location_at_creation =  geoLocationAtCreation
+
+                if (event.event_location_type.compareTo(EventLocationType.REALTIME.name) == 0) {
+                    event.location = EventLocation().apply {
+                        latitude = event.location?.latitude
+                        longitude = event.location?.longitude
                     }
-                    var mediaFileEncoded: String? = null
-                    if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" ||
-                        fileExtension?.lowercase(Locale.getDefault()) == "png" ||
-                        fileExtension?.lowercase(Locale.getDefault()) == "mp4" ||
-                        fileExtension?.lowercase(Locale.getDefault()) == "3gp"
-                    ) {
+                }
 
-                        mediaFileEncoded =
-                            MultimediaUtils(_instance!!.context!!).convertFileToBase64(
-                                Uri.parse(
-                                    fileUri
+                event.media?.forEach { media ->
+                    if (media.media_type == MediaTypesEnum.VIDEO ||
+                        media.media_type == MediaTypesEnum.AUDIO ||
+                        media.media_type == MediaTypesEnum.IMAGE
+                    ) {
+                        val fileExtension = media.file_name.getFileExtension(context!!)
+                        var fileUri = media.file_name
+                        if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" ||
+                            fileExtension?.lowercase(Locale.getDefault()) == "png"
+                        ) {
+                            fileUri = "file:" + media.file_name
+                        }
+                        var mediaFileEncoded: String? = null
+                        if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" ||
+                            fileExtension?.lowercase(Locale.getDefault()) == "png" ||
+                            fileExtension?.lowercase(Locale.getDefault()) == "mp4" ||
+                            fileExtension?.lowercase(Locale.getDefault()) == "3gp"
+                        ) {
+
+                            mediaFileEncoded =
+                                MultimediaUtils(_instance!!.context!!).convertFileToBase64(
+                                    Uri.parse(
+                                        fileUri
+                                    )
                                 )
-                            )
-                                .toString()
+                                    .toString()
+                        }
+                        media.bytesB64 = mediaFileEncoded
                     }
-                    media.bytesB64 = mediaFileEncoded
                 }
+
+
+                var call = eventsRepository.postEvent(event)
+                if (call.data != null) {
+//                        _postingEventStatus.postValue(Resource.Success<Event?>(call.data))
+                    flow.postValue(Resource.Success<Event?>(call.data))
+                } else
+//                        _postingEventStatus.postValue(Resource.Error<Event?>(call.message.toString()))
+                    flow.postValue(Resource.Error<Event?>(call.message.toString()))
             }
 
-
-            var call = eventsRepository.postEvent(event)
-            if (call.data != null) {
-//                        _postingEventStatus.postValue(Resource.Success<Event?>(call.data))
-                flow.postValue(Resource.Success<Event?>(call.data))
-            } else
-//                        _postingEventStatus.postValue(Resource.Error<Event?>(call.message.toString()))
-                flow.postValue(Resource.Error<Event?>(call.message.toString()))
         }
 
 
     }
 
-    private val flow = MutableLiveData<Resource<Event?>>()
+     val flow = MutableLiveData<Resource<Event?>>()
 
 
     fun getResult(): MutableLiveData<Resource<Event?>> = flow

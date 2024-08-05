@@ -21,21 +21,12 @@ class SettingsFragmentPagerAdapter(
 ) :
     FragmentStatePagerAdapter(fragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
-    private val mSettingsLandingFragment by lazy { SettingsLandingFragment(
-        mainActivityViewModel,
-        viewModel,
-        _interface
-    ) }
+    private val mSettingsLandingFragment by lazy { SettingsLandingFragment() }
     private val mPressOrTapFragment by lazy { PressOrTapSetupFragment(
-        mainActivityViewModel,
-        viewModel,
-        _interface
     ) }
     private val mProfileSettingsFragment by lazy { ProfileSettingsFragment(
-        mainActivityViewModel,
-        viewModel,
-        _interface
     ) }
+
     private var count = 3
     private var fragmentsArray = ArrayList<Fragment>()
 

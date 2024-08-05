@@ -90,7 +90,7 @@
     <string name="error_user_not_found">Usuario No Encontrado</string>
     <string name="error_email_not_verified">Debes verificarte mediante el Correo que te enviamos</string>
 
-
+    <string name="min_chars_required">%1$s caracteres minimo</string>
     <string name="you_are_safe_here">"Entre TODOS estaremos más Seguros"</string>
     <string name="tap_to_select">Toca para cargar</string>
     <string name="not_filled">Incompleto</string>
@@ -147,6 +147,34 @@
     <string name="functionality_description_mechanical_aid">Mediante esta opción, puedes solicitat a los usuarios que se encuentren en las proximidades que te den auxilio Mecánico.</string>
     <string name="are_you_sure_you_want_to_logout">Estás seguro que quieres desconectar de IAN?</string>
     <string name="logout">Salir</string>
+    <string name="verification_sms_sent">Mensaje Enviado</string>
+    <string name="verification_sms_sent_description">Te enviamos un SMS con el Código de Verificación</string>
+    <string name="event_publish_type_selector">Tipo de Evento</string>
+    <string name="event_publish_location_selector">Donde sucede?</string>
+    <string name="event_publish_location_selector_title">Define la Ubicación</string>
+    <string name="event_publish_location_type_title">Donde Sucede?</string>
+    <string name="event_publish_location_input_title">En donde sucede?</string>
+    <string name="event_publish_additional_content_title">Contenido Adicional</string>
+    <string name="new_contact">Nuevo Contacto</string>
+    <string name="new_group">Nuevo Grupo</string>
+    <string name="group_name_exists">El Grupo ya existe</string>
+    <string name="add_contact">Añadir Contacto</string>
+    <string name="name_email_of_phone_number">Nombre, Email o Telefono</string>
+    <string name="contacts">Contactos</string>
+    <string name="are_you_sure_you_want_to_create_the_group">Estas seguro que quieres crear el Grupo?</string>
+    <string name="are_you_sure_you_want_to_delete_the_group">Estas seguro que quieres eliminar el Grupo?</string>
+    <string name="are_you_sure_you_want_to_delete_the_contact">Estas seguro que quieres eliminar al Contacto?</string>
+    <string name="confirm_friendship_invitation">Confirmar</string>
+    <string name="do_you_want_to_invite_the_contact">Confirmas que quieres invitar a</string>
+    <string name="dialog_you_have_been_invited_by">%1$s te ha invitado a ser su contacto en caso de emergencias.</string>
+    <string name="do_you_accept">Aceptas?</string>
+    <string name="contact_not_found">El Usuario ya no existe</string>
+    <string name="already_friends">Ya estan conectados!</string>
+    <string name="you_are_already_connected">Ya estan conectados</string>
+    <string name="connect_your_self">Conectate</string>
+    <string name="ask_to_scan_the_code">Si aun no estan conectados, solicitale a tu Contacto que abra la Cámara de su dispositivo y enfoque el codigo, si su telefono es compatible con esta funcionalidad podra conectarse contigo</string>
+    <string name="show">Mostrar</string>
+    <string name="scan">Leer</string>
 
 
 </resources>

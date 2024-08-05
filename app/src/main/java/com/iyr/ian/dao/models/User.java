@@ -6,11 +6,11 @@ import com.stfalcon.chatkit.commons.models.IUser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 
-public  class User extends UserMinimum  {
-
+public  class User extends UserMinimum implements Serializable {
 
     @Nullable
     public String registrationType;

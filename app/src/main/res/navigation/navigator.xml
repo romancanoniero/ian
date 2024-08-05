@@ -3,7 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navigator"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/splashFragment"
+
+    >
 
     <fragment
         android:id="@+id/homeFragment"
@@ -22,6 +24,15 @@
         <action
             android:id="@+id/action_homeFragment_to_settingsFragment"
             app:destination="@id/settingsFragment" />
+        <argument
+            android:name="user"
+            app:argType="com.iyr.ian.dao.models.User" />
+        <action
+            android:id="@+id/action_homeFragment_to_notificationsFragment"
+            app:destination="@id/notificationsFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_contactsFragment"
+            app:destination="@id/contactsFragment" />
     </fragment>
     <fragment
         android:id="@+id/eventTypeSelectorFragment"
@@ -31,6 +42,19 @@
         <action
             android:id="@+id/action_eventTypeSelectorFragment_to_eventRealTimeTrackingFragment"
             app:destination="@id/eventRealTimeTrackingFragment" />
+        <action
+            android:id="@+id/action_eventTypeSelectorFragment_to_eventTypeExplanationDialog"
+            app:destination="@id/eventTypeExplanationDialog">
+
+            <argument
+                android:name="eventType"
+                app:argType="com.iyr.ian.enums.EventTypesEnum" />
+            <argument
+                android:name="dialogType"
+                app:argType="com.iyr.ian.ui.dialogs.DialogFunctionEnum" />
+
+
+        </action>
     </fragment>
     <fragment
         android:id="@+id/eventRealTimeTrackingFragment"
@@ -61,6 +85,9 @@
         <action
             android:id="@+id/action_eventAdditionalMediaFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_eventAdditionalMediaFragment_to_networkSelectionDialog"
+            app:destination="@id/networkSelectionDialog" />
     </fragment>
     <fragment
         android:id="@+id/mapSituationFragment"
@@ -70,15 +97,19 @@
         <action
             android:id="@+id/action_mapSituationFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
+        <argument
+            android:name="eventKey"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
     <fragment
         android:id="@+id/friendsFragment"
         android:name="com.iyr.ian.ui.friends.FriendsFragment"
         android:label="FriendsFragment"
-        tools:layout="@layout/fragment_friends"/>
+        tools:layout="@layout/fragment_friends" />
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="com.iyr.ian.ui.settings.SettingsFragment"
+        android:name="com.iyr.ian.ui.settings.landing_fragment.SettingsLandingFragment"
         android:label="SettingsFragment"
         tools:layout="@layout/fragment_settings_landing">
         <action
@@ -103,20 +134,423 @@
         android:id="@+id/planSubscriptionFragment"
         android:name="com.iyr.ian.ui.settings.subscription_plan.PlanSubscriptionFragment"
         android:label="PlanSubscriptionFragment"
-        tools:layout="@layout/activity_subscription_current_plan"/>
+        tools:layout="@layout/activity_subscription_current_plan" />
     <activity
         android:id="@+id/subscriptionCurrentPlanActivity"
         android:name="com.iyr.fewtouchs.ui.views.signup.subscription_plan.SubscriptionCurrentPlanActivity"
         android:label="SubscriptionCurrentPlanActivity"
-        tools:layout="@layout/fragment_plan_subscription"/>
+        tools:layout="@layout/fragment_plan_subscription" />
     <fragment
         android:id="@+id/pushButtonSetupFragment"
         android:name="com.iyr.ian.ui.settings.push_button.PushButtonSetupFragment"
         android:label="PushButtonSetupFragment"
-        tools:layout="@layout/activity_press_or_tap_setup"/>
+        tools:layout="@layout/fragment_bluetooth_configuration" />
+
+    <fragment
+        android:id="@+id/pressOrTapSetupFragment"
+        android:name="com.iyr.ian.ui.settings.press_or_tap_setup.PressOrTapSetupFragment"
+        android:label="PushButtonSetupFragment"
+        tools:layout="@layout/activity_press_or_tap_setup">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle"
+            app:nullable="true" />
+    </fragment>
+
     <activity
         android:id="@+id/bluetoothConfigurationActivity"
         android:name="com.iyr.ian.ui.setup.bluetooth.BluetoothConfigurationActivity"
         android:label="BluetoothConfigurationActivity"
-        tools:layout="@layout/activity_bluetooth_configuration"/>
+        tools:layout="@layout/activity_bluetooth_configuration" />
+    <fragment
+        android:id="@+id/splashFragment"
+        android:name="com.iyr.ian.ui.splash.SplashFragment"
+        android:label="SplashFragment"
+        tools:layout="@layout/activity_splash">
+        <action
+            android:id="@+id/action_splashFragment_to_preLoaderFragment"
+            app:destination="@id/preLoaderFragment"
+            app:popUpTo="@id/preLoaderFragment"
+            app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_splashFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/preLoaderFragment"
+        android:name="com.iyr.ian.ui.preloader.PreLoaderFragment"
+        android:label="PreLoaderFragment"
+        tools:layout="@layout/activity_preloader">
+        <action
+            android:id="@+id/action_preLoaderFragment_to_loginFragment2"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_preLoaderFragment_to_signUpFragment"
+            app:destination="@id/signUpFragment"
+            app:popUpTo="@id/preLoaderFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.iyr.ian.ui.login.LoginFragment"
+        android:label="LoginFragment"
+        tools:layout="@layout/activity_login">
+        <argument
+            android:name="email"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="password"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="login_method"
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_loginFragment_to_signUpFragment"
+            app:destination="@id/signUpFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/signUpFragment"
+        android:name="com.iyr.ian.ui.signup.signup_selector.SignUpSelectorFragment"
+        android:label="SignUpFragment"
+        tools:layout="@layout/activity_sign_up_selector">
+        <action
+            android:id="@+id/action_signUpFragment_to_signUpWithEmailActivity"
+            app:destination="@id/signUpWithEmailFragment" />
+        <action
+            android:id="@+id/action_signUpFragment_to_signUpWithPhoneFragment"
+            app:destination="@id/signUpWithPhoneFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/eventsFragment"
+        android:name="com.iyr.ian.ui.events.EventsFragment"
+        android:label="EventsFragment"
+        tools:layout="@layout/fragment_event" />
+
+    <dialog
+        android:id="@+id/eventTypeExplanationDialog"
+        android:name="com.iyr.ian.ui.dialogs.EventTypeExplanationDialog"
+        android:label="EventTypeExplanationDialog"
+        tools:layout="@layout/event_type_explanation_popup">
+
+        <argument
+            android:name="eventType"
+            app:argType="com.iyr.ian.enums.EventTypesEnum" />
+        <argument
+            android:name="dialogType"
+            app:argType="com.iyr.ian.ui.dialogs.DialogFunctionEnum" />
+
+        <action
+            android:id="@+id/action_eventTypeExplanationDialog_to_planSubscriptionFragment"
+            app:destination="@id/planSubscriptionFragment">
+
+
+        </action>
+    </dialog>
+    <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.iyr.ian.ui.notifications.NotificationsFragment"
+        android:label="NotificationsFragment"
+        tools:layout="@layout/fragment_notifications" />
+    <fragment
+        android:id="@+id/otpVerificationActivity"
+        android:name="com.iyr.ian.ui.otp.OtpVerificationFragment"
+        android:label="OtpVerificationActivity"
+        tools:layout="@layout/activity_otp_verification">
+        <argument
+            android:name="action"
+            app:argType="string" />
+        <argument
+            android:name="storedVerificationId"
+            app:argType="string" />
+        <argument
+            android:name="resend_token"
+            app:argType="com.google.firebase.auth.PhoneAuthProvider$ForceResendingToken"
+            app:nullable="true" />
+        <argument
+            android:name="phone_number"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_setupFragment"
+            app:destination="@id/setupFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_pressOrTapSetupFragment"
+            app:destination="@id/pressOrTapSetupFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_pinSetupFragment"
+            app:destination="@id/pinSetupFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_speedDialSetupFragment"
+            app:destination="@id/speedDialSetupFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_locationRequiredFragment"
+            app:destination="@id/locationRequiredFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_addContactsFromPhoneFragment"
+            app:destination="@id/addContactsFromPhoneFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_homeFragment"
+            app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_otpVerificationActivity_to_pinSetupFragment2"
+            app:destination="@id/pinSetupFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/signUpWithEmailFragment"
+        android:name="com.iyr.ian.ui.signup.with_email.SignUpWithEmailFragment"
+        android:label="SignUpWithEmailActivity"
+        tools:layout="@layout/activity_sign_up_with_email">
+        <action
+            android:id="@+id/action_signUpWithEmailFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/signUpWithPhoneFragment"
+        android:name="com.iyr.ian.ui.signup.with_phone.SignUpWithPhoneFragment"
+        android:label="SignUpWithPhoneFragment"
+        tools:layout="@layout/activity_sign_up_with_phone">
+        <action
+            android:id="@+id/action_signUpWithPhoneFragment_to_otpVerificationActivity"
+            app:destination="@id/otpVerificationActivity" />
+    </fragment>
+    <fragment
+        android:id="@+id/setupFragment"
+        android:name="com.iyr.ian.ui.setup.SetupFragment"
+        android:label="SetupFragment"
+        tools:layout="@layout/activity_setup">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_setupFragment_to_pinSetupFragment"
+            app:destination="@id/pinSetupFragment" />
+        <action
+            android:id="@+id/action_setupFragment_to_speedDialSetupFragment"
+            app:destination="@id/speedDialSetupFragment" />
+        <action
+            android:id="@+id/action_setupFragment_to_addContactsFromPhoneFragment"
+            app:destination="@id/addContactsFromPhoneFragment" />
+        <action
+            android:id="@+id/action_setupFragment_to_locationRequiredFragment"
+            app:destination="@id/locationRequiredFragment" />
+        <action
+            android:id="@+id/action_setupFragment_to_pressOrTapSetupFragment"
+            app:destination="@id/pressOrTapSetupFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/pinSetupFragment"
+        android:name="com.iyr.ian.ui.setup.pin_setup.PinSetupFragment"
+        android:label="PinSetupFragment"
+        tools:layout="@layout/activity_pin_setup">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_pinSetupFragment_to_addContactsFromPhoneFragment"
+            app:destination="@id/addContactsFromPhoneFragment" />
+        <action
+            android:id="@+id/action_pinSetupFragment_to_locationRequiredFragment"
+            app:destination="@id/locationRequiredFragment" />
+        <action
+            android:id="@+id/action_pinSetupFragment_to_speedDialSetupFragment"
+            app:destination="@id/speedDialSetupFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/speedDialSetupFragment"
+        android:name="com.iyr.ian.ui.setup.speed_dial_setup.SpeedDialSetupFragment"
+        android:label="SpeedDialSetupFragment"
+        tools:layout="@layout/activity_speed_dial_setup">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_speedDialSetupFragment_to_addContactsFromPhoneFragment"
+            app:destination="@id/addContactsFromPhoneFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/locationRequiredFragment"
+        android:name="com.iyr.ian.ui.setup.location.LocationRequiredFragment"
+        android:label="LocationRequiredFragment"
+        tools:layout="@layout/activity_location_required">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle" />
+        <action
+            android:id="@+id/action_locationRequiredFragment_to_signUpCompletedFragment"
+            app:destination="@id/signUpCompletedFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/addContactsFromPhoneFragment"
+        android:name="com.iyr.ian.ui.signup.phone_contacts.AddContactsFromPhoneFragment"
+        android:label="AddContactsFromPhoneFragment"
+        tools:layout="@layout/activity_add_contacts_from_phone">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/signUpCompletedFragment"
+        android:name="com.iyr.ian.ui.signup.signup_completed.SignUpCompletedFragment"
+        android:label="SignUpCompletedFragment"
+        tools:layout="@layout/activity_sign_up_completed">
+        <argument
+            android:name="bundle"
+            app:argType="android.os.Bundle"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/contactsFragment"
+        android:name="com.iyr.ian.ui.contatcs.ContactsFragment"
+        android:label="fragment_contacts"
+        tools:layout="@layout/fragment_contacts">
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsCreationDialog"
+            app:destination="@id/contactsCreationDialog" />
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsGroupsCreationConfirmationDialog"
+            app:destination="@id/contactsGroupsCreationConfirmationDialog" />
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsGroupsDeletionConfirmationDialog"
+            app:destination="@id/contactsGroupsDeletionConfirmationDialog" />
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsDeletionConfirmationDialog"
+            app:destination="@id/contactsDeletionConfirmationDialog" />
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsInvitationConfirmationDialog"
+            app:destination="@id/contactsInvitationConfirmationDialog" />
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsGroupsCreationDialog"
+            app:destination="@id/contactsGroupsCreationDialog" />
+        <action
+            android:id="@+id/action_contactsFragment_to_contactsGroupsAssignationDialog"
+            app:destination="@id/contactsGroupsAssignationDialog" />
+    </fragment>
+
+    <dialog
+        android:id="@+id/contactsCreationDialog"
+        android:name="com.iyr.ian.ui.contatcs.dialogs.ContactsCreationDialog"
+        android:label="ContactsCreationDialog"
+        tools:layout="@layout/fragment_contact_creation_popup" />
+    <dialog
+        android:id="@+id/contactsGroupsCreationConfirmationDialog"
+        android:name="com.iyr.ian.ui.contacts_groups.dialogs.ContactsGroupsCreationConfirmationDialog"
+        android:label="ContactsGroupsCreationConfirmationDialog"
+        tools:layout="@layout/fragment_contact_group_creation_confirmation_popup">
+        <argument
+            android:name="userKey"
+            app:argType="string" />
+        <argument
+            android:name="additional_data"
+            app:argType="string" />
+    </dialog>
+    <dialog
+        android:id="@+id/contactsGroupsDeletionConfirmationDialog"
+        android:name="com.iyr.ian.ui.contacts_groups.dialogs.ContactsGroupsDeletionConfirmationDialog"
+        android:label="ContactsGroupsDeletionConfirmationDialog"
+        tools:layout="@layout/fragment_contact_group_deletion_confirmation_popup">
+        <argument
+            android:name="userKey"
+            app:argType="string" />
+        <argument
+            android:name="contactGroup"
+            app:argType="com.iyr.ian.dao.models.ContactGroup" />
+
+    </dialog>
+    <dialog
+        android:id="@+id/contactsDeletionConfirmationDialog"
+        android:name="com.iyr.ian.ui.contatcs.dialogs.ContactsDeletionConfirmationDialog"
+        android:label="ContactsDeletionConfirmationDialog"
+        tools:layout="@layout/fragment_contact_deletion_confirmation_popup">
+
+        <argument
+            android:name="userKey"
+            app:argType="string" />
+        <argument
+            android:name="contact"
+            app:argType="com.iyr.ian.dao.models.Contact" />
+
+
+    </dialog>
+    <dialog
+        android:id="@+id/contactsInvitationConfirmationDialog"
+        android:name="com.iyr.ian.ui.contatcs.dialogs.ContactsInvitationConfirmationDialog"
+        android:label="ContactsInvitationConfirmationDialog"
+        tools:layout="@layout/fragment_contact_insertion_confirmation_popup">
+        <argument
+            android:name="input"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_contactsInvitationConfirmationDialog_to_sharingBottomSheetFragment"
+            app:destination="@id/sharingBottomSheetFragment" />
+    </dialog>
+    <dialog
+        android:id="@+id/sharingBottomSheetFragment"
+        android:name="com.iyr.ian.utils.sharing_app.SharingBottomSheetFragment"
+        android:label="SharingBottomSheetFragment"
+        tools:layout="@layout/fragment_bottom_sheet_dialog_share_with_apps"/>
+    <dialog
+        android:id="@+id/contactsGroupsCreationDialog"
+        android:name="com.iyr.ian.ui.contacts_groups.dialogs.ContactsGroupsCreationDialog"
+        android:label="ContactsGroupsCreationDialog"
+        tools:layout="@layout/fragment_contact_group_creation_popup">
+
+        <argument
+            android:name="additional_data"
+            app:argType="string" />
+    </dialog>
+    <dialog
+        android:id="@+id/contactsGroupsAssignationDialog"
+        android:name="com.iyr.ian.ui.contatcs.dialogs.ContactsGroupsAssignationDialog"
+        android:label="ContactsGroupsAssignationDialog"
+        tools:layout="@layout/fragment_contact_group_assignation_popup">
+        <argument
+            android:name="contact"
+            app:argType="com.iyr.ian.dao.models.Contact" />
+
+        <argument
+            android:name="groupsAsJson"
+            app:argType="string" />
+    </dialog>
+    <dialog
+        android:id="@+id/contactAcceptInvitationDialog"
+        android:name="com.iyr.ian.ui.contatcs.dialogs.ContactAcceptInvitationDialog"
+        android:label="ContactAcceptInvitationDialog"
+        tools:layout="@layout/fragment_contact_accept_invitation_popup">
+        <argument
+            android:name="contact"
+            app:argType="com.iyr.ian.dao.models.UserMinimum" />
+        <action
+            android:id="@+id/action_contactAcceptInvitationDialog_to_newFriendDialog"
+            app:destination="@id/newFriendDialog" />
+    </dialog>
+    <dialog
+        android:id="@+id/newFriendDialog"
+        android:name="com.iyr.ian.ui.contacts_groups.dialogs.NewFriendDialog"
+        android:label="NewFriendDialog"
+        tools:layout="@layout/new_friend_popup">
+        <argument
+            android:name="contactsHashMap"
+            app:argType="java.io.Serializable" />
+    </dialog>
+    <dialog
+        android:id="@+id/qrCodeDisplayPopup"
+        android:name="com.iyr.ian.ui.base.fragments.QrCodeDisplayPopup"
+        android:label="dialog_qr_code_display"
+        tools:layout="@layout/fragment_qr_code_display" />
+    <fragment
+        android:id="@+id/qrCodeScanningFragment"
+        android:name="com.iyr.ian.ui.base.fragments.QrCodeScanningFragment"
+        android:label="QrCodeScanningFragment"
+        tools:layout="@layout/fragment_qr_scanner_display"/>
+    <dialog
+        android:id="@+id/networkSelectionDialog"
+        android:name="com.iyr.ian.ui.events.fragments.dialogs.network_selection.NetworkSelectionDialog"
+        android:label="NetworkSelectionDialog"
+        tools:layout="@layout/fragment_network_selection_popup"/>
 </navigation>

@@ -16,12 +16,14 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.dao.repositories.implementations.auth.firebase.AuthenticationRepositoryImpl
 import com.iyr.ian.enums.UserTypesEnum
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.UsersRepositoryImpl
 import com.iyr.ian.ui.login.LoginMethodsEnum
+import com.iyr.ian.utils.Validators
 import com.iyr.ian.utils.coroutines.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,10 +43,6 @@ class SignUpWithEmailActivityViewModel(
     }
 
     private var isEmailValid: Boolean = false
-
-    internal var emailAddress: String = ""
-    internal var password: String = ""
-    internal var phoneNumber: String = ""
 
 
     private val _error = MutableLiveData<String>()
@@ -246,7 +244,8 @@ class SignUpWithEmailActivityViewModel(
                         var call = usersRepository.insertUser(user)
 
                         try {
-                            var emailVerificationCall = authRepository.sendEmailVerification(authUser!!)
+                            var emailVerificationCall =
+                                authRepository.sendEmailVerification(authUser!!)
                             _viewStatus.postValue(Resource.Success(user))
 
                         } catch (exception: Exception) {
@@ -374,4 +373,48 @@ class SignUpWithEmailActivityViewModel(
         }
 
     }
+
+
+    private val _emailAddress = MutableLiveData<String>()
+    val emailAddress: LiveData<String> = _emailAddress
+    fun onEmailChanged(emailAddress: String) {
+        _emailAddress.value = emailAddress
+        checkSignUpButtonStatus()
+        isEmailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches()
+        _isValidEmail.value = isEmailValid
+    }
+
+
+
+    private val _password = MutableLiveData<String?>()
+    val password: LiveData<String?> = _password
+    fun onPasswordChanged(password: String) {
+        _password.value = password
+        checkSignUpButtonStatus()
+    }
+
+    private val _confirmPassword = MutableLiveData<String>()
+    val confirmPassword: LiveData<String> = _confirmPassword
+    fun onPasswordConfirmationChanged(password: String) {
+        _confirmPassword.value = password
+        checkSignUpButtonStatus()
+    }
+
+
+    /***
+     * Determina si el boton de registro debe mostrarse habilitado o no
+     */
+    private fun checkSignUpButtonStatus() {
+        _loginButtonEnabled.value = isEmailValid && isValidPassword.value!!
+        val emailAddress = _emailAddress.value
+        val password = _password.value
+        val confirmPassword = _confirmPassword.value
+        Validators.isValidMail(emailAddress) &&
+                (password?.compareTo(confirmPassword ?: "-----") == 0 && Validators.isValidPassword(
+                    password,
+                    AppConstants.PASSWORD_MINIMUM_LENGTH
+                ))
+    }
+
+
 }

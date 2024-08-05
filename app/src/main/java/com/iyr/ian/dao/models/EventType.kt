@@ -1,9 +1,10 @@
 package com.iyr.ian.dao.models
 
 import com.google.firebase.database.annotations.NotNull
+import java.io.Serializable
 
 
-class EventType() {
+class EventType() : Serializable {
 
     constructor(
         eventTypeName: String,

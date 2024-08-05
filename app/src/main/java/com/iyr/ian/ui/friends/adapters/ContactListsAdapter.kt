@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.chauthai.swipereveallayout.ViewBinderHelper
 import com.iyr.ian.R
-import com.iyr.ian.dao.models.NotificationList
+import com.iyr.ian.dao.models.ContactGroup
 
 
 interface IContactLists {
@@ -20,7 +20,7 @@ interface IContactLists {
 class ContactListsAdapter(val context: Context) :
     RecyclerView.Adapter<ContactListsAdapter.ViewHolder>() {
     private val viewBinderHelper = ViewBinderHelper()
-    private var data: java.util.ArrayList<NotificationList> = ArrayList<NotificationList>()
+    private var data: java.util.ArrayList<ContactGroup> = ArrayList<ContactGroup>()
 
     init {
     }
@@ -51,7 +51,7 @@ class ContactListsAdapter(val context: Context) :
     }
 
 
-    fun getData(): ArrayList<NotificationList> {
+    fun getData(): ArrayList<ContactGroup> {
         return data
     }
 

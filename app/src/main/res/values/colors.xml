@@ -324,5 +324,7 @@
     <color name="whiteTrans50">#50ffffff</color>
     <color name="whiteTrans80">#80ffffff</color>
     <color name="shimmerColor">#CAC6C6</color>
+    <color name="color_when_enabled">#070707</color>
+    <color name="color_when_not_enabled">#BDBDBD</color>
 
 </resources>

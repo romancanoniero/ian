@@ -11,8 +11,17 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.VectorDrawable
 import android.os.Build
 import android.view.View
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
+import com.iyr.ian.R
+import com.iyr.ian.glide.GlideApp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ImageExtensions
 
@@ -36,7 +45,7 @@ fun Context.resizeVectorDrawable(image: VectorDrawable, with: Int, height: Int):
 
 }
 
-fun Context.getBitmapFromVectorDrawable( drawableId: Int): Bitmap {
+fun Context.getBitmapFromVectorDrawable(drawableId: Int): Bitmap {
     var drawable = ContextCompat.getDrawable(this, drawableId)
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
         assert(drawable != null)
@@ -53,7 +62,7 @@ fun Context.getBitmapFromVectorDrawable( drawableId: Int): Bitmap {
 }
 
 
-fun Context.loadBitmapFromView( view: View, width: Int, height: Int): Bitmap {
+fun Context.loadBitmapFromView(view: View, width: Int, height: Int): Bitmap {
     val dm = this.resources.displayMetrics
     view.measure(
         View.MeasureSpec.makeMeasureSpec(
@@ -78,12 +87,12 @@ fun Context.loadBitmapFromView( view: View, width: Int, height: Int): Bitmap {
 }
 
 fun Bitmap.toGrayscale(): Bitmap {
-  /*
-    val width: Int
-    val height: Int
-    height = bmpOriginal.height
-    width = bmpOriginal.width
-*/
+    /*
+      val width: Int
+      val height: Int
+      height = bmpOriginal.height
+      width = bmpOriginal.width
+  */
     val bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     val c = Canvas(bmpGrayscale)
     val paint = Paint()
@@ -93,4 +102,75 @@ fun Bitmap.toGrayscale(): Bitmap {
     paint.colorFilter = f
     c.drawBitmap(this, 0f, 0f, paint)
     return bmpGrayscale
+}
+
+
+/***
+ * Assigns an image to an ImageView from cache of from a file in Firebase Storage
+ * @param context The context of the activity or fragment
+ * @param fileName The name of the file to be loaded
+ * @param folder The folder where the file is stored ( Fullpath)
+ * @param destination The ImageView where the image will be assigned
+ */
+fun Context.assignFileImageTo(
+    fileName: String,
+    folder: String,
+    destination: ImageView
+) {
+    var imageBitmap = loadImageFromCache(
+        fileName,
+        folder
+    )
+
+    if (imageBitmap != null) {
+        destination.setImageBitmap(imageBitmap)
+        return
+    } else {
+
+        try {
+            val storageReference = FirebaseStorage.getInstance()
+                .getReference(folder)
+                .child(fileName)
+
+            GlobalScope.launch(Dispatchers.IO) {
+                try {
+                    imageBitmap = GlideApp.with(this@assignFileImageTo)
+                        .asBitmap()
+                        .load(storageReference)
+                        .placeholder(this@assignFileImageTo.getDrawable(R.drawable.progress_animation))
+                        .error(this@assignFileImageTo.getDrawable(R.drawable.ic_error))
+                        .submit()
+                        .get()
+
+                    if (imageBitmap != null) {
+                        imageBitmap!!.saveImageToCache(
+                            this@assignFileImageTo,
+                            fileName,
+                            folder
+                        )
+                        withContext(Dispatchers.Main) {
+                            destination.setImageBitmap(imageBitmap)
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            destination.setImageDrawable(
+                                this@assignFileImageTo.getDrawable(
+                                    R.drawable.ic_error
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        destination.setImageDrawable(this@assignFileImageTo.getDrawable(R.drawable.ic_error))
+                    }
+                }
+
+            }
+        } catch (e: Exception) {
+            destination.setImageDrawable(this@assignFileImageTo.getDrawable(R.drawable.ic_error))
+        } catch (e: StorageException) {
+            destination.setImageDrawable(this@assignFileImageTo.getDrawable(R.drawable.ic_error))
+        }
+    }
 }

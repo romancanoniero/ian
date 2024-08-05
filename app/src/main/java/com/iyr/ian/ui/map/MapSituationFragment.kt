@@ -42,6 +42,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -95,7 +96,6 @@ import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.chat.ChatWindowStatus
 import com.iyr.ian.ui.chat.MessagesFragmentInterface
 import com.iyr.ian.ui.chat.MessagesInEventFragment
-import com.iyr.ian.ui.interfaces.MainActivityInterface
 import com.iyr.ian.ui.map.adapters.EventHeaderAdapter
 import com.iyr.ian.ui.map.enums.CameraModesEnum
 import com.iyr.ian.ui.map.enums.MapObjectsType
@@ -140,6 +140,7 @@ import com.iyr.ian.utils.zoomToFitMarkers
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
 import com.iyr.ian.viewmodels.MessagesInEventFragmentViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import com.utsman.smartmarker.googlemaps.toLatLngGoogle
 import com.utsman.smartmarker.moveMarkerSmoothly
 import io.nlopez.smartlocation.SmartLocation
@@ -171,9 +172,15 @@ enum class ChatFragmentStatus {
 }
 
 
-class MapSituationFragment(
-    val mainActivity: MainActivity, val mainActivityViewModel: MainActivityViewModel
-) : Fragment(), MessagesFragmentInterface, EventHeaderCallback {
+class MapSituationFragment() : Fragment(), MessagesFragmentInterface, EventHeaderCallback {
+
+
+    val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(
+            requireContext(),
+            UserViewModel.getInstance().getUser()?.user_key.toString() ?: "???"
+        )
+    }
 
     private lateinit var viewModel: MapSituationFragmentViewModel
     private lateinit var messagingViewModel: MessagesInEventFragmentViewModel
@@ -598,13 +605,27 @@ class MapSituationFragment(
     override fun onResume() {
         super.onResume()
         refreshTimes = 0
-        (requireActivity() as MainActivity).setTitleBarTitle(R.string.action_events_map)
-        AppClass.instance.setCurrentFragment(this)
 
-        Log.d("MAPFRAGMENT", "ONRESUME")
-        if (requireActivity() is MainActivityInterface) {
-            (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.action_events_map))
+        var mainActivityBindings = (requireActivity() as MainActivity).binding
+
+        if (findNavController().currentDestination?.id == R.id.mapSituationFragment) {
+            var appToolbar = (requireActivity() as MainActivity).appToolbar
+            appToolbar.enableBackBtn(true)
+            appToolbar.updateTitle(getString(R.string.action_events_map))
+            mainActivityBindings.includeCustomToolbar.root.visibility = View.VISIBLE
+            mainActivityBindings.bottomToolbar.visibility = View.GONE
         }
+
+
+//        (requireActivity() as MainActivity).setTitleBarTitle(R.string.action_events_map)
+        //      AppClass.instance.setCurrentFragment(this)
+        /*
+                Log.d("MAPFRAGMENT", "ONRESUME")
+                if (requireActivity() is MainActivityInterface) {
+                    (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.action_events_map))
+                }
+            */
+
         if (userVisibleHint) {
             if (mMap == null) {
                 mapView.getMapAsync(
@@ -613,7 +634,7 @@ class MapSituationFragment(
             }
         }
 
-        setupObservers()
+        startObservers()
 
 
         if (eventKeyShowing != null) {
@@ -622,7 +643,8 @@ class MapSituationFragment(
         } else {
             if (AppClass.instance.eventsMap.value?.size == 0) {
                 Toast.makeText(requireContext(), "No hay eventos", Toast.LENGTH_SHORT).show()
-                mainActivity.onBackPressed()
+                //mainActivity.onBackPressed()
+                findNavController().popBackStack()
             } else {
                 AppClass.instance.eventsMap.value?.values?.first()?.let { event ->
                     Log.d(
@@ -642,13 +664,13 @@ class MapSituationFragment(
         mapUpdatesJob?.cancel()
         remainingTimeUpdatesJob?.cancel()
         disconnectFromEvent()
-        cancelObservers()
+        stopObservers()
         //  AppClass.instance.removeViewFromStack(this)
 
     }
 
 
-    private fun setupObservers() {
+    private fun startObservers() {
 
         viewModel.spinner.observe(this) { value ->
             value.let { show ->
@@ -675,15 +697,14 @@ class MapSituationFragment(
                 }
 
                 MapSituationFragmentViewModel.OnEventClosedActionsEnum.GO_MAIN -> {
-                    mainActivity.onBackPressed()
+//                    mainActivity.onBackPressed()
+                    findNavController().popBackStack()
                 }
 
                 null -> {}
             }
 
         }
-
-
 
         AppClass.instance.eventsMap.observe(this) { map ->
             startShimmer()
@@ -752,8 +773,6 @@ class MapSituationFragment(
             }
 
         }
-
-
 
         viewModel.currentEventKey.observe(this) { eventKey ->
             messages.clear()
@@ -940,6 +959,24 @@ class MapSituationFragment(
 
     }
 
+
+    private fun stopObservers() {
+        viewModel.spinner.removeObservers(this)
+        viewModel.resetMap.removeObservers(this)
+        viewModel.onCloseEventAction.removeObservers(this)
+        AppClass.instance.eventsMap.removeObservers(this)
+        viewModel.currentEventKey.removeObservers(this)
+        viewModel.currentEvent.removeObservers(this)
+        viewModel.isChatOpen.removeObservers(this)
+        viewModel.showChatFragment.removeObservers(this)
+        viewModel.isChatButtonVisible.removeObservers(this)
+        viewModel.isCounterVisible.removeObservers(this)
+        viewModel.bottomBarVisibilityStatus.removeObservers(this)
+        viewModel.eventFlow.removeObservers(this)
+        mainActivityViewModel.isKeyboardOpen.removeObservers(this)
+    }
+
+
     private fun startShimmer() {
         binding.shimmerLayout.visibility = VISIBLE
         binding.shimmerLayout.startShimmer()
@@ -1104,11 +1141,11 @@ class MapSituationFragment(
 
 
     fun startObserveEvent(eventKey: String) {
-      if (::viewModel.isInitialized) {
-          Log.d("FLOW_CONNECT_VIEWMODEL_INTENTA", "Will change to Event {$eventKey}")
-          viewModel.onCurrentEventChange(eventKey)
-          chatFragment?.clearMessages()
-      }
+        if (::viewModel.isInitialized) {
+            Log.d("FLOW_CONNECT_VIEWMODEL_INTENTA", "Will change to Event {$eventKey}")
+            viewModel.onCurrentEventChange(eventKey)
+            chatFragment?.clearMessages()
+        }
 
 
 
@@ -1226,17 +1263,6 @@ class MapSituationFragment(
     }
 
 
-    private fun cancelObservers() {
-        viewModel.eventFlow.removeObservers(this)
-        // viewModel.viewersUpdatesFlow.removeObservers(this)
-        //jobViewersFlowObserver?.cancel()
-        viewModel.currentEvent.removeObservers(this)
-        viewModel.resetMap.removeObservers(this)
-        viewModel.subscriptedEvents.removeObservers(this)
-        viewModel.showChatFragment.removeObservers(this)
-    }
-
-
     private suspend fun getEventMarkerLatLng(event: Event): LatLng? {
         if (event.event_location_type == EventLocationType.FIXED.toString()) {
             return LatLng(event.location?.latitude!!, event.location?.longitude!!)
@@ -1313,7 +1339,7 @@ class MapSituationFragment(
 
         binding.elapsedPeriod.maxValue = 180f
         setupToolbar()
-        closeCameraModeSelector()
+//        closeCameraModeSelector()
         binding.elapsedPeriod.visibility = GONE
 
         chatFragment?.setViewReference(binding.fabChat)
@@ -1788,8 +1814,10 @@ class MapSituationFragment(
                 if (nextEvent == null) {
                     clearMap()
                     hideEventsToolbar()
-                  //  mainActivity.switchToModule(0, "home")
-                    mainActivity.goHome()
+                    //  mainActivity.switchToModule(0, "home")
+//                    mainActivity.goHome()
+                    findNavController().popBackStack()
+
                 } else {
 //                    selectEvent(nextEvent.event_key)
                     Log.d(
@@ -2369,18 +2397,18 @@ class MapSituationFragment(
                 existingBounds.include(farthestLatitude)
                 existingBounds.include(puntoVerticalNegativo!!)
 
-/*
-                circles.add(
-                    mMap?.drawControlCircle(
-                        myPosition, getColor(requireContext(), R.color.material_green500), 1000.0
-                    )!!
-                )
+                /*
+                                circles.add(
+                                    mMap?.drawControlCircle(
+                                        myPosition, getColor(requireContext(), R.color.material_green500), 1000.0
+                                    )!!
+                                )
 
-                circles.add(mMap?.drawControlCircle(farthestLongitude, R.color.red)!!)
-                circles.add(mMap?.drawControlCircle(puntoHorizontalNegativo!!, R.color.red)!!)
-                circles.add(mMap?.drawControlCircle(farthestLatitude, R.color.blue)!!)
-                circles.add(mMap?.drawControlCircle(puntoVerticalNegativo!!, R.color.blue)!!)
-*/
+                                circles.add(mMap?.drawControlCircle(farthestLongitude, R.color.red)!!)
+                                circles.add(mMap?.drawControlCircle(puntoHorizontalNegativo!!, R.color.red)!!)
+                                circles.add(mMap?.drawControlCircle(farthestLatitude, R.color.blue)!!)
+                                circles.add(mMap?.drawControlCircle(puntoVerticalNegativo!!, R.color.blue)!!)
+                */
                 elementsBounds = existingBounds.build()
 
                 if (lastPolygon != null) {
@@ -2717,7 +2745,9 @@ class MapSituationFragment(
                 chatFragment?.enableControls()
                 AppClass.instance.setCurrentFragment(chatFragment)
                 // Provisoriamente elimino del contador los mensajes ya leidos
-                mainActivity.removeUnreadMessagesByRoomKey(eventKeyShowing ?: "")
+                //      mainActivity.removeUnreadMessagesByRoomKey(eventKeyShowing ?: "")
+
+
             }
 
             override fun onAnimationRepeat(animation: Animation?) {

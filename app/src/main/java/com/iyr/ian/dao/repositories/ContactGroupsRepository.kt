@@ -1,13 +1,12 @@
 package com.iyr.ian.dao.repositories
 
-import com.iyr.ian.dao.models.Contact
-import com.iyr.ian.dao.models.NotificationList
+import com.iyr.ian.dao.models.ContactGroup
 import com.iyr.ian.utils.coroutines.Resource
 
 
 interface ContactGroupsInterface {
 
-    suspend fun postContactGroup(userKey: String, groupName: String) : Resource<NotificationList?>
+    suspend fun postContactGroup(userKey: String, groupName: String) : Resource<ContactGroup?>
 }
 
 abstract class ContactGroupsRepository : ContactGroupsInterface {

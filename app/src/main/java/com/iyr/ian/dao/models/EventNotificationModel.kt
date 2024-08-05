@@ -58,7 +58,7 @@ class EventNotificationModel {
     var event_info: HashMap<String, Any>? = null
     var qty: Int? = null
     var status: String = ""
-
+    var read: Boolean = false
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

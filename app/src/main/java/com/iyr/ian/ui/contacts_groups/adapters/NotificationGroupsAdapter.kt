@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.iyr.ian.R
-import com.iyr.ian.dao.models.NotificationList
+import com.iyr.ian.dao.models.ContactGroup
 import com.iyr.ian.ui.contacts_groups.ContactsGroupsFragmentCallback
 
 
@@ -19,7 +19,7 @@ interface IContactGroups {
 class ContactsGroupsAdapter(val context: Context, val callback: ContactsGroupsFragmentCallback) :
     RecyclerView.Adapter<ContactsGroupsAdapter.ViewHolder>() {
 
-    private var data: java.util.ArrayList<NotificationList> = ArrayList<NotificationList>()
+    private var data: java.util.ArrayList<ContactGroup> = ArrayList<ContactGroup>()
 
     init {
     }
@@ -44,7 +44,7 @@ class ContactsGroupsAdapter(val context: Context, val callback: ContactsGroupsFr
     }
 
 
-    fun getData(): ArrayList<NotificationList> {
+    fun getData(): ArrayList<ContactGroup> {
         return data
     }
 
@@ -57,18 +57,6 @@ class ContactsGroupsAdapter(val context: Context, val callback: ContactsGroupsFr
         var listName: TextView = view.findViewById<TextView>(R.id.list_name)
         var membersCount: TextView = view.findViewById<TextView>(R.id.members_count)
 
-        /*
-              var primaryActionButton = view.findViewById<View>(R.id.primary_action_button)
-              var primaryActionIcon = view.findViewById<ImageView>(R.id.primary_action_icon)
-              var primaryActionText = view.findViewById<TextView>(R.id.primary_action_title)
-              var secondaryActionButton = view.findViewById<View>(R.id.secondary_action_button)
-              var secondaryActionImage = view.findViewById<ImageView>(R.id.secondary_action_icon)
-              var secondaryActionTitle = view.findViewById<TextView>(R.id.secondary_action_title)
-              var switchSpeedDial = view.findViewById<Switch>(R.id.switch_speed_dial)
-              var switchSpeedDialSection = view.findViewById<LinearLayout>(R.id.switch_speed_dial_section)
-      */
-        //        var statusStamp = view.findViewById<TextView>(R.id.status_stamp)
-      //  var secondLine: TextView = view.findViewById<TextView>(R.id.second_line)
 
     }
 

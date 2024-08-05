@@ -14,4 +14,5 @@
     <dimen name="dimen_75dp">75dp</dimen>
     <dimen name="dimen_100dp">100dp</dimen>
     <dimen name="message_incoming_bubble_margin_left">2dp</dimen>
+    <dimen name="circle_4_5">128dp</dimen>
 </resources>

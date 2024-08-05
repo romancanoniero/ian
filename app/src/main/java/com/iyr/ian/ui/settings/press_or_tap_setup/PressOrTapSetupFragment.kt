@@ -1,6 +1,5 @@
 package com.iyr.ian.ui.settings.press_or_tap_setup
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,15 +13,14 @@ import com.iyr.ian.R
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.databinding.ActivityPressOrTapSetupBinding
 import com.iyr.ian.ui.interfaces.MainActivityInterface
-import com.iyr.ian.ui.settings.ISettingsFragment
 import com.iyr.ian.ui.settings.SettingsFragmentViewModel
-import com.iyr.ian.ui.settings.SettingsFragmentsEnum
 import com.iyr.ian.ui.setup.press_or_tap_setup.PressOrTapSetupActivityCallback
 import com.iyr.ian.ui.setup.press_or_tap_setup.SOSActivationMethods
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import com.triggertrap.seekarc.SeekArc
 import java.util.Timer
 import java.util.TimerTask
@@ -38,16 +36,17 @@ private const val ARG_PARAM2 = "param2"
  * Use the [PressOrTapSetupFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class PressOrTapSetupFragment(
-    val mainActivityViewModel: MainActivityViewModel,
-    val settingsFragmentViewModel: SettingsFragmentViewModel,
-    val _interface: ISettingsFragment
-) : Fragment(),
+class PressOrTapSetupFragment() : Fragment(),
     PressOrTapSetupActivityCallback {
     private lateinit var binding: ActivityPressOrTapSetupBinding
     private var selectedToggleButton: SOSActivationMethods = SOSActivationMethods.HOLD
     private var startTimeCounter: Long = 0
     private var timer: Timer? = null
+
+
+    private val mainActivityViewModel: MainActivityViewModel by lazy { MainActivityViewModel.getInstance(requireContext(), UserViewModel.getInstance().getUser()?.user_key.toString()) }
+    private val  settingsFragmentViewModel: SettingsFragmentViewModel by lazy { SettingsFragmentViewModel.getInstance() }
+
 
     var viewModel = PressOrTapSetupFragmentViewModel()
 
@@ -191,16 +190,6 @@ class PressOrTapSetupFragment(
         viewModel.savingStatus.removeObservers(this)
     }
 
-    companion object {
-        @JvmStatic
-        fun newInstance(
-            context: Context,
-            mainActivityViewModel: MainActivityViewModel,
-            settingsFragmentViewModel: SettingsFragmentViewModel,
-            _interface: ISettingsFragment
-        ) =
-            PressOrTapSetupFragment(mainActivityViewModel, settingsFragmentViewModel, _interface)
-    }
 
 
     private fun setupUI() {

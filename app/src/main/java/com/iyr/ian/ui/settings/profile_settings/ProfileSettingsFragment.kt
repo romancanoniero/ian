@@ -1,6 +1,5 @@
 package com.iyr.ian.ui.settings.profile_settings
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -25,12 +24,12 @@ import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.interfaces.IProfileSettingsFragment
 import com.iyr.ian.ui.interfaces.MainActivityInterface
-import com.iyr.ian.ui.settings.ISettingsFragment
 import com.iyr.ian.ui.settings.SettingsFragmentViewModel
 import com.iyr.ian.ui.setup.SetupActivity
 import com.iyr.ian.utils.FirebaseExtensions.getCurrentAuthenticationMethod
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -43,16 +42,14 @@ private const val ARG_PARAM2 = "param2"
  * Use the [ProfileSettingsFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class ProfileSettingsFragment(
-    val mainActivityViewModel: MainActivityViewModel,
-    val settingsFragmentViewModel: SettingsFragmentViewModel,
-    var _interface: ISettingsFragment
-) : Fragment(),
+class ProfileSettingsFragment() : Fragment(),
     IProfileSettingsFragment {
     private lateinit var binding: FragmentProfileSettingsBinding
-    //private lateinit var presenter: ProfileSettingsPresenter
 
-    // TODO: Rename and change types of parameters
+    private val mainActivityViewModel: MainActivityViewModel by lazy { MainActivityViewModel.getInstance(requireContext(), UserViewModel.getInstance().getUser()?.user_key.toString()) }
+    private val  settingsFragmentViewModel: SettingsFragmentViewModel by lazy { SettingsFragmentViewModel.getInstance() }
+
+
     private var param1: String? = null
     private var param2: String? = null
 
@@ -77,28 +74,6 @@ class ProfileSettingsFragment(
         return binding.root
     }
 
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FriendsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-
-
-        @JvmStatic
-        fun newInstance(
-            context: Context,
-            mainActivityViewModel: MainActivityViewModel,
-            settingsFragmentViewModel: SettingsFragmentViewModel,
-            _interface: ISettingsFragment
-        ) =
-            ProfileSettingsFragment(mainActivityViewModel, settingsFragmentViewModel, _interface)
-    }
 
 
     private fun setupUI() {

@@ -3,8 +3,11 @@ package com.iyr.ian.ui.interfaces
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import androidx.navigation.findNavController
 import com.google.gson.Gson
-import com.iyr.ian.ui.signup.phone_contacts.AddContactsFromPhoneActivity
+import com.iyr.ian.BuildConfig
+import com.iyr.ian.R
+import com.iyr.ian.app.AppClass
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.setup.SetupActivity
@@ -12,7 +15,9 @@ import com.iyr.ian.ui.setup.location.LocationRequiredActivity
 import com.iyr.ian.ui.setup.pin_setup.PinSetupActivity
 import com.iyr.ian.ui.setup.press_or_tap_setup.PressOrTapSetupActivity
 import com.iyr.ian.ui.setup.speed_dial_setup.SpeedDialSetupActivity
+import com.iyr.ian.ui.signup.phone_contacts.AddContactsFromPhoneActivity
 import com.iyr.ian.utils.areLocationPermissionsGranted
+import com.iyr.ian.viewmodels.MainActivityViewModel
 
 interface IAuthentication {
 
@@ -58,13 +63,24 @@ interface IAuthentication {
     }
 
     fun Activity.goToMainScreen(user: User) {
-        val intent = Intent(this, MainActivity::class.java)
-        val bundle = Bundle()
-        bundle.putString("user", Gson().toJson(user))
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        intent.putExtras(bundle)
-        startActivity(intent)
-        finish()
+
+        if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
+            var mainActivity = (this as MainActivity)
+            mainActivity.setAppStatus(MainActivityViewModel.AppStatus.INITIALIZING)
+
+
+            findNavController(R.navigation.navigator).navigate(R.id.homeFragment)
+            AppClass.instance.logged = true
+        } else {
+            val intent = Intent(this, MainActivity::class.java)
+            val bundle = Bundle()
+            bundle.putString("user", Gson().toJson(user))
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            intent.putExtras(bundle)
+            startActivity(intent)
+            AppClass.instance.logged = true
+            finish()
+        }
     }
 
 }

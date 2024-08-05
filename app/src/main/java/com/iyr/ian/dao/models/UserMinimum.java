@@ -5,9 +5,10 @@ import com.iyr.ian.utils.support_models.MediaFile;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class UserMinimum {
+public class UserMinimum implements Serializable {
 
     @Exclude
     public String user_key;

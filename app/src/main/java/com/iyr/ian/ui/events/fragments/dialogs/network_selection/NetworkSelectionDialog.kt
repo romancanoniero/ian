@@ -1,25 +1,26 @@
 package com.iyr.ian.ui.events.fragments.dialogs.network_selection
 
 
-import android.app.Activity
-import android.content.Context
+import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.MediaController
-import android.widget.RadioButton
-import android.widget.Spinner
-import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.navigation.fragment.findNavController
 import com.iyr.ian.R
 import com.iyr.ian.callbacks.OnCompleteCallback
-import com.iyr.ian.dao.models.NotificationList
+import com.iyr.ian.dao.models.ContactGroup
+import com.iyr.ian.databinding.FragmentNetworkSelectionPopupBinding
 import com.iyr.ian.utils.UIUtils.handleTouch
+import com.iyr.ian.viewmodels.EventsFragmentViewModel
+import com.iyr.ian.viewmodels.MainActivityViewModel
 
 interface OnNetworkListSelection {
     fun onSelected(listKey: String)
@@ -27,152 +28,154 @@ interface OnNetworkListSelection {
 
 }
 
-class NetworkSelectionDialog(
-    mContext: Context,
-    val mActivity: Activity,
-    callback: OnNetworkListSelection
-) :
-    AlertDialog(
-        mContext
-    ) {
+class NetworkSelectionDialog() :
+    AppCompatDialogFragment() {
 
-    private lateinit var spinnerAdapter: ArrayAdapter<NotificationList>
+    private val viewModel by lazy { EventsFragmentViewModel.getInstance().getViewModel() }
 
-    /*
-      private lateinit var notificationGroupsRef: DatabaseReference
-      private var notificationGroupsListener: ChildEventListener = object : ChildEventListener {
-          override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-              var newObject = snapshot.getValue(NotificationList::class.java)
-              if (spinnerAdapter.getPosition(newObject) == -1) {
-                  spinnerAdapter.add(newObject)
-                  spinnerAdapter.notifyDataSetChanged()
-              }
-          }
+    private lateinit var spinnerAdapter: ArrayAdapter<ContactGroup>
 
-          override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-
-
-          }
-
-          override fun onChildRemoved(snapshot: DataSnapshot) {
-              var newObject = snapshot.getValue(NotificationList::class.java)
-              var index = spinnerAdapter.getPosition(newObject)
-              if (index != -1) {
-                  spinnerAdapter.remove(spinnerAdapter.getItem(index))
-              }
-          }
-
-          override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-              // TODO("Not yet implemented")
-          }
-
-          override fun onCancelled(error: DatabaseError) {
-              // TODO("Not yet implemented")
-          }
-      }
-  */
-    private var acceptButton: Button?
-    private lateinit var spinnerNotificationGroups: Spinner
-    private lateinit var rbSelectorAll: RadioButton
-    private lateinit var rbSelectorOneGroup: RadioButton
-    private var spinnerData: ArrayList<NotificationList> = ArrayList()
-    private var controller: MediaController? = null
-    private val mThisDialog: NetworkSelectionDialog = this
     private var mButton1Callback: OnCompleteCallback? = null
-    private val mDialoglayout: View
-    private var mTitle: String? = null
-    private var mLegend: String? = null
-    private val mButton2Caption: String? = null
+    //private val mDialoglayout: View
+
     private var notificationListKey: String? = null
 
+    protected lateinit var binding: FragmentNetworkSelectionPopupBinding
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.context.setTheme(R.style.DialogStyle)
+        return dialog
+    }
 
-    init {
-        val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.fragment_network_selection_popup, null)
-        this.setView(mDialoglayout)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
-        rbSelectorAll = mDialoglayout.findViewById<RadioButton>(R.id.radio_button_all_contacts)
-        rbSelectorOneGroup =
-            mDialoglayout.findViewById<RadioButton>(R.id.radio_button_select_a_group)
+        binding = FragmentNetworkSelectionPopupBinding.inflate(
+            requireActivity().layoutInflater,
+            container,
+            false
+        )
 
-        spinnerNotificationGroups = mDialoglayout.findViewById<Spinner>(R.id.groups_spinner)
-        acceptButton = mDialoglayout.findViewById<Button>(R.id.buttonOne)
+        //    spinnerNotificationGroups = mDialoglayout.findViewById<Spinner>(R.id.groups_spinner)
+        //      acceptButton = mDialoglayout.findViewById<Button>(R.id.buttonOne)
 
-        val cancelButton = mDialoglayout.findViewById<Button>(R.id.cancel_button)
+        //       val cancelButton = mDialoglayout.findViewById<Button>(R.id.cancel_button)
 
-        val lp = WindowManager.LayoutParams()
-        lp.copyFrom(window!!.attributes)
-        lp.gravity = Gravity.CENTER
-        window!!.attributes = lp
-        window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        window!!.setGravity(Gravity.CENTER)
-        window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-        rbSelectorAll.setOnClickListener { view ->
-            rbSelectorOneGroup.isChecked = false
-            spinnerNotificationGroups.isEnabled = false
+        binding.radioButtonSelectAGroup.setOnClickListener { view ->
+            binding.radioButtonSelectAGroup.isChecked = false
+            binding.groupsSpinner.isEnabled = false
         }
 
-        rbSelectorOneGroup.setOnClickListener { view ->
-            rbSelectorAll.isChecked = false
-            spinnerNotificationGroups.isEnabled = true
-
+        binding.radioButtonSelectAGroup.setOnClickListener { view ->
+            binding.radioButtonSelectAGroup.isChecked = false
+            binding.groupsSpinner.isEnabled = true
         }
 
-        rbSelectorAll.isChecked = true
-        acceptButton!!.setOnClickListener { view ->
-            context.handleTouch()
+        binding.radioButtonSelectAGroup.isChecked = true
 
-            var groupKey: String? = null
-            if (rbSelectorOneGroup.isChecked) {
-                var position = spinnerNotificationGroups.selectedItemPosition
+
+        binding.buttonOne.setOnClickListener { view ->
+            requireContext().handleTouch()
+
+            var groupKey: String = ""
+            if (binding.radioButtonSelectAGroup.isChecked) {
+
+                var position = binding.groupsSpinner.selectedItemPosition
                 groupKey =
-                    (spinnerNotificationGroups.adapter?.getItem(position) as NotificationList).list_key
-                groupKey = notificationListKey
-            }
-            else
-            {
+                    (binding.groupsSpinner.adapter?.getItem(position) as ContactGroup).list_key
+                groupKey = notificationListKey!!
+            } else {
                 groupKey = "all"
             }
-            if (callback != null) {
-                callback.onSelected(groupKey!!)
-                dismiss()
-            }
-            dismiss()
+
+            viewModel.onNotificationGroupSelected(groupKey)
+            MainActivityViewModel.getInstance().onEventReadyToFire(viewModel.event.value!!)
+            findNavController().popBackStack()
         }
 
-        /*
-                spinnerNotificationGroups.setOnTouchListener( object : OnTouchListener{
-                    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-                        rbSelectorOneGroup.isChecked = true
-                        rbSelectorAll.isChecked = false
-                        return false
-                    }
-                })
-        */
-        cancelButton.setOnClickListener { view ->
-            context.handleTouch()
-            dismiss()
-            if (callback != null) {
-                callback.onCanceled()
-            }
+
+        binding.cancelButton.setOnClickListener { view ->
+            requireContext().handleTouch()
+            findNavController().popBackStack()
         }
 
-        /*
-                mDialoglayout.addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
-                    override fun onViewAttachedToWindow(v: View) {
-                        subscribeToNotificationLists()
 
-                        //TODO("Not yet implemented")
-                    }
 
-                    override fun onViewDetachedFromWindow(v: View) {
-                        //TODO("Not yet implemented")
-                        unsubscribeNotificationLists()
-                    }
-                })
-          */
+        return binding.root
     }
+
+    /**
+     * Prepare the spinner adapter
+     */
+    private fun setupGroupsAdapter(list: ArrayList<ContactGroup>) {
+        spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, list)
+        binding.groupsSpinner.adapter = spinnerAdapter
+        binding.groupsSpinner.onItemSelectedListener = object :
+            AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                var position = binding.groupsSpinner.selectedItemPosition
+                notificationListKey =
+                    (binding.groupsSpinner.adapter?.getItem(position) as ContactGroup).list_key
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                TODO("Not yet implemented")
+            }
+        }
+
+
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val dialog = dialog
+        if (dialog != null) {
+
+            val lp = WindowManager.LayoutParams()
+            lp.copyFrom(dialog.window!!.attributes)
+            lp.gravity = Gravity.CENTER
+
+            dialog.window!!.attributes = lp
+            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.window!!.setGravity(Gravity.CENTER)
+            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+
+            val width = ViewGroup.LayoutParams.MATCH_PARENT
+            val height = ViewGroup.LayoutParams.WRAP_CONTENT
+            dialog.window?.setLayout(width, height)
+
+            startObservers()
+        }
+    }
+
+
+    override fun onStop() {
+        super.onStop()
+        stopObservers()
+    }
+
+
+    private fun startObservers() {
+        EventsFragmentViewModel.getInstance().groupsList.observe(viewLifecycleOwner, { list ->
+            list.let {
+                setupGroupsAdapter(it!!)
+            }
+        })
+    }
+
+    private fun stopObservers() {
+        EventsFragmentViewModel.getInstance().groupsList.removeObservers(viewLifecycleOwner)
+    }
+
 
     /*
         private fun subscribeToNotificationLists() {
@@ -193,32 +196,4 @@ class NetworkSelectionDialog(
     }
 
 
-    fun show(list: ArrayList<NotificationList>) {
-        spinnerAdapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, list)
-        spinnerNotificationGroups.onItemSelectedListener = object :
-            AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                var position = spinnerNotificationGroups.selectedItemPosition
-                notificationListKey =
-                    (spinnerNotificationGroups.adapter?.getItem(position) as NotificationList).list_key
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                TODO("Not yet implemented")
-            }
-        }
-        spinnerNotificationGroups.adapter = spinnerAdapter
-        /*
-                spinnerAdapter.clear()
-                spinnerAdapter.addAll(list)
-                spinnerAdapter.notifyDataSetInvalidated()
-
-         */
-        show()
-    }
 }

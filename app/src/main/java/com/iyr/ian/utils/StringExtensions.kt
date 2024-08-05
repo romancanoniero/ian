@@ -1,6 +1,9 @@
 package com.iyr.ian.utils
 
 import android.content.Context
+import android.telephony.PhoneNumberUtils
+import android.text.TextUtils
+import android.util.Patterns
 import com.iyr.ian.R
 import java.util.Locale
 
@@ -39,4 +42,29 @@ fun String.capitalizeWords(): String {
             Locale.getDefault()
         ) else it.toString()
     }
+}
+
+
+fun String.capitalizeFirstAndLongWords(): String {
+    return this.split(" ").mapIndexed { index, word ->
+        if (index == 0 || word.length > 3) {
+            word.capitalize()
+        } else {
+            word
+        }
+    }.joinToString(" ")
+}
+
+
+
+fun String.isValidMail(): Boolean {
+    return !TextUtils.isEmpty(this) && Patterns.EMAIL_ADDRESS.matcher(this).matches()
+}
+
+fun String.isValidPassword( minLenght: Int): Boolean {
+    return !TextUtils.isEmpty(this) && this.length >= minLenght
+}
+
+fun String.isValidPhoneNumber(): Boolean {
+    return PhoneNumberUtils.isGlobalPhoneNumber(this) && this.length >= 12
 }

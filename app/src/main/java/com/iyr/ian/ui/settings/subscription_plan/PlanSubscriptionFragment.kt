@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -18,10 +19,7 @@ import com.iyr.ian.R
 import com.iyr.ian.dao.models.SubscriptionPlans
 import com.iyr.ian.dao.models.SubscriptionTypes
 import com.iyr.ian.databinding.FragmentPlanSubscriptionBinding
-import com.iyr.ian.enums.IANModulesEnum
 import com.iyr.ian.ui.MainActivity
-import com.iyr.ian.ui.interfaces.MainActivityInterface
-import com.iyr.ian.ui.settings.ISettingsFragment
 import com.iyr.ian.ui.settings.subscription_plan.adapters.ISubscriptionPlansAdapter
 import com.iyr.ian.ui.settings.subscription_plan.adapters.ISubscriptionTypesAdapter
 import com.iyr.ian.ui.settings.subscription_plan.adapters.SubscriptionPlansAdapter
@@ -41,7 +39,7 @@ private const val ARG_PARAM2 = "param2"
 
 
 @SuppressLint("MissingPermission")
-class PlanSubscriptionFragment(private val _interface: ISettingsFragment) : Fragment(),
+class PlanSubscriptionFragment() : Fragment(),
     ISubscriptionPlansAdapter, ISubscriptionTypesAdapter {
     private val viewModel: SubscriptionPlanViewModel by viewModels()
 
@@ -81,8 +79,8 @@ class PlanSubscriptionFragment(private val _interface: ISettingsFragment) : Frag
 
     companion object {
         @JvmStatic
-        fun newInstance(context: Context, _interface: ISettingsFragment) =
-            PlanSubscriptionFragment(_interface)
+        fun newInstance(context: Context) =
+            PlanSubscriptionFragment()
     }
 
     @SuppressLint("MissingPermission")
@@ -121,9 +119,16 @@ class PlanSubscriptionFragment(private val _interface: ISettingsFragment) : Frag
 
     override fun onResume() {
         super.onResume()
+
+        (requireActivity() as MainActivity).appToolbar?.apply {
+            enableBackBtn(true)
+            updateTitle(getString(R.string.my_plan))
+        }
+        /*
         if (requireActivity() is MainActivityInterface) {
             (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.my_plan))
         }
+        */
         startObservers()
 
         binding.recyclerSubscriptionType.getViewTreeObserver().addOnGlobalLayoutListener {
@@ -215,7 +220,7 @@ class PlanSubscriptionFragment(private val _interface: ISettingsFragment) : Frag
                         null,
                         object : OnClickListener{
                             override fun onClick(v: View?) {
-                                (requireActivity() as MainActivity).switchToModule(IANModulesEnum.MAIN.ordinal, "Home")
+                            findNavController().popBackStack()
                             }
                         })
                     viewModel.resetBuyingStatus()
@@ -225,7 +230,6 @@ class PlanSubscriptionFragment(private val _interface: ISettingsFragment) : Frag
                     requireActivity().hideLoader()
                     requireActivity().showErrorDialog(resource.message.toString())
                 }
-
                 else -> {}
             }
         })
@@ -238,7 +242,7 @@ class PlanSubscriptionFragment(private val _interface: ISettingsFragment) : Frag
     }
 
     override fun onBuy(plan: SubscriptionPlans) {
-        //    TODO("Not yet implemented")
+
         viewModel.onBuy(plan)
     }
 

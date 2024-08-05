@@ -1,7 +1,7 @@
 package com.iyr.ian
 
 import android.content.Context
-import com.iyr.ian.AppConstants.ServiceCode.DYNAMICLINKS_PAGE_LINK
+import com.iyr.ian.app.AppClass
 
 class AppConstants(val context: Context) {
 
@@ -118,12 +118,10 @@ class AppConstants(val context: Context) {
         const val MINIMUM_TAPS = 3
         const val MINIMUM_TOUCH_TIME = 3
         const val BROADCAST_MESSAGE_PANIC_BUTTON_PRESSED = "BROADCAST_MESSAGE_PANIC_BUTTON_PRESSED"
-        var DYNAMICLINKS_PAGE_LINK: String = ""
+        var DYNAMICLINKS_PAGE_LINK: String = AppClass.instance.getString(R.string.dynamic_links_page)
     }
 
     init {
-        DYNAMICLINKS_PAGE_LINK =
-            context.getString(R.string.dynamic_links_page)
 
     }
 

@@ -1,7 +1,8 @@
 package com.iyr.ian.ui.settings.landing_fragment
 
 import android.app.Activity
-import android.content.Context
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -16,8 +17,10 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
@@ -31,11 +34,9 @@ import com.iyr.ian.glide.GlideApp
 import com.iyr.ian.services.falling_detection.FallDetectionServiceMethod
 import com.iyr.ian.services.location.isServiceRunning
 import com.iyr.ian.sharedpreferences.SessionForProfile
-import com.iyr.ian.ui.interfaces.MainActivityInterface
+import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.login.LoginActivity
-import com.iyr.ian.ui.settings.ISettingsFragment
 import com.iyr.ian.ui.settings.SettingsFragmentViewModel
-import com.iyr.ian.ui.settings.SettingsFragmentsEnum
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.coroutines.Resource
@@ -55,6 +56,7 @@ import com.iyr.ian.utils.support_models.MediaTypesEnum
 import com.iyr.ian.utils.uploadFileToFirebaseStorage
 import com.iyr.ian.utils.versionPrefix
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import com.lassi.common.utils.KeyUtils
 import com.lassi.data.media.MiMedia
 import com.lassi.domain.media.LassiOption
@@ -76,16 +78,20 @@ private const val ARG_PARAM2 = "param2"
  * Use the [SettingsLandingFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class SettingsLandingFragment(
-    private val mainActivityViewModel: MainActivityViewModel,
-    val settingsFragmentViewModel: SettingsFragmentViewModel,
-    private val _interface: ISettingsFragment
-) : Fragment() {
+class SettingsLandingFragment() : Fragment() {
     private lateinit var binding: FragmentSettingsLandingBinding
 
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
+
+    private val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(
+            requireContext(),
+            UserViewModel.getInstance().getUser()?.user_key.toString()
+        )
+    }
+    private val settingsFragmentViewModel: SettingsFragmentViewModel by lazy { SettingsFragmentViewModel.getInstance() }
 
 
     private var toPickImagePermissionsRequest: ActivityResultLauncher<Array<String>>? =
@@ -176,7 +182,6 @@ class SettingsLandingFragment(
                                 )
 
 
-
                             }
 
                             if (mediaFile is java.lang.Exception) {
@@ -229,11 +234,11 @@ class SettingsLandingFragment(
 
         viewModel.image.observe(viewLifecycleOwner) { resource ->
 
-            when (resource)
-            {
+            when (resource) {
                 is Resource.Loading -> {
                     binding.animation.visibility = VISIBLE
                 }
+
                 is Resource.Success -> {
                     var mediaFile = resource.data
 
@@ -287,6 +292,7 @@ class SettingsLandingFragment(
 
 
                 }
+
                 is Resource.Error -> {
                     binding.animation.visibility = GONE
 
@@ -328,33 +334,38 @@ class SettingsLandingFragment(
 
     override fun onResume() {
         super.onResume()
-        if (requireActivity() is MainActivityInterface) {
-            (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.action_settings))
+
+        val appToolbar = (requireActivity() as MainActivity).appToolbar
+        appToolbar.enableBackBtn(true)
+        appToolbar.updateTitle(getString(R.string.action_settings))
+
+        val bottomToolBar = (requireActivity() as MainActivity).binding.bottomToolbar
+        bottomToolBar.visibility = View.GONE
+
+    }
+    /*
+        companion object {
+            /**
+             * Use this factory method to create a new instance of
+             * this fragment using the provided parameters.
+             *
+             * @param context Parameter 1.
+             * @param _interface Parameter 2.
+             * @return A new instance of fragment FriendsFragment.
+             */
+            // TODO: Rename and change types and number of parameters
+
+
+            @JvmStatic
+            fun newInstance(
+                context: Context,
+                mainActivityViewModel: MainActivityViewModel,
+                settingsFragmentViewModel: SettingsFragmentViewModel,
+                _interface: ISettingsFragment
+            ) =
+                SettingsLandingFragment(mainActivityViewModel, settingsFragmentViewModel, _interface)
         }
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param context Parameter 1.
-         * @param _interface Parameter 2.
-         * @return A new instance of fragment FriendsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-
-
-        @JvmStatic
-        fun newInstance(
-            context: Context,
-            mainActivityViewModel: MainActivityViewModel,
-            settingsFragmentViewModel: SettingsFragmentViewModel,
-            _interface: ISettingsFragment
-        ) =
-            SettingsLandingFragment(mainActivityViewModel, settingsFragmentViewModel, _interface)
-    }
-
+    */
 
     private fun setupUI() {
 
@@ -367,13 +378,15 @@ class SettingsLandingFragment(
 
         binding.profileSettingsButton.setOnClickListener {
             //_interface.goToFragment(SettingsFragmentsEnum.PROFILE_SETTINGS.ordinal)
-            settingsFragmentViewModel.onProfileSettingsClick()
+            //  settingsFragmentViewModel.onProfileSettingsClick()
+            findNavController().navigate(R.id.profileSettingsFragment)
 
         }
 
         binding.sosSettingsButton.setOnClickListener {
             //_interface.goToFragment(SettingsFragmentsEnum.SOS_SETTINGS.ordinal)
-            settingsFragmentViewModel.onSOSSettingsClick()
+            //      settingsFragmentViewModel.onSOSSettingsClick()
+            findNavController().navigate(R.id.pressOrTapSetupFragment)
         }
 
 
@@ -403,7 +416,23 @@ class SettingsLandingFragment(
         binding.pushButtonSetupLay.setOnClickListener {
 //            _interface.goToFragment(SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS.ordinal)
 //            mainActivityViewModel.onPushButtonSettingsClick()
-            settingsFragmentViewModel.goToFragment(SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS.ordinal)
+    //        settingsFragmentViewModel.goToFragment(SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS.ordinal)
+
+            val bluetoothManager: BluetoothManager? = getSystemService(requireContext(),BluetoothManager::class.java)
+            val bluetoothAdapter: BluetoothAdapter? = bluetoothManager?.getAdapter()
+            if (bluetoothAdapter == null) {
+                requireActivity().showErrorDialog(getString(R.string.bluetooth_not_supported))
+                // Device does not support Bluetooth
+            } else if (!bluetoothAdapter.isEnabled()) {
+                // Bluetooth is not enabled :)
+                requireActivity().showErrorDialog(getString(R.string.bluetooth_not_enabled))
+            } else {
+                findNavController().navigate(R.id.pushButtonSetupFragment)
+                // Bluetooth is enabled
+            }
+
+
+
         }
 
         binding.logoutButton.setOnClickListener {
@@ -613,9 +642,6 @@ class SettingsLandingFragment(
                 } catch (e: StorageException) {
                     binding.userImage.setImageDrawable(requireContext().getDrawable(R.drawable.ic_error))
                 }
-//                    .into(binding.userImage)
-
-
             }
 
         } else {
