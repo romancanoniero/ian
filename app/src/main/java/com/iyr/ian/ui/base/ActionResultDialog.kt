@@ -33,7 +33,7 @@ class ActionResultDialog(private val mContext: Context, private val mActivity: A
     init {
         mThisDialog = this
         val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.action_result_popup, null)
+        mDialoglayout = inflater.inflate(R.layout.dialog_action_result, null)
         this.setView(mDialoglayout)
         val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
         val lp = WindowManager.LayoutParams()

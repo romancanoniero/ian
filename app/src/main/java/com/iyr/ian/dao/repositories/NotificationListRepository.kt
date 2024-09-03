@@ -19,7 +19,7 @@ interface NotificationListRepositoryInterface {
     suspend fun addContactToGroup(userKey: String, contact: Contact, group: ContactGroup): Resource<Boolean?>
     suspend fun removeContactFromGroup(userKey: String, toString: String, toString1: String): Resource<Boolean?>
 
-    suspend fun setNotificationsAsRead(userKey: String, vararg notificationKeys: String): Resource<Boolean?>
+
 }
 
 abstract class NotificationListRepository : NotificationListRepositoryInterface {

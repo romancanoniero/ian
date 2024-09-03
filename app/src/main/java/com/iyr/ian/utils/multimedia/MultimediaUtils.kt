@@ -5,6 +5,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -17,6 +20,7 @@ import android.util.Base64
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.common.io.Files.getFileExtension
 import com.iyr.ian.AppConstants
 import com.iyr.ian.Constants
@@ -43,7 +47,6 @@ import java.io.InputStream
 import java.util.Locale
 
 
-
 interface MediaPlayerInterface {
     fun onBeforePlay()
     fun onAfterPlay()
@@ -64,13 +67,11 @@ class MultimediaUtils(val context: Context) {
 
         fun getInstance(context: Context): MultimediaUtils =
             instance ?: synchronized(this) {
-                instance ?: MultimediaUtils(context).also { instance = it
+                instance ?: MultimediaUtils(context).also {
+                    instance = it
 
                 }
             }
-
-
-
 
 
     }
@@ -104,7 +105,7 @@ class MultimediaUtils(val context: Context) {
         mainHandler.post(runnable)
     }
 
-    fun playSound(context: Context,audioFilePath: String) {
+    fun playSound(context: Context, audioFilePath: String) {
         this.playSound(context, audioFilePath, null)
     }
     /*
@@ -120,33 +121,33 @@ class MultimediaUtils(val context: Context) {
     ) {
 
         if (!audioFilePath.startsWith("file:") && !File(audioFilePath).exists()) {
-/*
-            val callback: DownloadFileListener = object : DownloadFileListener {
-                override fun onDownloadStatusChange(
-                    referenceTag: String?,
-                    downloadStatus: MediaFileDownloadStatusEnum
-                ) {
-                    Log.d("ASYNC_DOWNLOAD", downloadStatus.name)
-                }
+            /*
+                        val callback: DownloadFileListener = object : DownloadFileListener {
+                            override fun onDownloadStatusChange(
+                                referenceTag: String?,
+                                downloadStatus: MediaFileDownloadStatusEnum
+                            ) {
+                                Log.d("ASYNC_DOWNLOAD", downloadStatus.name)
+                            }
 
-                override fun onDownloadStatusChange(
-                    referenceTag: String?,
-                    downloadStatus: MediaFileDownloadStatusEnum,
-                    locatUri: Uri?
-                ) {
+                            override fun onDownloadStatusChange(
+                                referenceTag: String?,
+                                downloadStatus: MediaFileDownloadStatusEnum,
+                                locatUri: Uri?
+                            ) {
 
-                    playLocalSoundByUri(locatUri, playerCallback)
-                }
+                                playLocalSoundByUri(locatUri, playerCallback)
+                            }
 
-                override fun onError(exception: Exception) {
-                    throw exception
-                }
-            }
-            FirebaseStorageUtils().getStorageObject(audioFilePath, null, callback)
-*/
+                            override fun onError(exception: Exception) {
+                                throw exception
+                            }
+                        }
+                        FirebaseStorageUtils().getStorageObject(audioFilePath, null, callback)
+            */
 
 
-            CoroutineScope(Dispatchers.IO).launch{
+            CoroutineScope(Dispatchers.IO).launch {
                 var localFileName = storageRepositoryImpl.downloadStoredItem(
                     AppConstants.PROFILE_IMAGES_STORAGE_PATH,
                     "tempDirectory"
@@ -156,8 +157,6 @@ class MultimediaUtils(val context: Context) {
 //                playLocalSoundByUri(audioFilePath, localFileName)
 
             }
-
-
 
 
         } else {
@@ -172,7 +171,7 @@ class MultimediaUtils(val context: Context) {
         locatUrl: String,
         playerCallback: MediaPlayerInterface?
     ) {
-        playLocalSoundByUri(context,Uri.parse(locatUrl), playerCallback)
+        playLocalSoundByUri(context, Uri.parse(locatUrl), playerCallback)
     }
 
     private fun playLocalSoundByUri(
@@ -182,26 +181,26 @@ class MultimediaUtils(val context: Context) {
     ) {
 
         //AppClass.instance.getCurrentActivity().run {
-   //     activity.run {
+        //     activity.run {
 
-            val mediaPlayer = MediaPlayer()
-            AppClass.instance.setCurrentMediaPlayer(mediaPlayer)
-            mediaPlayer.setDataSource(locatUri.toString())
-            playerCallback?.onBeforePlay()
-            mediaPlayer.setOnCompletionListener {
-                mediaPlayer.release()
+        val mediaPlayer = MediaPlayer()
+        AppClass.instance.setCurrentMediaPlayer(mediaPlayer)
+        mediaPlayer.setDataSource(locatUri.toString())
+        playerCallback?.onBeforePlay()
+        mediaPlayer.setOnCompletionListener {
+            mediaPlayer.release()
+            AppClass.instance.setCurrentMediaPlayer(null)
+            playerCallback?.onAfterPlay()
+        }
+        mediaPlayer.setOnErrorListener(object : MediaPlayer.OnErrorListener {
+            override fun onError(p0: MediaPlayer?, p1: Int, p2: Int): Boolean {
                 AppClass.instance.setCurrentMediaPlayer(null)
-                playerCallback?.onAfterPlay()
+                return true
             }
-            mediaPlayer.setOnErrorListener(object : MediaPlayer.OnErrorListener {
-                override fun onError(p0: MediaPlayer?, p1: Int, p2: Int): Boolean {
-                    AppClass.instance.setCurrentMediaPlayer(null)
-                    return true
-                }
-            })
-            mediaPlayer.prepare()
-            mediaPlayer.start()
-   //     }
+        })
+        mediaPlayer.prepare()
+        mediaPlayer.start()
+        //     }
 
 
     }
@@ -243,15 +242,14 @@ class MultimediaUtils(val context: Context) {
             try {
 
 
-
                 try {
-  /*
-                    localFilePath?.let {
+                    /*
+                                      localFilePath?.let {
 
 
 
-                    }
-*/
+                                      }
+                  */
 
 
                     recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -328,9 +326,6 @@ class MultimediaUtils(val context: Context) {
     }
 
 
-
-
-
     /*
         public fun getLocalPath(fileName : String): String?
         {
@@ -361,16 +356,16 @@ class MultimediaUtils(val context: Context) {
     fun getDuration(uri: Uri): Int {
         var durationStr = "00:00:00"
         try {
-          val mediaMetadataRetriever = MediaMetadataRetriever()
-          mediaMetadataRetriever.setDataSource(context, uri)
-          durationStr =
-              mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION).toString()
+            val mediaMetadataRetriever = MediaMetadataRetriever()
+            mediaMetadataRetriever.setDataSource(context, uri)
+            durationStr =
+                mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    .toString()
 
-      }
-      catch (ex: Exception) {
+        } catch (ex: Exception) {
             var pp = 2
-      }
-         return durationStr!!.toInt()
+        }
+        return durationStr!!.toInt()
     }
 
     fun getDimentions(uri: Uri): HashMap<String, Int> {
@@ -388,7 +383,12 @@ class MultimediaUtils(val context: Context) {
         return map
     }
 
-    fun convertFileToBase64(parse: Uri): Any {
+    fun convertFileToBase64(_parse: Uri): Any {
+        var parse = _parse
+        if (!parse.toString().startsWith("file:")) {
+            val path = parse.path
+            parse = Uri.parse("file:$path")
+        }
         val encoded = mediaToBase64(context, parse)
         return encoded!!
     }
@@ -397,9 +397,6 @@ class MultimediaUtils(val context: Context) {
     private fun mediaToBase64(context: Context, uri: Uri): String? {
         var sBytes: String? = null
         val fileExtension = getFileExtension(uri.path)
-
-
-
         when (fileExtension.lowercase(Locale.getDefault())) {
             "jpg", "jpeg", "png", "bmp" -> {
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
@@ -420,10 +417,15 @@ class MultimediaUtils(val context: Context) {
             "mp4" -> {
 
 
-
                 val tempFile = File(
-                    uri.toString()
+                    uri.toString().replace("file:", "")
                 )
+
+
+                return encodeFile(tempFile)
+
+
+
                 var encodedString: String? = null
                 var inputStream: InputStream? = null
 
@@ -435,7 +437,7 @@ class MultimediaUtils(val context: Context) {
 
                 val localUri: Uri = Uri.fromFile(File(uri.toString()))
                 val bytes: ByteArray
-                val buffer = ByteArray(8192 )
+                val buffer = ByteArray(8192)
                 var bytesRead: Int
                 val output = ByteArrayOutputStream()
                 try {
@@ -454,6 +456,9 @@ class MultimediaUtils(val context: Context) {
                 val tempFile = File(
                     uri.toString()
                 )
+
+     return encodeFile(tempFile)
+
                 var encodedString: String? = null
                 var inputStream: InputStream? = null
 
@@ -465,7 +470,7 @@ class MultimediaUtils(val context: Context) {
 
                 val localUri: Uri = Uri.fromFile(File(uri.toString()))
                 val bytes: ByteArray
-                val buffer = ByteArray(8192  )
+                val buffer = ByteArray(8192)
                 var bytesRead: Int
                 val output = ByteArrayOutputStream()
                 try {
@@ -481,7 +486,33 @@ class MultimediaUtils(val context: Context) {
         }
         return sBytes
     }
+
+
+    fun encodeFile(file: File?): String? {
+        val encodedString = StringBuilder()
+
+        try {
+            val fileInputStream = FileInputStream(file)
+
+            val fileContent = ByteArray(3000)
+
+            while (fileInputStream.read(fileContent) >= 0) {
+                encodedString.append(Base64.encodeToString(fileContent, Base64.NO_WRAP))
+            }
+            fileInputStream.close()
+            return encodedString.toString()
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+            return null
+        } catch (e: Error) {
+            e.printStackTrace()
+            return null
+        }
+    }
 }
+
+
+
 
 
 fun Activity.showTextDialog(
@@ -545,7 +576,7 @@ fun Context.getDimentions(uri: Uri): HashMap<String, Int> {
  */
 
 fun Context.prepareMediaMessage(
-    mediaType: MediaTypesEnum, fileName: String, localFullPath: String, subPath : String = ""
+    mediaType: MediaTypesEnum, fileName: String, localFullPath: String, subPath: String = ""
 ): Any {
 
     if (fileName.compareTo(fileName.getJustFileName()) != 0) {
@@ -599,4 +630,27 @@ fun Context.prepareMediaMessage(
         return ex
     }
 
+}
+
+fun BitmapDescriptor.toBase64(): String {
+    val byteArrayOutputStream = ByteArrayOutputStream()
+
+
+    this.toBitmap()?.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+    val byteArray = byteArrayOutputStream.toByteArray()
+    return Base64.encodeToString(byteArray, Base64.DEFAULT)
+}
+
+// Método de extensión para convertir BitmapDescriptor a Bitmap
+fun BitmapDescriptor.toBitmap(): Bitmap? {
+    val drawable: Drawable = BitmapDrawable()
+    val bitmap = Bitmap.createBitmap(
+        drawable.intrinsicWidth,
+        drawable.intrinsicHeight,
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, canvas.width, canvas.height)
+    drawable.draw(canvas)
+    return bitmap
 }

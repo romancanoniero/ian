@@ -1,5 +1,5 @@
 <resources>
-
+    <!-- Samsung Galaxy S22 -->
 
     <dimen name="box_xxxsuperbig">264dp</dimen>
     <dimen name="box_xxsuperbig">225dp</dimen>
@@ -13,7 +13,7 @@
     <dimen name="box_medium">31.5dp</dimen>
     <dimen name="box_small">27dp</dimen>
     <dimen name="box_xsmall">21dp</dimen>
-    <dimen name="box_xxsmall">12dp</dimen>
+    <dimen name="box_xxsmall">10dp</dimen>
     <dimen name="dimen_2dp">1.5dp</dimen>
     <dimen name="dimen_4dp">3dp</dimen>
     <dimen name="dimen_10dp">7.5dp</dimen>
@@ -31,19 +31,19 @@
     <dimen name="dimen_100dp">91.67dp</dimen>
 
 
-    <dimen name="marker_user_image_size">56dp</dimen>
+    <dimen name="marker_user_image_size">48dp</dimen>
 
     <dimen name="otp_item_height">64dp</dimen>
     <dimen name="otp_item_width">64dp</dimen>
 
-    <dimen name="text_size_heading">28.8sp</dimen>
-    <dimen name="text_size_subheading">16sp</dimen>
-    <dimen name="text_size_paragraph">12.8sp</dimen>
+    <dimen name="text_size_heading">20sp</dimen>
+    <dimen name="text_size_subheading">14sp</dimen>
+    <dimen name="text_size_paragraph">10.8sp</dimen>
     <dimen name="text_size_subparagraph">9.6sp</dimen>
     <dimen name="text_size_subsubparagraph">6.4sp</dimen>
 
     <dimen name="circle_1">206dp</dimen>
-    <dimen name="circle_5">64dp</dimen>
+    <dimen name="circle_5">48dp</dimen>
 
 
     <dimen name="rectangle_1">101dp</dimen>

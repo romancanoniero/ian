@@ -2,6 +2,7 @@ package com.iyr.ian.viewmodels
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.MainThread
@@ -20,6 +21,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.NOTIFICATION_TYPE_NEW_MESSAGE
+import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.dao.models.Contact
 import com.iyr.ian.dao.models.Event
@@ -49,6 +51,7 @@ import com.iyr.ian.repository.implementations.databases.realtimedatabase.UsersRe
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.UsersSubscriptionsRepositoryImpl
 import com.iyr.ian.services.eventservice.EventService
 import com.iyr.ian.sharedpreferences.SessionApp
+import com.iyr.ian.ui.base.PulseRequestTarget
 import com.iyr.ian.ui.base.PulseValidationRequest
 import com.iyr.ian.ui.settings.SettingsFragmentsEnum
 import com.iyr.ian.utils.NotificationsUtils
@@ -151,13 +154,7 @@ class MainActivityViewModel private constructor(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    /*
-        private val _notificationsFlow = MutableStateFlow<NotificationsRepository.DataEvent?>(null)
-        val notificationsFlow: StateFlow<NotificationsRepository.DataEvent?> get() = _notificationsFlow
-    */
-    private val _notificationsStatus = MutableLiveData<Resource<Boolean?>>()
-    val notificationsStatus: LiveData<Resource<Boolean?>> = _notificationsStatus
-
+    var currentFragment : Int? = null
 
     private val _unreadMessagesFlow = MutableLiveData<List<UnreadMessages>>(emptyList())
     val unreadMessagesFlow: LiveData<List<UnreadMessages>> get() = _unreadMessagesFlow
@@ -297,6 +294,9 @@ class MainActivityViewModel private constructor(
 
     //  }
 
+    private val _notificationsStatus = MutableLiveData<Resource<Boolean?>>()
+    val notificationsStatus: LiveData<Resource<Boolean?>> = _notificationsStatus
+
     val notificationsList = ArrayList<EventNotificationModel>()
     private val _notifications = MutableLiveData<ArrayList<EventNotificationModel>>()
     val notifications: LiveData<ArrayList<EventNotificationModel>> = _notifications
@@ -309,12 +309,23 @@ class MainActivityViewModel private constructor(
             emit(event)
             when (event) {
                 is NotificationsRepository.DataEvent.ChildAdded -> {
+                    if (currentFragment!= null && (currentFragment == R.id.messagesInEventFragment ||  MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment) &&
+                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key)
+                    {
+                        return@collect
+                    }
+
                     if (!notificationsList.contains(event.data)) {
                         notificationsList.add(event.data)
                     }
                 }
 
                 is NotificationsRepository.DataEvent.ChildChanged -> {
+                    if (currentFragment!= null && ( currentFragment == R.id.messagesInEventFragment  ||  MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment)&&
+                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key)
+                    {
+                        return@collect
+                    }
                     val index = notificationsList.indexOf(event.data)
                     if (index == -1) {
                         notificationsList.add(event.data)
@@ -991,6 +1002,7 @@ class MainActivityViewModel private constructor(
                     }
 
                     is Resource.Loading -> TODO()
+
                 }
 
             } else {
@@ -1023,4 +1035,53 @@ class MainActivityViewModel private constructor(
         eventService.fireEvent(event)
     }
 
+    private val _validationResult = MutableLiveData<Resource<Bundle?>>()
+    val validationResult: LiveData<Resource<Bundle?>> = _validationResult
+    fun onValidationDone(arguments: Bundle?) {
+        arguments?.let { bundle ->
+            viewModelScope.launch(Dispatchers.IO) {
+
+                val userKey = UserViewModel.getInstance().getUser()?.user_key.toString()
+
+                val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    bundle.getSerializable("action", PulseRequestTarget::class.java)
+                } else {
+                    bundle.getSerializable("action")
+                }
+                val eventKey: String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    bundle.getSerializable("event_key", String::class.java).toString()
+                } else {
+                    bundle.getSerializable("event_key").toString()
+                }
+                val securityCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    bundle.getSerializable("code", String::class.java).toString()
+                } else {
+                    bundle.getSerializable("code").toString()
+                }
+                _validationResult.postValue(Resource.Loading())
+                when (action) {
+                    PulseRequestTarget.PULSE_VALIDATION -> TODO()
+                    PulseRequestTarget.VALIDATE_USER -> TODO()
+                    PulseRequestTarget.VALIDATION_BEFORE_CLOSE_EVENT -> {
+                        try {
+                            val call = eventRepository.closeEvent(eventKey, userKey, securityCode)
+                            _validationResult.postValue(Resource.Success<Bundle?>(Bundle()))
+                        } catch (ex: Exception) {
+                            _validationResult.postValue(Resource.Error<Bundle?>(ex.message.toString()))
+                        }
+                    }
+
+                    PulseRequestTarget.ON_FALLING_VALIDATION -> TODO()
+                    null -> {}
+                }
+
+            }
+
+        }
+
+    }
+
+    fun onError(errorMessage: String) {
+        _error.postValue(errorMessage)
+    }
 }

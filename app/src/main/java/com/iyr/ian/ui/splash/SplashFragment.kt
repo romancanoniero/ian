@@ -405,7 +405,7 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
                 if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
                     var navController = findNavController()
-                    val action = SplashFragmentDirections.actionSplashFragmentToHomeFragment(it)
+                    val action = SplashFragmentDirections.actionSplashFragmentToHomeFragment(it,true)
                     navController.navigate(action)
                     navController.popBackStack(R.id.splashFragment, true)
                 } else {
@@ -709,7 +709,20 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
     override fun onOkToMainScreen(user: User) {
         SessionForProfile.getInstance(requireContext()).storeUserProfile(user)
         AppClass.instance.core?.onOkToMainScreen(user, requireActivity().intent.extras)
-        findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
+
+/*
+       val bundle : Bundle
+        if (requireActivity().intent.extras != null) {
+            bundle = requireActivity().intent.extras!!
+        } else {
+            bundle = Bundle()
+        }
+      bundle.putBoolean("firstRun", true)
+
+ */
+        val action = SplashFragmentDirections.actionSplashFragmentToHomeFragment(user, true)
+        findNavController().navigate(action)
+        UserViewModel.getInstance().onLine()
 //
         /*
                 Log.d("INGRESO", "onOkToMainScreen - 1")

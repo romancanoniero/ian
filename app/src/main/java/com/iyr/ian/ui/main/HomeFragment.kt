@@ -42,12 +42,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
-import com.budiyev.android.codescanner.AutoFocusMode
+import androidx.navigation.fragment.navArgs
 import com.budiyev.android.codescanner.CodeScanner
-import com.budiyev.android.codescanner.CodeScannerView
-import com.budiyev.android.codescanner.DecodeCallback
-import com.budiyev.android.codescanner.ErrorCallback
-import com.budiyev.android.codescanner.ScanMode
 import com.github.alexzhirkevich.customqrgenerator.QrData
 import com.github.alexzhirkevich.customqrgenerator.vector.QrCodeDrawable
 import com.github.alexzhirkevich.customqrgenerator.vector.QrVectorOptions
@@ -63,9 +59,7 @@ import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorPixelSha
 import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorShapes
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.storage.FirebaseStorage
-import com.google.zxing.BarcodeFormat
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REFRESH_PANIC_BUTTON
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_SHOW_FOOTER_TOOLBAR
@@ -215,6 +209,7 @@ class HomeFragment(
 
     var isPanicButtonBusy: Boolean = false
 
+    private val args : HomeFragmentArgs by navArgs()
 
     private lateinit var binding: FragmentMainBinding
     private var recordSession: MediaRecorder? = null
@@ -466,7 +461,8 @@ class HomeFragment(
         super.onCreate(savedInstanceState)
         Log.d("EVENT_CREATION", this.javaClass.name)
 
-//        val navController = findNavController()
+
+
         findNavController().popBackStack(findNavController().currentDestination?.id!!, false)
 
         mainActivityViewModel = MainActivityViewModel.getInstance()
@@ -478,13 +474,6 @@ class HomeFragment(
             val mainActivity = requireActivity() as MainActivity
             mainActivity.setAppStatus(MainActivityViewModel.AppStatus.INITIALIZING)
         }
-        /*
-                {
-
-
-                }
-
-         */
         eventService = EventService.getInstance(requireContext())
 
         startNetworkBroadcastReceiver(requireContext())
@@ -492,9 +481,8 @@ class HomeFragment(
 
         speedDialAdapter = SpeedDialAdapter(requireActivity(), this)
 
-
         val eventService = AppClass.instance.serviceLocationPointer?.ServiceLocationBinder()
-
+     //   (requireActivity() as MainActivity).setListnerToRootView()
     }
 
     override fun onCreateView(
@@ -870,12 +858,12 @@ class HomeFragment(
         binding.buttonQr.setOnClickListener {
             requireContext().handleTouch()
             showQRPopup()
-/*
-            if (requireContext().loadImageFromCache("qr_code", "images") == null) {
-                prepareQrCode()
-            } else
-                findNavController().navigate(R.id.qrCodeDisplayPopup)
-*/
+            /*
+                        if (requireContext().loadImageFromCache("qr_code", "images") == null) {
+                            prepareQrCode()
+                        } else
+                            findNavController().navigate(R.id.qrCodeDisplayPopup)
+            */
         }
 
 
@@ -1386,11 +1374,11 @@ class HomeFragment(
         super.onStart()
     }
 
+
     override fun onResume() {
         registerNetworkBroadcastReceiver(requireContext())
         super.onResume()
         AppClass.instance.setCurrentFragment(this)
-
         registerReceivers()
         startObservers(FirebaseAuth.getInstance().uid.toString())
 
@@ -1403,13 +1391,28 @@ class HomeFragment(
             var appToolbar = (requireActivity() as MainActivity).appToolbar
             appToolbar.enableBackBtn(false)
             appToolbar.updateTitle(getString(R.string.app_long_title))
-
             mainActivityBindings.includeCustomToolbar.root.visibility = View.VISIBLE
             mainActivityBindings.bottomToolbar.visibility = View.VISIBLE
         }
 
+        val activityRootView = (requireActivity() as MainActivity).binding.root
+        val activityBindings = (requireActivity() as MainActivity).binding
+        (requireActivity() as MainActivity).restoreNavigationFragment()
+
+        try {
+            if (args.firstRun)
+            {
+                (requireActivity() as MainActivity).setListnerToRootView()
+            }
+        }
+        catch (ex: Exception)
+        {
+
+        }
+
 
     }
+
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -1431,72 +1434,7 @@ class HomeFragment(
         return binding.redButton
     }
 
-    /*
-        fun onContactsUpdate(contact: Contact) {
 
-            val oldRecordIndex = speedDialAdapter.getData().indexOf(contact)
-            if (oldRecordIndex != -1) {
-                if (contact.add_to_speed_dial) {
-                    speedDialAdapter.getData()[oldRecordIndex] = contact
-                    speedDialAdapter.notifyItemChanged(oldRecordIndex)
-                } else {
-                    speedDialAdapter.getData().removeAt(oldRecordIndex)
-                    speedDialAdapter.notifyItemRemoved(oldRecordIndex)
-                }
-            } else {
-                if (contact.add_to_speed_dial) {
-                    speedDialAdapter.getData().add(contact)
-                    speedDialAdapter.notifyItemInserted(speedDialAdapter.getData().size - 1)
-                }
-            }
-        }
-        *//*
-        fun onContactsRemove(contact: Contact) {
-            val oldRecordIndex = speedDialAdapter.getData().indexOf(contact)
-            if (oldRecordIndex > -1) {
-                speedDialAdapter.getData().removeAt(oldRecordIndex)
-                speedDialAdapter.notifyItemRemoved(oldRecordIndex)
-            }
-        }
-
-        override fun onSpeedDialAdded(contact: Contact) {
-            val list = speedDialAdapter.getData()
-            val oldRecordIndex = list.indexOf(contact)
-            if (oldRecordIndex == -1 && contact.add_to_speed_dial) {
-                speedDialAdapter.getData().add(contact)
-                speedDialAdapter.notifyItemInserted(list.size - 1)
-            }
-        }
-
-        override fun onSpeedDialChanged(contact: Contact) {
-            val list = speedDialAdapter.getData()
-
-            val oldRecordIndex = list.indexOf(contact)
-            if (oldRecordIndex != -1) {
-                if (contact.add_to_speed_dial) {
-                    list[oldRecordIndex] = contact
-                    speedDialAdapter.notifyItemChanged(oldRecordIndex)
-                } else {
-                    list.removeAt(oldRecordIndex)
-                    speedDialAdapter.notifyItemRemoved(oldRecordIndex)
-                }
-            } else {
-                if (contact.add_to_speed_dial) {
-                    list.add(contact)
-                    speedDialAdapter.notifyItemInserted(list.size - 1)
-                }
-            }
-        }
-
-        override fun onSpeedDialRemoved(contact: Contact) {
-            val list = speedDialAdapter.getData()
-            val oldRecordIndex = list.indexOf(contact)
-            if (oldRecordIndex > -1) {
-                list.removeAt(oldRecordIndex)
-                speedDialAdapter.notifyItemRemoved(oldRecordIndex)
-            }
-        }
-    */
     override fun onError(exception: Exception) {
         TODO("Not yet implemented")
     }
@@ -1933,9 +1871,7 @@ class HomeFragment(
 
             if (requireContext().loadImageFromCache("qr_code.png", "images") != null) {
                 findNavController().navigate(R.id.qrCodeDisplayPopup)
-            }
-            else
-            {
+            } else {
                 prepareQrCode()
             }
 
@@ -1944,10 +1880,9 @@ class HomeFragment(
         buttonScanQr.setOnClickListener {
 
 
-
             qrPopupWindow.dismiss()
 
-           findNavController().navigate(R.id.qrCodeScanningFragment)
+            findNavController().navigate(R.id.qrCodeScanningFragment)
             /*
             val scannerView = requireActivity().findViewById<CodeScannerView>(R.id.scanner_view)
             scannerView.visibility = View.VISIBLE

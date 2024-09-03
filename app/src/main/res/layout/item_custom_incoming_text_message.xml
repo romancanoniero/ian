@@ -10,8 +10,10 @@
         android:id="@id/messageUserAvatar"
         android:layout_width="40dp"
         android:layout_height="40dp"
+        android:layout_alignParentStart="true"
         android:layout_marginEnd="8dp"
-        android:layout_marginRight="8dp" />
+        android:layout_marginRight="8dp"
+        android:src="@drawable/profile_dummy"/>
 
     <!--this view is needed for custom holder-->
     <ImageView
@@ -28,9 +30,10 @@
         android:id="@id/bubble"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="8dp"
         android:layout_marginEnd="30dp"
         android:layout_marginRight="30dp"
-        android:layout_toEndOf="@id/messageUserAvatar"
         android:layout_toRightOf="@id/messageUserAvatar"
         android:orientation="vertical">
 
@@ -42,6 +45,7 @@
             android:layout_marginLeft="8dp"
             android:layout_marginEnd="4dp"
             android:layout_marginRight="4dp"
+            android:text="rerdvdfvfdvfdvferer"
             android:textSize="@dimen/text_size_subparagraph" />
 
     </LinearLayout>

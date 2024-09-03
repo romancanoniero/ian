@@ -298,6 +298,7 @@
     <color name="material_bluegrey900">#ff263238</color>
     <color name="transluscent_red">#F4DFE1</color>
     <color name="transluscent_yellow">#E0F2E2</color>
+    <color name="transluscent_gray">#80C9C9C9</color>
 
     <color name="background_gradient_start">#000000</color>
     <color name="background_gradient_end">#DDDDDD</color>

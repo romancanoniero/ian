@@ -196,6 +196,13 @@ class EventsFragmentViewModel private constructor(val context: Context) : ViewMo
 //            var notificationList = notificationListRepository.listNotificationList(userKey)
             if ((groupsList.value?: emptyList<ContactGroup>()).size > 0) {
                 _showContactGroupSelector.postValue(true)
+                _showContactGroupSelector.postValue(null)
+            }
+            else{
+                onNotificationGroupSelected("_default")
+                MainActivityViewModel.getInstance().onEventReadyToFire(event.value!!)
+                _showContactGroupSelector.postValue(false)
+                _showContactGroupSelector.postValue(null)
             }
         }
     }
@@ -205,69 +212,6 @@ class EventsFragmentViewModel private constructor(val context: Context) : ViewMo
         return notificationListRepository.listNotificationList(userKey)
     }
 
-    /*
-        fun publishEvent(event: Event) {
-            _postingEventStatus.postValue(Resource.Loading())
-            viewModelScope.launch(Dispatchers.IO)
-            {
-
-                event.media?.forEach { media ->
-                    if (media.media_type == MediaTypesEnum.VIDEO ||
-                        media.media_type == MediaTypesEnum.AUDIO ||
-                        media.media_type == MediaTypesEnum.IMAGE
-                    ) {
-                        val fileExtension = media.file_name.getFileExtension(con)
-                        var fileUri = media.file_name
-                        if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" ||
-                            fileExtension?.lowercase(Locale.getDefault()) == "png"
-                        ) {
-                            fileUri = "file:" + media.file_name
-                        }
-                        var mediaFileEncoded: String? = null
-                        if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" ||
-                            fileExtension?.lowercase(Locale.getDefault()) == "png" ||
-                            fileExtension?.lowercase(Locale.getDefault()) == "mp4" ||
-                            fileExtension?.lowercase(Locale.getDefault()) == "3gp"
-                        ) {
-
-                            mediaFileEncoded =
-                                MultimediaUtils(AppClass.instance).convertFileToBase64(Uri.parse(fileUri))
-                                    .toString()
-                        }
-                        media.bytesB64 = mediaFileEncoded
-                    }
-                }
-
-
-                var call = eventsRepository.postEvent(event)
-                if (call.data != null) {
-                    _postingEventStatus.postValue(Resource.Success<Event?>(call.data))
-
-                } else
-                    _postingEventStatus.postValue(Resource.Error<Event?>(call.message.toString()))
-
-
-                /*
-                            EventsWSClient.instance.postEvent(event, object : OnCompleteCallback {
-                                override fun onComplete(success: Boolean, result: Any?) {
-                                    if (success) {
-                                        if (result is Event) {
-                                            callback.onPublishEventDone(result)
-                                            iCallback?.onComplete(true, result)
-                                        }
-                                    }
-                                }
-
-                                override fun onError(exception: java.lang.Exception) {
-                                    callback.onError(exception)
-                                    iCallback?.onError(exception)
-                                }
-                            })
-                  */
-            }
-
-        }
-    */
     fun clearMedia() {
         _mediaContents.clear()
         _eventMediaFlow.postValue(_mediaContents)
@@ -290,11 +234,14 @@ class EventsFragmentViewModel private constructor(val context: Context) : ViewMo
         } else {
             // Register the service
             val eventService = EventService.getInstance(context)
-            //  event.group_key = "_default"
             onNotificationGroupSelected("_default")
             val event = event.value!!
             eventService.fireEvent(event)
         }
+    }
+
+    fun resetShowContactGroupSelector() {
+        _showContactGroupSelector.postValue(null)
     }
 
     var groups = ArrayList<ContactGroup>(ArrayList<ContactGroup>())
@@ -303,8 +250,7 @@ class EventsFragmentViewModel private constructor(val context: Context) : ViewMo
     val contactsGroupsListFlow = liveData<ArrayList<ContactGroup>>(Dispatchers.IO) {
         val userKey = UserViewModel.getInstance().getUser()?.user_key ?: ""
         contactsGroupsRepository.contactsGroupsByUserListFlow(userKey).collect { groups ->
-
-            _groupsList.postValue(groups)
+                _groupsList.postValue(groups)
         }
     }
 

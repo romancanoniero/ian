@@ -14,6 +14,7 @@ interface EventsRepositoryInterface {
     //   fun getEventFlow(eventKey: String): Flow<Resource<Event>>?
 
     suspend fun getEventsList(userKey: String): Resource<ArrayList<EventFollowed>?>
+    suspend fun subscribeToEvent(notificationKey: String, eventKey: String): Resource<Boolean?>
 }
 
 

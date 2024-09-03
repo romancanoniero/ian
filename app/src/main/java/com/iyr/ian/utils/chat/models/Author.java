@@ -14,7 +14,7 @@ public class Author implements IUser, Serializable {
     private final String id;
     private final String name;
     private String avatar;
-    private final boolean online;
+    private boolean online;
 
     public Author(String id, String name, String avatar, boolean online) {
         this.id = id;
@@ -44,5 +44,8 @@ public class Author implements IUser, Serializable {
 
     public boolean isOnline() {
         return online;
+    }
+    public void setOnline(Boolean online  ) {
+        this.online = online;
     }
 }

@@ -37,6 +37,7 @@ interface ChatRepositoryInterface {
     suspend fun resetUnreadMessages(userKey: String, eventKey: String): Resource<Boolean?>
 
     suspend fun generateMessageKey(eventKey: String): Resource<String>
+    fun unreadMessagesFlow(userKey: String, eventKey: String): Flow<Long>
 }
 
 

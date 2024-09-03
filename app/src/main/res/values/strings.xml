@@ -495,8 +495,8 @@
     <string name="not_called_message">%1$s No pudo comunicarse con las autoridades</string>
     <string name="im_in_place">Estoy en el Lugar</string>
     <string name="im_in_place_message">%1$s ya llegó al Lugar</string>
-    <string name="not_in_place">No encuentro el Lugar</string>
-    <string name="not_in_place_message">%1$s no encuentra el Lugar</string>
+    <string name="not_in_place">No he llegado</string>
+    <string name="not_in_place_message">%1$s no se encuentra en el Lugar</string>
     <string name="im_with">Estoy con El/Ella</string>
     <string name="im_with_message">%1$s ya está con El/Ella</string>
     <string name="not_with">Cancelar</string>
@@ -718,6 +718,18 @@
     <string name="ask_to_scan_the_code">Si aun no estan conectados, solicitale a tu Contacto que abra la Cámara de su dispositivo y enfoque el codigo, si su telefono es compatible con esta funcionalidad podra conectarse contigo</string>
     <string name="show">Mostrar</string>
     <string name="scan">Leer</string>
+    <string name="gps_off">GPS apagado</string>
+    <string name="gps_required_message">Para el correcto funcionamiento de IAN se necesita que tu GPS este activado.</string>
+    <string name="activate_gps">Activar</string>
+    <string name="invited">Invitado</string>
+    <string name="action_events_map_title">Seguimiento de Eventos</string>
+    <string name="open_in_maps">Abrir en Maps</string>
+    <string name="you">Tu</string>
+    <string name="and">y</string>
+    <string name="more">más</string>
+    <string name="no_phone_number">No Disponible</string>
+    <string name="action_delete_all_notifications">Eliminar</string>
+    <string name="action_delete_all_notifications_message">Deseas eliminar todas las notificaciones recibidas?</string>
 
 
 </resources>

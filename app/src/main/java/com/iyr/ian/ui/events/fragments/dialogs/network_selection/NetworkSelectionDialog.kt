@@ -59,11 +59,6 @@ class NetworkSelectionDialog() :
             false
         )
 
-        //    spinnerNotificationGroups = mDialoglayout.findViewById<Spinner>(R.id.groups_spinner)
-        //      acceptButton = mDialoglayout.findViewById<Button>(R.id.buttonOne)
-
-        //       val cancelButton = mDialoglayout.findViewById<Button>(R.id.cancel_button)
-
         binding.radioButtonSelectAGroup.setOnClickListener { view ->
             binding.radioButtonSelectAGroup.isChecked = false
             binding.groupsSpinner.isEnabled = false
@@ -88,7 +83,7 @@ class NetworkSelectionDialog() :
                     (binding.groupsSpinner.adapter?.getItem(position) as ContactGroup).list_key
                 groupKey = notificationListKey!!
             } else {
-                groupKey = "all"
+                groupKey = "_default"
             }
 
             viewModel.onNotificationGroupSelected(groupKey)

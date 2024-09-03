@@ -232,26 +232,5 @@ class NotificationListRepositoryImpl : NotificationListRepository() {
 
     }
 
-    override suspend fun setNotificationsAsRead(
-        userKey: String, vararg notificationKeys: String
-    ): Resource<Boolean?> {
 
-        val updates = hashMapOf<String, Any>()
-
-        for (key in notificationKeys) {
-            updates["${userKey}/${key}/read"] = true
-        }
-
-        try {
-            val call = databaseReference.updateChildren(updates).await()
-
-            val callAux = FirebaseDatabase.getInstance().getReference("events_notifications").updateChildren(updates).await()
-
-            return Resource.Success<Boolean?>(true)
-        }
-        catch (e: Exception)
-        {
-            return Resource.Error<Boolean?>(e.message.toString())
-        }
-    }
 }

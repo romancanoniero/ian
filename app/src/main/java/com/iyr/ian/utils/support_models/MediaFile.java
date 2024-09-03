@@ -10,11 +10,12 @@ import com.iyr.ian.dao.models.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Objects;
 
 
-public class MediaFile implements Parcelable {
+public class MediaFile implements Parcelable, Serializable  {
 
 
     public static final int MEDIA_FILE_STATUS_UNMODIFIED = 0;

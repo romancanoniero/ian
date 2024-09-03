@@ -6,7 +6,6 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaPlayer.OnPreparedListener
-import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -57,7 +56,7 @@ class VideoPlayerDialog(mContext: Context, mActivity: Activity) :
 
     init {
         val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.fragment_video_player_popup, null)
+        mDialoglayout = inflater.inflate(R.layout.dialog_video_player, null)
         this.setView(mDialoglayout)
         val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
 

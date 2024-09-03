@@ -6,7 +6,6 @@ import com.google.firebase.functions.FirebaseFunctions
 import com.google.gson.Gson
 import com.iyr.ian.dao.models._LatLng
 import com.iyr.ian.dao.repositories.CoreRepository
-import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.utils.coroutines.Resource
 import kotlinx.coroutines.tasks.await
 
@@ -21,7 +20,7 @@ class CoreRepositoryImpl : CoreRepository() {
                 data["user_key"] = userKey
                 data["latitude"] = latLng.latitude
                 data["longitude"] = latLng.longitude
-                data["bat_level"] = (batteryLevel*100).toInt()
+                data["battery_percentage"] = (batteryLevel*100).toInt()
                 data["auth_token"] = tokenResult.token.toString()
                 try {
                     var call = FirebaseFunctions.getInstance()

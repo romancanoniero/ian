@@ -10,19 +10,21 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 
-public  class User extends UserMinimum implements Serializable {
+public  class User extends UserMinimum  {
+
+    public User(@NotNull String type) {
+        this.user_type = type;
+    }
+
+    public User() {
+
+    }
+
 
     @Nullable
     public String registrationType;
 
-    @NotNull
-    public String getSubscription_type_key() {
-        return subscription_type_key;
-    }
 
-    public void setSubscription_type_key(@NotNull String subscription_type_key) {
-        this.subscription_type_key = subscription_type_key;
-    }
 
     @NotNull
     public String pulse_status = "";
@@ -39,6 +41,16 @@ public  class User extends UserMinimum implements Serializable {
     @NotNull
     public String subscription_type_key = "";
     public String status = "";
+
+
+    @NotNull
+    public String getSubscription_type_key() {
+        return subscription_type_key;
+    }
+
+    public void setSubscription_type_key(@NotNull String subscription_type_key) {
+        this.subscription_type_key = subscription_type_key;
+    }
 
     public String getFirst_name() {
         return first_name;
@@ -192,11 +204,5 @@ public  class User extends UserMinimum implements Serializable {
         this.status = status;
     }
 
-    public User(@NotNull String type) {
-        this.user_type = type;
-    }
 
-    public User() {
-
-    }
 }

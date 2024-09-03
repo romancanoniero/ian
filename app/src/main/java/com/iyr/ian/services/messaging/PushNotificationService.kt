@@ -20,8 +20,8 @@ import com.iyr.ian.enums.IANModulesEnum
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.NotificationsRepositoryImpl
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.utils.broadcastMessage
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 
@@ -34,13 +34,7 @@ class PushNotificationService : FirebaseMessagingService() {
      * FCM registration token is initially generated so this is where you would retrieve the token.
      */
     override fun onNewToken(token: String) {
-        Log.d(TAG, "Refreshed token: $token")
-
-        // If you want to send messages to this application instance or
-        // manage this apps subscriptions on the server side, send the
-        // FCM registration token to your app server.
-
-        GlobalScope.launch(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.IO).launch {
             var notificationsRepository = NotificationsRepositoryImpl()
             notificationsRepository.registerNotificationsToken(token)
         }
@@ -53,28 +47,38 @@ class PushNotificationService : FirebaseMessagingService() {
         Log.d(TAG, "From: ${remoteMessage.from}")
         Log.d(TAG, remoteMessage.data.toString())
 
+        val intent = Intent("com.iyr.ian")
+        val bundle = Bundle()
+        val data = remoteMessage.data
 
-
-        if (AppClass.instance.isInForeground) {
-            // La aplicación está en primer plano, manejar el mensaje sin mostrar la notificación
-
-            handleForegroundMessage(remoteMessage)
-        } else {
-
-
-            // La aplicación está en segundo plano o cerrada, mostrar la notificación
-            showNotification(remoteMessage)
-
-
+        // recorre cada elemento del mapa de datos y lo agrega al bundle
+        for (key in data.keys) {
+            bundle.putString(key, data[key])
         }
 
-        //    baseContext.broadcastMessage(remoteMessage, "ON_NOTIFICATION_INCOME")
+        // recorre remoteMessage.notification y lo agrega al bundle
+        remoteMessage.notification?.let {
+            bundle.putString("title", it.title)
+            bundle.putString("body", it.body)
+            bundle.putString("titleLocKey", it.titleLocalizationKey.toString())
+            bundle.putStringArray("titleLocArgs", it.titleLocalizationArgs)
+            bundle.putString("bodyLocKey", it.bodyLocalizationKey.toString())
+            bundle.putStringArray("bodyLocArgs", it.bodyLocalizationArgs)
+            bundle.putString("image", it.imageUrl.toString())
+            bundle.putString("click_action", it.clickAction)
+        }
+        intent.putExtras(bundle)
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 
 
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
 
-
+/*
+        if (AppClass.instance.isInForeground) {
+            handleForegroundMessage(remoteMessage)
+        } else {
+            // La aplicación está en segundo plano o cerrada, mostrar la notificación
+            showNotification(remoteMessage)
+        }*/
     }
 
 
@@ -171,9 +175,7 @@ class PushNotificationService : FirebaseMessagingService() {
                     }
 
                     // Reviso si el mensaje ya fue leido
-if (showNotification) {
 
-}
 
 
                     if (showNotification) {
@@ -518,5 +520,9 @@ if (showNotification) {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(0, notificationBuilder.build())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }

@@ -24,7 +24,12 @@ interface UsersInterface {
         userKey: String, subscriptionTypeKey: String?
     ): Resource<Boolean?>
 
-    suspend fun onUpdateUserImage(userKey: String, image: MediaFile) : Resource<Boolean?>
+    suspend fun onUpdateUserImage(userKey: String, image: MediaFile): Resource<Boolean?>
+
+    suspend fun onOnLine(userKey: String): Resource<Boolean?>
+    suspend fun onOffLine(userKey: String): Resource<Boolean?>
+    suspend fun onLineFlow(userKey: String): Flow<Resource<Boolean?>>?
+
 }
 
 abstract class UsersRespository : UsersInterface {

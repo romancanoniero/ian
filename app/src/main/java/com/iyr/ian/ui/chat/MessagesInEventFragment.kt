@@ -1,19 +1,18 @@
 package com.iyr.ian.ui.chat
 
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
 import android.app.Activity
+import android.app.Dialog
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Rect
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Looper
 import android.util.DisplayMetrics
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -29,15 +28,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.Fragment
+import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
 import com.google.gson.Gson
 import com.iyr.ian.AppConstants.Companion.CHAT_FILES_STORAGE_PATH
 import com.iyr.ian.AppConstants.Companion.PROFILE_IMAGES_STORAGE_PATH
@@ -50,19 +50,18 @@ import com.iyr.ian.dao.models.SpeedMessage
 import com.iyr.ian.dao.models.SpeedMessageActions
 import com.iyr.ian.dao.repositories.ChatRepository
 import com.iyr.ian.databinding.FragmentBottomSheetMessagesBinding
-import com.iyr.ian.glide.GlideApp
 import com.iyr.ian.sharedpreferences.SessionForProfile
+import com.iyr.ian.ui.KeyboardStatusEnum
+import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.chat.adapters.SpeedMessagesAdapter
 import com.iyr.ian.ui.chat.adapters.SpeedMessagesCallback
-import com.iyr.ian.ui.map.event_header.EventHeaderFragment
-import com.iyr.ian.ui.map.event_header.adapter.EventHeaderCallback
 import com.iyr.ian.utils.FileUtils
-import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
+import com.iyr.ian.utils.UIUtils.getStatusBarHeight
 import com.iyr.ian.utils.UIUtils.handleTouch
+import com.iyr.ian.utils.assignFileImageTo
 import com.iyr.ian.utils.chat.ChatContentTypes.CONTENT_TYPE_ACTION
 import com.iyr.ian.utils.chat.ChatContentTypes.CONTENT_TYPE_VIDEO
 import com.iyr.ian.utils.chat.ChatContentTypes.CONTENT_TYPE_VOICE
-import com.iyr.ian.utils.chat.enums.MessagesStatus
 import com.iyr.ian.utils.chat.models.Author
 import com.iyr.ian.utils.chat.models.Message
 import com.iyr.ian.utils.chat.viewholders.actions.CustomIncomingActionMessageViewHolder
@@ -78,12 +77,11 @@ import com.iyr.ian.utils.chat.viewholders.voice.CustomOutcomingVoiceMessageViewH
 import com.iyr.ian.utils.copyFile
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.createDirectoryStructure
-import com.iyr.ian.utils.dp
 import com.iyr.ian.utils.getBitmapFromVectorDrawable
 import com.iyr.ian.utils.getFileExtension
 import com.iyr.ian.utils.getJustFileName
 import com.iyr.ian.utils.hideKeyboard
-import com.iyr.ian.utils.loaders.showLoader
+import com.iyr.ian.utils.models.ViewAttributes
 import com.iyr.ian.utils.multimedia.IMultimediaPlayer
 import com.iyr.ian.utils.multimedia.MultimediaUtils
 import com.iyr.ian.utils.multimedia.getDimentions
@@ -91,12 +89,15 @@ import com.iyr.ian.utils.permissionsForImages
 import com.iyr.ian.utils.permissionsForVideo
 import com.iyr.ian.utils.permissionsReadWrite
 import com.iyr.ian.utils.playSound
+import com.iyr.ian.utils.px
 import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
+import com.iyr.ian.utils.toMediaFile
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
 import com.iyr.ian.viewmodels.MessagesInEventFragmentViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import com.lassi.common.utils.KeyUtils
 import com.lassi.data.media.MiMedia
 import com.lassi.domain.media.LassiOption
@@ -106,353 +107,38 @@ import com.lassi.presentation.cropper.CropImageView
 import com.stfalcon.chatkit.commons.ImageLoader
 import com.stfalcon.chatkit.messages.MessageHolders
 import com.stfalcon.chatkit.messages.MessageHolders.ContentChecker
-import com.stfalcon.chatkit.messages.MessageInput.AttachmentsListener
 import com.stfalcon.chatkit.messages.MessageInput.InputListener
 import com.stfalcon.chatkit.messages.MessagesListAdapter
 import com.visualizer.amplitude.AudioRecordView
+import com.visualizer.amplitude.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
 
 enum class ChatWindowStatus {
     CLOSED, NORMAL, FULLSCREEN
 }
 
-interface MessagesFragmentInterface {
 
-    fun hideChatFragment()
-
-}
-
-/**
- * A simple [Fragment] subclass.
- * Use the [MessagesInEventFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-
-
-enum class ChatFragmentKeyboardStatus {
-    OPEN, CLOSED
-}
-
-class MessagesInEventFragment(
-    context: Context,
-    val mainActivityViewModel: MainActivityViewModel,
-    val mapSituationFragmentViewModel: MapSituationFragmentViewModel,
-    val viewModel: MessagesInEventFragmentViewModel
-) : Fragment(), DialogInterface.OnClickListener, ContentChecker<Message>, SpeedMessagesCallback,
+class MessagesInEventFragment : DialogFragment(), ContentChecker<Message>, SpeedMessagesCallback,
     MediaPickersInterface {
 
+    private var standardChatWindowHeight: Int = 0
+    private val mainActivityViewModel: MainActivityViewModel by lazy { MainActivityViewModel.getInstance() }
+    private val mapSituationFragmentViewModel: MapSituationFragmentViewModel by lazy { MapSituationFragmentViewModel.getInstance() }
+    private val viewModel: MessagesInEventFragmentViewModel by lazy { MessagesInEventFragmentViewModel() }
 
-    fun MessagesInEventFragment() {
-
-    }
-
+    private val myUserKey: String = UserViewModel.getInstance().getUser()?.user_key ?: ""
     private var opennerButton: FloatingActionButton? = null
     private var mainParentView: ConstraintLayout? = null
 
-
-    private var destinationFolder = ""
-
-
-    private var toPickImagePermissionsRequest: ActivityResultLauncher<Array<String>>? =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
-            if (!permissionsStatusMap.containsValue(false)) {
-
-                val imagePickerIntent =
-                    Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
-                        .setMaxCount(1).setGridSize(3)
-                        .setMediaType(MediaType.IMAGE) // MediaType : VIDEO IMAGE, AUDIO OR DOC
-                        .setCompressionRatio(50) // compress image for single item selection (can be 0 to 100)
-                        .setSupportedFileTypes(
-                            "jpg", "jpeg", "png", "webp", "gif"
-                        ).setMinFileSize(100) // Restrict by minimum file size
-                        .setMaxFileSize(1024) //  Restrict by maximum file size
-                        .setStatusBarColor(R.color.white).setToolbarResourceColor(R.color.white)
-                        .setProgressBarColor(R.color.colorAccent)
-                        .setPlaceHolder(R.drawable.ic_image_placeholder)
-                        .setErrorDrawable(R.drawable.ic_image_placeholder)
-                        .setSelectionDrawable(R.drawable.ic_checked_media)
-                        .setAlertDialogNegativeButtonColor(R.color.white)
-                        .setAlertDialogPositiveButtonColor(R.color.darkGray)
-                        .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
-                        .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .setCropAspectRatio(
-                            1, 1
-                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
-                        .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
-                        .build()
-
-
-                pickImageContract?.launch(imagePickerIntent)
-            } else {
-                requireActivity().permissionsForImages()
-            }
-        }
-
-    private var pickImageContract: ActivityResultLauncher<Intent>? =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
-                val selectedMedia =
-                    it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
-                if (!selectedMedia.isNullOrEmpty()) {
-
-                    lifecycleScope.launch(Dispatchers.IO) {
-
-                        var localPath = selectedMedia[0].path.toString()/*
-                                                var fileName =
-                                                    CHAT_FILES_STORAGE_PATH + this@MessagesInEventFragment.eventKey.toString() + "/" + localPath.getJustFileName()
-                        */
-                        var fileName = localPath.getJustFileName()
-
-
-                        try {
-
-
-                            var mediaFile =
-                                prepareMediaMessage(MediaTypesEnum.IMAGE, fileName, localPath)
-
-                            if (mediaFile is MediaFile) {
-
-                                viewModel.onNewMediaMessage(
-                                    mainActivityViewModel.user.value!!, mediaFile
-                                )
-                            }
-
-                            if (mediaFile is java.lang.Exception) {
-                                Toast.makeText(
-                                    requireContext(), mediaFile.localizedMessage, Toast.LENGTH_LONG
-                                ).show()
-                            }
-
-                        } catch (ex: Exception) {
-                            Looper.prepare()
-                            Toast.makeText(
-                                requireContext(), ex.localizedMessage, Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                }
-            }
-        }
-
-    private var toTakeVideoPermissionsRequest: ActivityResultLauncher<Array<String>>? =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
-            if (!permissionsStatusMap.containsValue(false)) {
-
-                val videoPickerIntent =
-                    Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
-                        .setMaxCount(5).setGridSize(3).setMediaType(MediaType.VIDEO)
-                        .setMaxFileSize(1024)
-                        .setCompressionRatio(10) // compress image for single item selection (can be 0 to 100)
-                        .setMinTime(5) // for MediaType.VIDEO only
-                        .setMaxTime(60) // for MediaType.VIDEO only
-                        .setSupportedFileTypes(
-                            "mp4", "mkv", "webm", "avi", "flv", "3gp"
-                        ) // Filter by limited media format (Optional)
-                        .setMinFileSize(100) // Restrict by minimum file size
-                        .setMaxFileSize(1024) //  Restrict by maximum file size
-                        .disableCrop() // to remove crop from the single image selection (crop is enabled by default for single image)
-                        /*
-                     * Configuration for  UI
-                     */.setStatusBarColor(R.color.colorPrimaryDark)
-                        .setToolbarResourceColor(R.color.colorPrimary)
-                        .setProgressBarColor(R.color.colorAccent)
-                        .setPlaceHolder(R.drawable.ic_image_placeholder)
-                        .setErrorDrawable(R.drawable.ic_image_placeholder)
-                        .setSelectionDrawable(R.drawable.ic_checked_media)
-                        .setAlertDialogNegativeButtonColor(R.color.white)
-                        .setAlertDialogPositiveButtonColor(R.color.colorPrimary)
-                        .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
-                        .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
-                        .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
-                        .enableActualCircleCrop() // Enable actual circular crop (only for MediaType.Image and CropImageView.CropShape.OVAL)
-                        .build()
-
-                /*
-             .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .setCropAspectRatio(
-                            1, 1
-                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
-
- */
-                pickVideoContract?.launch(videoPickerIntent)
-            } else {
-                requireActivity().permissionsForVideo()
-            }
-        }
-
-    private var pickVideoContract: ActivityResultLauncher<Intent>? =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
-                val selectedMedia =
-                    it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
-                if (!selectedMedia.isNullOrEmpty()) {
-
-                    lifecycleScope.launch(Dispatchers.IO) {
-
-                        Log.d("VIDEO_FILE", selectedMedia[0].path.toString())
-
-                        val localPath = selectedMedia[0].path.toString()
-                        //   val media = MediaFile(MediaTypesEnum.VIDEO, filePath)
-
-
-                        var fileName = localPath.getJustFileName()
-
-                        try {
-
-
-                            var mediaFile =
-                                prepareMediaMessage(MediaTypesEnum.VIDEO, fileName, localPath)
-
-
-
-                            when (mediaFile) {
-                                is MediaFile -> {
-
-                                    var videoDimentions =
-                                        requireContext().getDimentions(Uri.parse(localPath))
-                                    mediaFile.width = videoDimentions["width"]
-                                    mediaFile.height = videoDimentions["height"]
-
-
-                                    //---- muevo el archivo grabado al Cache
-                                    val originalPath = localPath
-
-                                    val storagePath = localPath.getJustFileName()
-
-                                    val finalPath =
-                                        requireContext().cacheDir.toString() + "/" + fileName
-
-                                    var newFilePath = ""
-
-                                    if (originalPath.contains(requireContext().cacheDir.toString())) {
-
-                                        // Si el archivo fue generado en cache, lo mueve
-                                        newFilePath = FileUtils().moveFile(
-                                            originalPath.substringBeforeLast("/"),
-                                            originalPath.getJustFileName(),
-                                            finalPath.substringBeforeLast("/")
-                                        )
-                                    } else {
-                                        // Si el archivo no estaba en Cache , lo copio
-                                        newFilePath = FileUtils().copyFile(
-                                            originalPath.substringBeforeLast("/"),
-                                            originalPath.getJustFileName(),
-                                            finalPath.substringBeforeLast("/")
-                                        ).toString()
-                                    }
-                                    //     mediaFile.file_name = fileName
-
-                                    Log.d("VIDEO_FILE", "voy a llamar a onSendMediaMessage")
-
-                                    viewModel.onNewMediaMessage(
-                                        mainActivityViewModel.user.value!!, mediaFile
-                                    )
-
-                                }
-
-                                is java.lang.Exception -> {
-                                }
-                            }
-                        } catch (ex: Exception) {
-                            Toast.makeText(
-                                requireContext(), ex.localizedMessage, Toast.LENGTH_LONG
-                            ).show()
-                        }
-
-                    }
-
-                }
-            }
-        }
-
-
-    /**
-     * Prepara un objeto de tipo multimedia
-     * @param mediaType Tipo de multimedia
-     * @param fileName Nombre del archivo
-     * @param localFullPath Ruta local del archivo sin el nombre de archivo.
-     */
-
-    private fun prepareMediaMessage(
-        mediaType: MediaTypesEnum, fileName: String, localFullPath: String
-    ): Any {
-
-        if (fileName.compareTo(fileName.getJustFileName()) != 0) {
-            throw Exception("El parametro fileName debe contener solo el nombre del archivo")
-        }/*
-                if (localFullPath.substringBeforeLast("/").contains(fileName)) {
-                    throw Exception("El parametro localFullPath no debe contener el nombre del archivo")
-                }
-        */
-
-        try {
-
-            val media = MediaFile(mediaType, localFullPath, fileName.toString())
-
-
-            if (mediaType == MediaTypesEnum.VIDEO || mediaType == MediaTypesEnum.AUDIO || mediaType == MediaTypesEnum.IMAGE) {
-                val fileExtension = media.file_name.getFileExtension(requireContext())
-                var fileUri = media.localFullPath
-                if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" || fileExtension?.lowercase(
-                        Locale.getDefault()
-                    ) == "png"
-                ) {
-                    fileUri = "file:" + media.localFullPath
-                }
-                var mediaFileEncoded: String? = null
-                if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" || fileExtension?.lowercase(
-                        Locale.getDefault()
-                    ) == "png" || fileExtension?.lowercase(Locale.getDefault()) == "mp4" || fileExtension?.lowercase(
-                        Locale.getDefault()
-                    ) == "3gp"
-                ) {
-
-
-                    mediaFileEncoded = MultimediaUtils(requireContext()).convertFileToBase64(
-                        Uri.parse(
-                            fileUri
-                        )
-                    ).toString()
-
-
-
-
-                    if (!localFullPath.contains(requireContext().cacheDir.toString() + "/" + CHAT_FILES_STORAGE_PATH + chatroomKey.toString())) {
-                        var destination =
-                            requireContext().cacheDir.toString() + "/" + CHAT_FILES_STORAGE_PATH + chatroomKey
-                        FileUtils().copyFile(
-                            media.localFullPath.substringBeforeLast("/"),
-                            media.localFullPath.getJustFileName(),
-                            destination
-                        )
-                    }
-                }
-                media.bytesB64 = mediaFileEncoded
-            }
-
-            return media
-        } catch (ex: Exception) {
-            return ex
-        }
-
-    }
-
-
-    private lateinit var imagePickerStartForResult: ActivityResultLauncher<Intent>
+    // private lateinit var imagePickerStartForResult: ActivityResultLauncher<Intent>
     private lateinit var speedMessagesAdapter: SpeedMessagesAdapter
     private var referenceView: View? = null
     private var popupView: View? = null
@@ -460,33 +146,45 @@ class MessagesInEventFragment(
     private var recordSession: MediaRecorder? = null
     private var recordingFilename: String? = null
 
-    //    private val timelineAdapter: TimeLineAdapter by lazy { TimeLineAdapter(context) }
     private var adapter: MessagesListAdapter<Message>? = null
 
-    // private var chatMessages = ArrayList<Message>()
-    lateinit var eventData: Event
+    var eventData: Event = MapSituationFragmentViewModel.getInstance().lastEventUpdate
 
     lateinit var binding: FragmentBottomSheetMessagesBinding
 
-
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
+    val args: MessagesInEventFragmentArgs by navArgs()
 
     init {
         initAdapter()
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
         speedMessagesAdapter = SpeedMessagesAdapter(requireActivity(), this)
-        setupSpeedMessages()
+        //setupSpeedMessages()
     }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.attributes?.windowAnimations = R.style.ChatDialogAnimation
+
+        // Cambiar la gravedad del diálogo
+        val params = dialog.window?.attributes
+        params?.gravity = Gravity.TOP // Cambia la gravedad a la parte superior
+        val config = (args.config as HashMap<*, *>)
+        val fabChatBottom = config["fab_chat_bottom"] as Int
+        val toolbarBottom = config["toolbar_bottom"] as Float
+        val screenHeight = resources.displayMetrics.heightPixels
+        this.standardChatWindowHeight =
+            (screenHeight - toolbarBottom - requireContext().getStatusBarHeight()).toInt()
+        params?.height = (fabChatBottom) // Aquí puedes establecer el tamaño de la ventana
+        params?.y = toolbarBottom.toInt()
+        dialog.window?.attributes = params
+        return dialog
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -494,82 +192,296 @@ class MessagesInEventFragment(
         // Inflate the layout for this fragment
         binding = FragmentBottomSheetMessagesBinding.inflate(layoutInflater, container, false)
 
-        setupUI()
+        binding.fullScreenButton.setOnClickListener {
+            val screenHeight = resources.displayMetrics.heightPixels
+            val rect = Rect()
+            (requireActivity() as MainActivity).window.decorView.getWindowVisibleDisplayFrame(
+                rect
+            )
+            val heightDiff = screenHeight - rect.height()
+
+            resizeChatWindow(
+                screenHeight,
+                rect.height(),
+                if (heightDiff > 0) KeyboardStatusEnum.OPEN else KeyboardStatusEnum.CLOSED,
+                ChatWindowStatus.FULLSCREEN
+            )
+
+            binding.fullScreenButton.visibility = View.GONE
+            binding.restoreScreenButton.visibility = View.VISIBLE
+        }
+
+        binding.restoreScreenButton.setOnClickListener {
+            //     mapSituationFragmentViewModel.setMessageFragmentMode(ChatWindowStatus.NORMAL)
+            //   viewModel.onChatWindowStatusChange(ChatWindowStatus.NORMAL)
+            val screenHeight = resources.displayMetrics.heightPixels
+            val rect = Rect()
+            (requireActivity() as MainActivity).window.decorView.getWindowVisibleDisplayFrame(
+                rect
+            )
+            val heightDiff = screenHeight - rect.height()
+
+            resizeChatWindow(
+                screenHeight,
+                rect.height(),
+                if (heightDiff > 0) KeyboardStatusEnum.OPEN else KeyboardStatusEnum.CLOSED,
+                ChatWindowStatus.NORMAL
+            )
+
+
+            binding.fullScreenButton.visibility = View.VISIBLE
+            binding.restoreScreenButton.visibility = View.GONE
+        }
+
+        binding.closeButton.setOnClickListener {
+            findNavController().popBackStack()
+        }
+
+        binding.messagesList.setAdapter(adapter)
+
+        binding.messagesList.setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            v.onTouchEvent(event)
+            true
+        }
+
+        binding.recyclerActions.adapter = speedMessagesAdapter
+        binding.recyclerActions.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+
+        // Configuro el comportamiento del teclado
+        binding.messageInputFix.inputEditText.setSingleLine()
+        binding.messageInputFix.inputEditText.imeOptions = EditorInfo.IME_ACTION_SEND
+        binding.messageInputFix.inputEditText.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEND) {
+                // Realiza tu acción aquí
+                binding.messageInputFix.button.performClick()
+                true
+            } else {
+                false
+            }
+        }
+        binding.messageInputFix.setInputListener(InputListener { textMessage ->
+            requireActivity().hideKeyboard()
+            val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
+            viewModel.onNewMessage(
+                me, textMessage.toString()
+            )
+            return@InputListener true
+        })
+
+        binding.messageInputFix.setAttachmentsListener {
+            context?.handleTouch()
+            showAtachmentsPopupWindow(binding.messageInputFix, requireActivity())
+        }
+
         return binding.root
     }
 
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FriendsFragment.
-         */
-        @JvmStatic
-        fun newInstance(
-            event: Event,
-            mapSituationFragmentViewModel: MapSituationFragmentViewModel,
-            param1: String,
-            param2: String
-        ) = EventHeaderFragment(
-            this as EventHeaderCallback, event, mapSituationFragmentViewModel
-        ).apply {
-            arguments = Bundle().apply {
-                putString(ARG_PARAM1, param1)
-                putString(ARG_PARAM2, param2)
-            }
-        }
-    }
-
-
     override fun onStart() {
         super.onStart()
-        setupObservers()
     }
 
     override fun onResume() {
         super.onResume()
-        // viewModel.setEventKey(mapSituationFragmentViewModel.currentEventKey.value)
         binding.messageInputFix.inputEditText.isEnabled = true
-        //  AppClass.instance.addViewToStack(IANModulesEnum.CHAT, this, eventKey)
-
+        MainActivityViewModel.getInstance().currentFragment = R.id.messagesInEventFragment
+        startObservers()
     }
 
     override fun onPause() {
         super.onPause()
+        MainActivityViewModel.getInstance().currentFragment = null
         binding.messageInputFix.inputEditText.isEnabled = false
-        //     AppClass.instance.removeViewFromStack(this)
+        stopObservers()
     }
 
 
     private var internalMessagesList: ArrayList<Message> = ArrayList()
 
-    private fun setupObservers() {
+    private var eventKey: String = ""
+    private var currentAttrs: ViewAttributes? = null
 
-        mapSituationFragmentViewModel.currentEventKey.observe(this) { resource ->
 
+    private fun startObservers() {
+        val currentEventKey: String =
+            mapSituationFragmentViewModel.eventFlow.value?.data?.event_key.toString()
+
+        if (this.eventKey == currentEventKey) return
+
+        this.eventKey = currentEventKey
+
+        viewModel.sendingMessage.observe(this) { resource ->
             when (resource) {
-                is Resource.Success -> {
-                    viewModel.onConnectToEvent(resource.data!!.toString())
-                    //   mapSituationFragmentViewModel.getMessages()
+                is Resource.Loading -> {
+                    //  viewModel.onMessageSent(resource.data!!)
+                    speedMessagesAdapter.setButtonsEnabled(false)
                 }
 
                 is Resource.Error -> {
-                    requireActivity().showErrorDialog(resource.message.toString())
+                    speedMessagesAdapter.setButtonsEnabled(true)
+                    Toast.makeText(
+                        requireContext(),
+                        resource.message.toString(),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
-                is Resource.Loading -> {
-                    requireActivity().showLoader()
+                is Resource.Success -> {
+                    speedMessagesAdapter.setButtonsEnabled(true)
+                }
+            }
+        }
+
+
+        MapSituationFragmentViewModel.getInstance().followers.value?.forEach { follower ->
+            // recorre la internalMessagesList buscando los mensajes cuyo autor sea este follower y actualiza el estado de online
+            internalMessagesList.forEach { message ->
+                if (message.user.id == follower.user_key) {
+                    message.user.setOnline(follower.on_line ?: false)
+                    adapter?.update(message)
                 }
 
-                null -> {
-                    // no hago nada
+            }
+        }
+        // Ahora sigo escuchando
+        MapSituationFragmentViewModel.getInstance().followers.observe(this) { followers ->
+            val me = UserViewModel.getInstance().getUser()
+            followers.forEach { follower ->
+                // Actualizo el estado de going y calling
+                if (follower.user_key == me?.user_key ?: false) {
+
+                    switchCallSpeedDial(follower.call_time)
+                    if (follower.call_time != null) {
+                        binding.callStatus.setImageDrawable(requireContext().getDrawable(R.drawable.ic_phone_call_ok_by_smashicons))
+                    } else {
+                        binding.callStatus.setImageDrawable(requireContext().getDrawable(R.drawable.ic_phone_call_guess))
+                    }
+
+
+                    if (follower.arrival_time != null) {
+                        binding.goingStatus.setImageDrawable(requireContext().getDrawable(R.drawable.ic_arrival_by_stockes_02))
+
+                    } else if (follower.going_time != null) {
+                        binding.goingStatus.setImageDrawable(requireContext().getDrawable(R.drawable.ic_man_running))
+                    } else {
+                        binding.goingStatus.setImageDrawable(requireContext().getDrawable(R.drawable.ic_man_standing_up))
+                    }
+                    //     switchArrivalSpeedDial(follower.arrival_time)
+
+
+                    switchGoingSpeedDial(follower.arrival_time, follower.going_time)
+
+
+                }
+
+
+
+                internalMessagesList.forEach { message ->
+                    if (message.user.id == follower.user_key) {
+                        if (message.user.isOnline() != follower.on_line) {
+                            message.user.setOnline(follower.on_line ?: false)
+                            adapter?.update(message)
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /***
+         * Borro las notificaciones para este chat
+         */
+        viewModel.removeChatNotifications(eventKey)
+
+
+        /*
+                mapSituationFragmentViewModel.messages.value?.forEach { message ->
+                    if (!internalMessagesList.contains(message)) {
+                        internalMessagesList.add(message)
+                        adapter?.addToStart(message, true)
+                    }
+                }*/
+        mapSituationFragmentViewModel.messages.observe(this) { messages ->
+            // recorro internalMessagesList y si no esta en el resource.data lo elimino
+            /*
+            internalMessagesList.forEach { message ->
+                if (!messages.contains(message)) {
+                    internalMessagesList.remove(message)
+                    adapter?.delete(message)
+                }
+            }
+            */
+            //--------------------------------------------
+            messages.forEach { message ->
+                if (!internalMessagesList.contains(message)) {
+                    internalMessagesList.add(message)
+                    adapter?.addToStart(message, true)
                 }
             }
 
+            /*
+            val messages = resource?.data
+            if (messages != null) {
+                internalMessagesList.clear()
+                internalMessagesList.addAll(messages)
+                adapter?.addToEnd(messages, true)
+            }
+
+ */
+        }/*
+                var messages = mapSituationFragmentViewModel.getMessages()
+                messages.forEach { message ->
+                    if (!internalMessagesList.contains(message)) {
+                        internalMessagesList.add(message)
+                        adapter?.addToStart(message, true)
+                    }
+                }
+
+                mapSituationFragmentViewModel.messageIncomming.observe(this) { resource ->
+                    val chatEvent = resource?.data
+                    handleMessageEvent(chatEvent)
+                }
+        */
+
+        mapSituationFragmentViewModel.resetEvent.observe(this) {
+            if (it == true) {
+                internalMessagesList.clear()
+                adapter?.clear()
+                adapter?.notifyDataSetChanged()
+            }
+        }
+
+        mapSituationFragmentViewModel.auxEventKey.observe(this) { resource ->
+            /*
+                  var messages = mapSituationFragmentViewModel.getMessages()
+                  messages.forEach { message ->
+                      if (!internalMessagesList.contains(message)) {
+                          internalMessagesList.add(message)
+                          adapter?.addToStart(message, true)
+                      }
+                  }
+      */
+
+            /*
+                      when (resource) {
+                          is Resource.Success -> {
+                              viewModel.onConnectToEvent(resource.data!!.toString())
+                          }
+
+                          is Resource.Error -> {
+                              requireActivity().showErrorDialog(resource.message.toString())
+                          }
+
+                          is Resource.Loading -> {
+                              requireActivity().showLoader()
+                          }
+
+                          null -> {
+                              // no hago nada
+                          }
+                      }
+          */
         }
 
         mainActivityViewModel.newMedia.observe(this) { media ->
@@ -587,111 +499,186 @@ class MessagesInEventFragment(
                         //  eventsFragmentViewModel.onAudioAdded(media.file_name, media.duration)
                     }
 
-                    MediaTypesEnum.TEXT -> TODO()
+                    MediaTypesEnum.TEXT -> {
+                        TODO()
+                    }
                 }
                 mainActivityViewModel.resetNewMedia()
             }
         }
 
-        mainActivityViewModel.isKeyboardOpen.observe(this) { isKeyboardOpen ->
-            val status = mapSituationFragmentViewModel.messageFragmentMode.value
-            if (mainActivityViewModel.isKeyboardOpen() != isKeyboardOpen) {
-                viewModel.onKeyboardStateChange(isKeyboardOpen, status)
+
+        // Observa estado del Teclado Virutal
+        mainActivityViewModel.screenAttrs.observe(this) { attrs ->
+            if (attrs == currentAttrs) return@observe
+            else {
+                this.currentAttrs = attrs
+            }
+
+            if (attrs != null) {
+
+                binding.cardView.post {
+//                    val screenAttrs = attrs
+                    val screenHeight = resources.displayMetrics.heightPixels
+                    val rect = Rect()
+                    (requireActivity() as MainActivity).window.decorView.getWindowVisibleDisplayFrame(
+                        rect
+                    )
+                    val heightDiff = screenHeight - rect.height()
+
+
+                    if (heightDiff > 0) { // Si la diferencia es más del 15% de la altura de la pantalla
+                        // Teclado Abierto
+
+                        resizeChatWindow(
+                            screenHeight,
+                            rect.height(),
+                            KeyboardStatusEnum.OPEN,
+                            viewModel.chatWindowStatus.value!!
+                        )
+
+                    } else {
+                        // Teclado cerrado
+
+                        resizeChatWindow(
+                            screenHeight,
+                            rect.height(),
+                            KeyboardStatusEnum.CLOSED,
+                            viewModel.chatWindowStatus.value!!
+                        )
+                    }
+                }
             }
         }
 
+        // Observa estado de la ventana: Normal, FullScreen, Cerrado
+
+        /*
+              viewModel.chatWindowStatus.observe(this) { messageFragmentMode ->
+
+                  val screenHeight = resources.displayMetrics.heightPixels
+                  val rect = Rect()
+                  (requireActivity() as MainActivity).window.decorView.getWindowVisibleDisplayFrame(
+                      rect
+                  )
+                  val heightDiff = screenHeight - rect.height()
+                  val keyboardStatus =
+                      if (heightDiff > 0) KeyboardStatusEnum.OPEN else KeyboardStatusEnum.CLOSED
+
+                  when (messageFragmentMode) {
+                      ChatWindowStatus.CLOSED -> {
+                          binding.cardView.visibility = View.GONE
+                      }
+
+                      ChatWindowStatus.NORMAL -> {
+                          resizeChatWindow(
+                              screenHeight,
+                              rect.height(),
+                              keyboardStatus,
+                              messageFragmentMode
+                          )
+
+                      }
+
+                      ChatWindowStatus.FULLSCREEN -> {
+
+
+                          resizeChatWindow(
+                              screenHeight,
+                              rect.height(),
+                              keyboardStatus,
+                              messageFragmentMode
+                          )
+                      }
+
+                      null -> {}
+                  }
+                  viewModel.onKeyboardStateChange(
+                      mainActivityViewModel.isKeyboardOpen(),
+                      messageFragmentMode
+                  )
+              }
+      */
         viewModel.isMaximizeButtonVisible.observe(this) { isVisible ->
-            when (isVisible) {
-                null -> {}
-                true -> binding.fullScreenButton.visibility = View.VISIBLE
-                false -> binding.fullScreenButton.visibility = View.GONE
-            }
         }
+
 
 
         viewModel.messagePreview.observe(this) { event ->
             // Agrego el mensaje al chat
-
-            Log.d("VIDEO_FILE", "Observe en messagePreview")
             handleMessageEvent(event)
-            // ahora termino de preparar el mensaje para enviarlo
-
-            if (event is ChatRepository.ChatDataEvent.OnChildAdded) {
-                lifecycleScope.launch(Dispatchers.IO) {
-                    var compressedBase64: String? = null
-                    var message: Message = event.data
-                    var fileLocation: String? = null
-                    if (message.image != null) {
-                        fileLocation = message.image.url
-                    } else if (message.video != null) {
-                        fileLocation = message.video.url
-                    } else if (message.voice != null) {
-                        fileLocation = message.voice.url
-
-                    }
-                }
-            }
             // Agrego el mensaje al chat
-        }
+        }/*
+                viewModel.storingMessage.observe(this) { _message ->
 
-        viewModel.storingMessage.observe(this) { _message ->
+                    var messages = viewModel.chatMessages
 
-            var messages = viewModel.chatMessages
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        when (_message) {
+                            is Resource.Loading -> {
+                                mapSituationFragmentViewModel.getMessages().forEach { message ->
+                                    if (message.id == _message.data) {
+                                        message.status = MessagesStatus.SENDING
+                                        adapter?.update(message)
+                                        return@forEach
+                                    }
+                                }
 
-            lifecycleScope.launch(Dispatchers.Main) {
-                when (_message) {
-                    is Resource.Loading -> {
-                        mapSituationFragmentViewModel.getMessages().forEach { message ->
-                            if (message.id == _message.data) {
-                                message.status = MessagesStatus.SENDING
-                                adapter?.update(message)
-                                return@forEach
+                            }
+
+                            is Resource.Error -> {
+
+                                Toast.makeText(
+                                    requireContext(), _message.message.toString(), Toast.LENGTH_SHORT
+                                ).show()
+                                adapter?.deleteById(_message.data.toString())
+                            }
+
+                            is Resource.Success -> {
+
+
+                                var index = -1
+                                mapSituationFragmentViewModel.getMessages().forEach { message ->
+                                    index++
+                                    if (message.id == _message.data) {
+                                        message.status = MessagesStatus.SENT
+                                        adapter?.update(message)
+                                        adapter?.notifyItemChanged(index)
+                                        return@forEach
+                                    }
+                                }
+
                             }
                         }
 
                     }
 
-                    is Resource.Error -> {
 
-                        Toast.makeText(
-                            requireContext(), _message.message.toString(), Toast.LENGTH_SHORT
-                        ).show()
-                        adapter?.deleteById(_message.data.toString())
-                    }
-
-                    is Resource.Success -> {
-
-
-                        var index = -1
-                        mapSituationFragmentViewModel.getMessages().forEach { message ->
-                            index++
-                            if (message.id == _message.data) {
-                                message.status = MessagesStatus.SENT
-                                adapter?.update(message)
-                                adapter?.notifyItemChanged(index)
-                                return@forEach
-                            }
-                        }
-
-                    }
                 }
-
-            }
-
-
-        }
+        */
 
 
-        mapSituationFragmentViewModel.messageIncomming.observe(this) { resource ->
-            var chatEvent = resource.data
-            handleMessageEvent(chatEvent)
-        }
     }
 
 
-    fun clearMessages() {
-        internalMessagesList.clear()
-        adapter?.clear()
+    private fun stopObservers() {
+
+        mapSituationFragmentViewModel.resetEvent.removeObservers(this)
+
+        mapSituationFragmentViewModel.auxEventKey.removeObservers(this)
+
+        mainActivityViewModel.newMedia.removeObservers(this)
+
+        mainActivityViewModel.isKeyboardOpen.removeObservers(this)
+
+        viewModel.isMaximizeButtonVisible.removeObservers(this)
+
+
+        viewModel.messagePreview.removeObservers(this)
+
+        viewModel.storingMessage.removeObservers(this)
+
+
     }
 
     private fun removeObservers() {
@@ -703,56 +690,108 @@ class MessagesInEventFragment(
         viewModel.isMaximizeButtonVisible.removeObservers(this)
     }
 
+    /***
+     * Resize the chat window according several status
+     */
+    private fun resizeChatWindow(
+        screenHeight: Int,
+        visibleAreaHeight: Int,
+        keyboardStatus: KeyboardStatusEnum,
+        chatWindowStatus: ChatWindowStatus
+    ) {
+        if (viewModel.chatWindowStatus.value == chatWindowStatus && viewModel.keyboardStatus.value == keyboardStatus) return
 
-    private fun handleMessageEvent(chatEvent: ChatRepository.ChatDataEvent?) {
-        if (this.chatroomKey == null) {
-            requireActivity().showErrorDialog(
-                "Error de Programacion", "EventKey no ha sido establecida"
-            )
-            return
+        val heightDiff = screenHeight - visibleAreaHeight
+        var newHeight = 0.0
+
+        when (keyboardStatus) {
+            KeyboardStatusEnum.OPEN -> when (chatWindowStatus) {
+                ChatWindowStatus.CLOSED -> newHeight = 0.0
+                ChatWindowStatus.NORMAL -> {
+                    newHeight =
+                        (standardChatWindowHeight - heightDiff + requireContext().getStatusBarHeight()).toDouble()
+                    binding.cardView.radius = 20.dp()
+                }
+
+                ChatWindowStatus.FULLSCREEN -> {
+                    newHeight =
+                        (visibleAreaHeight + requireContext().getStatusBarHeight()).toDouble()
+                    (binding.messageInputFix.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin =
+                        200  //(visibleAreaHeight - requireContext().getStatusBarHeight()).toDouble()
+                    binding.cardView.radius = 0.0f
+                }
+            }
+
+            KeyboardStatusEnum.CLOSED -> when (chatWindowStatus) {
+                ChatWindowStatus.CLOSED -> newHeight = 0.0
+                ChatWindowStatus.NORMAL -> {
+                    // ok
+                    newHeight = (standardChatWindowHeight).toDouble()
+                    binding.cardView.radius = 20.px.toFloat()
+                }
+
+                ChatWindowStatus.FULLSCREEN -> {
+                    // ok
+                    newHeight = (screenHeight - requireContext().getStatusBarHeight()).toDouble()
+                    binding.cardView.radius = 0.toFloat()
+                    (binding.messageInputFix.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin =
+                        0
+                }
+            }
         }
 
+        binding.cardView.visibility = View.GONE
+        binding.cardView.layoutParams.height = newHeight.toInt()
+        binding.cardView.visibility = View.VISIBLE
+
+        viewModel.onChatWindowStatusChange(chatWindowStatus)
+        viewModel.onKeyboardStatusChange(keyboardStatus)
+        binding.messageInputFix.requestFocus()
+    }
+
+
+    private fun handleMessageEvent(chatEvent: ChatRepository.ChatDataEvent?) {
 
         when (chatEvent) {
             is ChatRepository.ChatDataEvent.OnChildAdded -> {
-                val _message = chatEvent.data
+                val message = chatEvent.data
 
-                if (_message.video != null) {
-                    _message.video.url =
-                        CHAT_FILES_STORAGE_PATH + chatroomKey + "/" + _message.video.url.getJustFileName()
-                } else if (_message.image != null) {
-                    _message.image.url =
-                        CHAT_FILES_STORAGE_PATH + chatroomKey + "/" + _message.image.url.getJustFileName()
-                } else if (_message.voice != null) {
-                    _message.voice.url =
-                        CHAT_FILES_STORAGE_PATH + chatroomKey + "/" + _message.voice.url.getJustFileName()
+                if (message.video != null) {
+                    message.video.url =
+                        CHAT_FILES_STORAGE_PATH + chatroomKey + "/" + message.video.url.getJustFileName()
+                } else if (message.image != null) {
+                    message.image.url =
+                        CHAT_FILES_STORAGE_PATH + chatroomKey + "/" + message.image.url.getJustFileName()
+                } else if (message.voice != null) {
+                    message.voice.url =
+                        CHAT_FILES_STORAGE_PATH + chatroomKey + "/" + message.voice.url.getJustFileName()
                 }
 
+                if (!internalMessagesList.contains(message)) {
 
-                if (!internalMessagesList.contains(_message)) {
-
-                    internalMessagesList.add(_message)
+                    internalMessagesList.add(message)
 
                     var addMessage = true
-                    if (_message.action != null) {
-                        if (_message.user.id.compareTo(FirebaseAuth.getInstance().uid.toString()) == 0) {
+                    if (message.action != null) {
+
+                        if (message.user.id.compareTo(myUserKey) == 0) {
                             addMessage = false
                         }
                     }
                     if (addMessage) {
-                        if (mapSituationFragmentViewModel.isChatOpen.value ?: false) {
-                            var eventKey =
-                                mapSituationFragmentViewModel.currentEventKey.value?.data.toString()
-                            mainActivityViewModel.onMessageRead(eventKey, _message.id)
+                        if (mapSituationFragmentViewModel.isChatOpen.value == true) {
+                            val eventKey =
+                                mapSituationFragmentViewModel.auxEventKey.value.toString()
+                            mainActivityViewModel.onMessageRead(eventKey, message.id)
                         }
                         lifecycleScope.launch(Dispatchers.Main) {
-                            adapter?.addToStart(_message, true)
+                            adapter?.addToStart(message, true)
                         }
                     }
                 } else {
 
                     lifecycleScope.launch(Dispatchers.Main) {
-                        adapter?.update(_message)
+                        adapter?.update(message)
                     }
                 }
 
@@ -781,92 +820,178 @@ class MessagesInEventFragment(
         removeObservers()
     }
 
-    private fun setupUI() {
 
-        binding.messagesList.setAdapter(adapter)
+    private fun switchGoingSpeedDial(arrivalTime: Long?, goingTime: Long?) {
+        var pill: SpeedMessage? = null
+        var addArrivalPill = false
 
-        binding.messagesList.setOnTouchListener { v, event ->
-            v.parent.requestDisallowInterceptTouchEvent(true)
-            v.onTouchEvent(event)
-            true
-        }
+        if (arrivalTime != null) {
+            pill = SpeedMessage(
+                "arrival",
+                SpeedMessageActions.IM_THERE,
+                R.string.not_in_place,
+                R.string.not_in_place_message,
+            )
 
-        binding.recyclerActions.adapter = speedMessagesAdapter
-        binding.recyclerActions.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            removePill("im going")
+        } else {
 
-        // binding.messageInputFix.inputEditText.setOnFocusChangeListener { v, hasFocus ->
-        // Configuro el comportamiento del teclado
-        binding.messageInputFix.inputEditText.setSingleLine()
-        binding.messageInputFix.inputEditText.imeOptions = EditorInfo.IME_ACTION_SEND
-        binding.messageInputFix.inputEditText.setOnEditorActionListener { v, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_SEND) {
-                // Realiza tu acción aquí
-                binding.messageInputFix.button.performClick()
-                true
+            addArrivalPill = true
+
+            if (goingTime == null) {
+                //-----------------
+                pill = SpeedMessage(
+                    "im going",
+                    SpeedMessageActions.GOING,
+                    R.string.im_going,
+                    R.string.im_going_message
+                )
             } else {
-                false
+                pill = SpeedMessage(
+                    "im going",
+                    SpeedMessageActions.GOING,
+                    R.string.im_not_going,
+                    R.string.im_not_going_message
+                )
             }
         }
 
-        //   }
+        updateSpeedPill(pill)
 
-        binding.messageInputFix.setInputListener(InputListener { textMessage ->
-            requireActivity().hideKeyboard()
-            val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
-            viewModel.onNewMessage(
-                me, textMessage.toString()
+        if (addArrivalPill) {
+            val pillArrival = SpeedMessage(
+                "arrival",
+                SpeedMessageActions.IM_THERE,
+                R.string.im_in_place,
+                R.string.im_in_place_message
             )
-            return@InputListener true
-        })
+            updateSpeedPill(pillArrival)
+        }
 
-        binding.messageInputFix.setAttachmentsListener(AttachmentsListener {
-            showAtachmentsPopupWindow(binding.messageInputFix, requireActivity())
-        })
 
     }
 
-    private fun setupSpeedMessages() {
 
-        val speedMessagesList = ArrayList<SpeedMessage>()
-        speedMessagesList.add(
-            SpeedMessage(
-                "im going",
-                SpeedMessageActions.GOING,
-                R.string.im_going,
-                R.string.im_going_message,
-                SpeedMessageActions.NOT_GOING,
-                R.string.im_not_going,
-                R.string.im_not_going_message
-            )
-        )
-        speedMessagesList.add(
-            SpeedMessage(
+    /*
+        private fun switchArrivalSpeedDial(arrivalTime: Long?) {
+
+            var pill: SpeedMessage? = null
+            if (arrivalTime == null) {
+                pill = SpeedMessage(
+                    "arrival",
+                    SpeedMessageActions.GOING,
+                    R.string.im_going,
+                    R.string.im_going_message,
+                )
+
+
+            } else {
+                pill = SpeedMessage(
+                    "arrival",
+                    SpeedMessageActions.GOING,
+                    R.string.im_not_going,
+                    R.string.im_not_going_message
+                )
+            }
+            updateSpeedPill(pill)
+
+            /*
+            val index = speedMessagesAdapter.getData().indexOf(pill)
+            if (index == -1) {
+                speedMessagesAdapter.getData().add(pill)
+                speedMessagesAdapter.notifyItemInserted(speedMessagesAdapter.getData().size - 1)
+            } else {
+                speedMessagesAdapter.getData().set(index, pill)
+                speedMessagesAdapter.notifyItemChanged(index)
+            }
+            */
+        }
+    */
+
+    private fun switchCallSpeedDial(callTime: Long?) {
+        var pill: SpeedMessage? = null
+        if (callTime == null) {
+            pill = SpeedMessage(
                 "already called",
                 SpeedMessageActions.CALLED,
                 R.string.already_called,
-                R.string.already_called_message,
-                SpeedMessageActions.NOT_CALLED,
+                R.string.already_called_message
+            )
+        } else {
+            pill = SpeedMessage(
+                "already called",
+                SpeedMessageActions.CALLED,
                 R.string.not_called,
                 R.string.not_called_message
             )
-        )
-        speedMessagesList.add(
-            SpeedMessage(
-                "im there",
-                SpeedMessageActions.IM_THERE,
-                R.string.im_in_place,
-                R.string.im_in_place_message,
-                SpeedMessageActions.NOT_IN_THERE,
-                R.string.not_in_place,
-                R.string.not_in_place_message
-            )
-        )
+        }
 
-        speedMessagesAdapter.setData(speedMessagesList)
+        updateSpeedPill(pill)
     }
 
-    fun prepareMessage(): Message {
+    private fun removePill(pillTag: String) {
+        var index = speedMessagesAdapter.getData().indexOfFirst { it.messageTag == pillTag }
+        if (index > -1) {
+            speedMessagesAdapter.getData().removeAt(index)
+            speedMessagesAdapter.notifyItemRemoved(index)
+        }
+    }
+
+
+    private fun updateSpeedPill(pill: SpeedMessage) {
+        val index = speedMessagesAdapter.getData().indexOf(pill)
+        if (index == -1) {
+            speedMessagesAdapter.getData().add(pill)
+            speedMessagesAdapter.notifyItemInserted(speedMessagesAdapter.getData().size - 1)
+        } else {
+            speedMessagesAdapter.getData().set(index, pill)
+            speedMessagesAdapter.notifyItemChanged(index)
+        }
+    }
+
+
+    /*
+        private fun setupSpeedMessages() {
+
+            val speedMessagesList = ArrayList<SpeedMessage>()
+            speedMessagesList.add(
+                SpeedMessage(
+                    "im going",
+                    SpeedMessageActions.GOING,
+                    R.string.im_going,
+                    R.string.im_going_message,
+                    SpeedMessageActions.GOING,
+                    R.string.im_not_going,
+                    R.string.im_not_going_message
+                )
+            )
+            speedMessagesList.add(
+                SpeedMessage(
+                    "already called",
+                    SpeedMessageActions.CALLED,
+                    R.string.already_called,
+                    R.string.already_called_message,
+                    SpeedMessageActions.CALLED,
+                    R.string.not_called,
+                    R.string.not_called_message
+                )
+            )
+            speedMessagesList.add(
+                SpeedMessage(
+                    "im there",
+                    SpeedMessageActions.IM_THERE,
+                    R.string.im_in_place,
+                    R.string.im_in_place_message,
+                    SpeedMessageActions.IM_THERE,
+                    R.string.not_in_place,
+                    R.string.not_in_place_message
+                )
+            )
+
+            speedMessagesAdapter.setData(speedMessagesList)
+        }
+    */
+    private fun prepareMessage(): Message {
         val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
         val user = Author(
             SessionForProfile.getInstance(requireContext()).getUserId(),
@@ -1001,69 +1126,30 @@ class MessagesInEventFragment(
             }
 
 
-        val imageLoader: ImageLoader = object : ImageLoader {
-            override fun loadImage(imageView: ImageView?, url: String?, payload: Any?) {
-
-                val requestOptions = RequestOptions()
-                requestOptions.diskCacheStrategy(DiskCacheStrategy.ALL)
-                val storageReference: Any? = null
-                when (resources.getResourceName(imageView!!.id).substringAfter("/")) {
-                    "messageUserAvatar" -> {
-                        val filePath = PROFILE_IMAGES_STORAGE_PATH + url
-
-                        lifecycleScope.launch {
-
-                            Log.d("GLIDEAPP", "6")
-
-
-                            var finalPath = FirebaseStorage.getInstance()
-                                .getReference(filePath.getJustFileName()).downloadUrlWithCache(
-                                    AppClass.instance, filePath.substringBeforeLast("/")
-                                )
-
-                            GlideApp.with(requireContext()).setDefaultRequestOptions(requestOptions)
-                                .load(finalPath)
-                                .error(requireActivity().getDrawable(R.drawable.ic_error))
-                                .into(imageView)
-
+        val imageLoader = ImageLoader { imageView, url, _ ->
+            val requestOptions = RequestOptions()
+            requestOptions.diskCacheStrategy(DiskCacheStrategy.ALL)
+            val storageReference: Any? = null
+            when (resources.getResourceName(imageView!!.id).substringAfter("/")) {
+                "messageUserAvatar" -> {
+                    val filePath = PROFILE_IMAGES_STORAGE_PATH + "/" + url?.substringBefore("/")
+                    var justFileName = (url ?: "").substringAfterLast("/")
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        requireContext().assignFileImageTo(justFileName, filePath, imageView)
+                        if (imageView.visibility != View.VISIBLE) {
+                            imageView.visibility = View.VISIBLE
                         }
-                    }
-
-                    "image" -> {
-
-                        var justFileName = url?.getJustFileName()
-
-                        val filePath = "$CHAT_FILES_STORAGE_PATH$chatroomKey/$justFileName"
-//                        val localPath = "$CHAT_FILES_STORAGE_PATH$eventKey"
-                        //  lifecycleScope.launch(Dispatchers.IO) {
-
-                        lifecycleScope.launch(Dispatchers.IO) {
-
-
-                            var finalPath = FirebaseStorage.getInstance()
-                                .getReference(filePath.getJustFileName()).downloadUrlWithCache(
-                                    AppClass.instance, filePath.substringBeforeLast("/")
-                                )
-                            // TODO: Pasarlo a Coroutina
-
-//                            var localPath2 = FirebaseStorageUtils().getStorageObject(filePath, "")
-
-                            Log.d("GLIDEAPP", "7")
-
-                            withContext(Dispatchers.Main) {
-                                GlideApp.with(requireContext())
-                                    .setDefaultRequestOptions(requestOptions).load(finalPath)
-                                    .error(requireActivity().getDrawable(R.drawable.ic_error))
-                                    .into(imageView)
-
-                            }
-                        }
-
-
                     }
                 }
 
-                Log.d("IMAGE_LOADER", storageReference.toString())
+                "image" -> {
+                    val justFileName = url?.getJustFileName().toString()
+                    val filePath = url?.substringBeforeLast("/").toString()
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        requireContext().assignFileImageTo(justFileName, filePath, imageView)
+                    }
+                }
             }
         }
 
@@ -1119,18 +1205,12 @@ class MessagesInEventFragment(
             this
         )
 
-
-
         adapter = MessagesListAdapter<Message>(
             SessionForProfile.getInstance(AppClass.instance).getUserId(), holdersConfig, imageLoader
         )
 
     }
 
-
-    override fun onClick(p0: DialogInterface?, p1: Int) {
-        TODO("Not yet implemented")
-    }
 
     override fun hasContentFor(message: Message?, type: Byte): Boolean {
         when (type) {
@@ -1149,24 +1229,6 @@ class MessagesInEventFragment(
         return false
     }
 
-    fun setData(event: Event) {
-        if (!::eventData.isInitialized || eventData.event_key != event.event_key) {
-            eventData = event
-            setChatroomKey(eventData.event_key)
-        }
-    }
-
-
-    private fun removeMessage(index: Int, message: Message) {
-        mapSituationFragmentViewModel.getMessages().removeAt(index)
-        adapter?.delete(message)
-    }
-
-    private fun updateMessage(index: Int, message: Message) {
-        mapSituationFragmentViewModel.getMessages()[index] = message
-        adapter?.update(message)
-    }
-
 
     fun setChatroomKey(eventKey: String) {
         if (this.chatroomKey != null) {
@@ -1174,7 +1236,7 @@ class MessagesInEventFragment(
                 //   unsubscribe()
                 viewModel.setEventKey(eventKey)
                 adapter?.clear()
-                mapSituationFragmentViewModel.getMessages().clear()
+                mapSituationFragmentViewModel.messages.value?.clear()
                 internalMessagesList.clear()
             }
         }
@@ -1217,7 +1279,7 @@ class MessagesInEventFragment(
         val yAxis = attachmentButtonLocation[1] - popupHeight //76.px
         popupWindow.isOutsideTouchable = true
         popupWindow.showAtLocation(
-            view, android.view.Gravity.NO_GRAVITY, xAxis, yAxis
+            view, Gravity.NO_GRAVITY, xAxis, yAxis
         )
         popupWindow.dimBehind()
 
@@ -1243,7 +1305,7 @@ class MessagesInEventFragment(
 
 
         popupView.findViewById<LinearLayout>(R.id.attachment_audio_option)
-            .setOnTouchListener { view, motionEvent ->
+            .setOnTouchListener { _, motionEvent ->
                 recordingManagement(motionEvent)
                 return@setOnTouchListener true
             }
@@ -1261,9 +1323,8 @@ class MessagesInEventFragment(
 
     private fun startMonitoringWave() {
         var iconRecorder = popupView?.findViewById<ImageView>(R.id.icon_audio)
-        var iconRecordView: AudioRecordView =
-            popupView?.findViewById<AudioRecordView>(R.id.audioRecordView)!!
-        var captionRecorder: TextView = popupView?.findViewById<TextView>(R.id.caption_record)!!
+        val iconRecordView: AudioRecordView = popupView?.findViewById(R.id.audioRecordView)!!
+        val captionRecorder: TextView = popupView?.findViewById(R.id.caption_record)!!
         captionRecorder.text = requireContext().getString(R.string.recording)
         iconRecordView.visibility = View.VISIBLE
         lifecycleScope.launch(Dispatchers.Main) {
@@ -1278,14 +1339,17 @@ class MessagesInEventFragment(
 
     private fun stopMonitoringWave() {
 
-        var iconRecorder: ImageView = popupView?.findViewById<ImageView>(R.id.icon_audio)!!
-        var captionRecorder: TextView = popupView?.findViewById<TextView>(R.id.caption_record)!!
-        var iconRecordView: AudioRecordView =
-            popupView?.findViewById<AudioRecordView>(R.id.audioRecordView)!!
+        val iconRecorder: ImageView = popupView?.findViewById(R.id.icon_audio)!!
+        val captionRecorder: TextView = popupView?.findViewById(R.id.caption_record)!!
+        val iconRecordView: AudioRecordView = popupView?.findViewById(R.id.audioRecordView)!!
 
 
         captionRecorder.text = requireContext().getText(R.string.voice_message)
-        iconRecorder.setImageDrawable(requireContext().getDrawable(R.drawable.ic_audio_mic_outline))
+        iconRecorder.setImageDrawable(
+            AppCompatResources.getDrawable(
+                requireContext(), R.drawable.ic_audio_mic_outline
+            )
+        )
         iconRecordView.visibility = View.INVISIBLE
         iconRecordView.recreate()
     }
@@ -1321,11 +1385,11 @@ class MessagesInEventFragment(
 
                 startMonitoringWave()
 
-                var iconBitmap = requireContext().getBitmapFromVectorDrawable(
+                val iconBitmap = requireContext().getBitmapFromVectorDrawable(
                     R.drawable.ic_recording
                 )
 
-                var iconRecorder: ImageView = popupView?.findViewById<ImageView>(R.id.icon_audio)!!
+                val iconRecorder: ImageView = popupView?.findViewById(R.id.icon_audio)!!
                 iconRecorder.setImageBitmap(iconBitmap)
 //                    recordButton.setImageBitmap(iconBitmap)
                 requireActivity().playSound(R.raw.recording_start, null, null)
@@ -1393,7 +1457,7 @@ class MessagesInEventFragment(
                     Log.d("AUDIO_FILE", "2-" + recordingFilename.toString())
 
                     try {
-                        var fileName = recordingFilename.toString().getJustFileName()
+                        val fileName = recordingFilename.toString().getJustFileName()
                         ///             var localFolder = recordingFilename.toString().substringBeforeLast("/").replace(requireContext().cacheDir.toString()+"/","")
 
                         val mediaFile = prepareMediaMessage(
@@ -1405,6 +1469,7 @@ class MessagesInEventFragment(
                             is MediaFile -> {
                                 mediaFile.status = MediaFile.MEDIA_FILE_STATUS_NEW
                                 mediaFile.time = Date().time
+
 
                                 lifecycleScope.launch(Dispatchers.IO) {
 
@@ -1458,7 +1523,7 @@ class MessagesInEventFragment(
         return adapter
     }
 
-    fun addMessageToStart(message: Message) {
+    private fun addMessageToStart(message: Message) {
         adapter?.addToStart(message, true)
     }
 
@@ -1474,12 +1539,12 @@ class MessagesInEventFragment(
         sendSpeedMessage(message)
     }
 
-
-    private fun sendTextMessage(message: Message): Boolean {
-        addMessageToStart(message)
-        return true
-    }
-
+    /*
+        private fun sendTextMessage(message: Message): Boolean {
+            addMessageToStart(message)
+            return true
+        }
+    */
 
     private fun sendSpeedMessage(message: Message): Boolean {
 
@@ -1558,7 +1623,7 @@ class MessagesInEventFragment(
         )
         message.video = video
         addMessageToStart(message)
-        adapter?.notifyItemInserted(adapter?.messagesCount ?: 0 - 1)
+        adapter?.notifyItemInserted(adapter?.messagesCount ?: (0 - 1))
 
         val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
         lifecycleScope.launch(Dispatchers.Main) {
@@ -1566,11 +1631,12 @@ class MessagesInEventFragment(
         }
     }
 
-    fun onMessageAdded(message: Message) {
-        Log.d("FLOW_ADAPTER", "Entro el mensaje  = $message")
-        adapter?.addToStart(message, true)
-    }
-
+    /*
+        fun onMessageAdded(message: Message) {
+            Log.d("FLOW_ADAPTER", "Entro el mensaje  = $message")
+            adapter?.addToStart(message, true)
+        }
+    */
     fun connectToEvent(eventKey: String) {
         Log.d("FLOW_CONNECT_MESSAGES_IN_EVENT", "Connecting to event {$eventKey}")
         //  adapter?.clear()
@@ -1582,70 +1648,6 @@ class MessagesInEventFragment(
 
     var messagesDisplayRulesDefault: ConstraintLayout.LayoutParams? = null
 
-
-    /**
-     * Maximiza el fragmento y anima los botones
-     */
-    private fun animateButtonsForFullScreen() {
-        lifecycleScope.launch(Dispatchers.Main) {
-            parentFragment?.let { parent ->
-                val aditionalFragmentsLayout: FrameLayout = parent
-
-                // Obtén la instancia del ConstraintLayout padre
-                val parentConstraintLayout: ConstraintLayout = mainParentView!!
-                // Configura el ancho y alto del FrameLayout para que ocupe todo el ancho y alto disponible
-                val layoutParams =
-                    aditionalFragmentsLayout.layoutParams as ConstraintLayout.LayoutParams
-                layoutParams.width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                aditionalFragmentsLayout.setPadding(0, 0, 0, 0)
-                // Establece el margen inferior deseado (puedes ajustar esto según tus necesidades)
-                layoutParams.topMargin = 0
-                layoutParams.bottomMargin = -10.dp
-                layoutParams.marginEnd = 0
-                aditionalFragmentsLayout.layoutParams = layoutParams
-
-                //------- CardView -------------------
-                binding.cardView.cardElevation = 0F
-                binding.cardView.radius = 0F
-                binding.cardView.clipToPadding = false
-                binding.cardView.preventCornerOverlap = false
-                binding.fullScreenButton.visibility = View.GONE
-
-
-                var fullScreenButton = binding.fullScreenButton
-                var topButtonsSection = binding.topButtonsSection
-
-                // Configurar la animación de desvanecimiento
-                val fadeOut = ObjectAnimator.ofFloat(fullScreenButton, "alpha", 1f, 0f)
-                fadeOut.duration = 1000 // Duración de la animación en milisegundos
-
-                // Configurar la animación de agrandar
-                // Configurar la animación de agrandar
-                val scaleX = ObjectAnimator.ofFloat(fullScreenButton, "scaleX", 1f, 1.2f)
-                val scaleY = ObjectAnimator.ofFloat(fullScreenButton, "scaleY", 1f, 1.2f)
-                scaleX.duration = 1000 // Duración de la animación en milisegundos
-                scaleY.duration = 1000 // Duración de la animación en milisegundos
-
-                // Configurar la animación de alineación a la izquierda después de la animación de agrandamiento
-                val alignLeft = ObjectAnimator.ofFloat(fullScreenButton, "translationX", 0f, 0f)
-                alignLeft.duration = 0 // La animación de alineación es instantánea
-
-                // Crear un conjunto de animaciones
-                val animatorSet = AnimatorSet()
-                animatorSet.playTogether(fadeOut, scaleX, scaleY, alignLeft)
-
-                // Iniciar la animación al hacer clic en el botón (puedes cambiar este evento según tus necesidades)
-                animatorSet.start()
-
-                // Después de la animación, cambiar las restricciones para alinear a la izquierda
-
-                mapSituationFragmentViewModel.setMessageFragmentMode(ChatWindowStatus.FULLSCREEN)
-
-
-            }
-        }
-    }
 
     private var parentFragment: FrameLayout? = null
     fun setParentReference(layout: FrameLayout) {
@@ -1660,99 +1662,99 @@ class MessagesInEventFragment(
         opennerButton = fab
     }
 
-
-    fun getFragmentLayoutDefaults(): ConstraintLayout.LayoutParams? {
-        return messagesDisplayRulesDefault
-    }
-
-    fun setFragmentLayoutDefaults(layoutParams: ConstraintLayout.LayoutParams) {
-        messagesDisplayRulesDefault = layoutParams
-    }
-
-    fun turnActionInto(currentActionType: SpeedMessageActions, action: SpeedMessageActions) {
-        var actionIndex = findActionIndex(currentActionType)
-        if (actionIndex > -1) {
-            when (currentActionType) {
-                SpeedMessageActions.GOING -> {
-                    speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
-                        "im not going",
-                        SpeedMessageActions.NOT_GOING,
-                        R.string.im_not_going,
-                        R.string.im_not_going_message,
-                        SpeedMessageActions.GOING,
-                        R.string.im_going,
-                        R.string.im_going_message
-                    )
-                }
-
-                SpeedMessageActions.NOT_GOING -> {
-                    speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
-                        "im going",
-                        SpeedMessageActions.GOING,
-                        R.string.im_going,
-                        R.string.im_going_message,
-                        SpeedMessageActions.NOT_GOING,
-                        R.string.im_not_going,
-                        R.string.im_not_going_message
-                    )
-                }
-
-                SpeedMessageActions.CALLED -> {
-                    speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
-                        "already called",
-                        SpeedMessageActions.NOT_CALLED,
-                        R.string.not_called,
-                        R.string.not_called_message,
-                        SpeedMessageActions.CALLED,
-                        R.string.already_called,
-                        R.string.already_called_message
-                    )
-
-                }
-
-                SpeedMessageActions.NOT_CALLED -> {
-                    speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
-                        "already called",
-                        SpeedMessageActions.CALLED,
-                        R.string.already_called,
-                        R.string.already_called_message,
-                        SpeedMessageActions.NOT_CALLED,
-                        R.string.not_called,
-                        R.string.not_called_message
-                    )
-
-                }
-
-                SpeedMessageActions.IM_THERE -> {
-                    speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
-                        "im there",
-                        SpeedMessageActions.NOT_IN_THERE,
-                        R.string.not_in_place,
-                        R.string.not_in_place_message,
-                        SpeedMessageActions.IM_THERE,
-                        R.string.im_in_place,
-                        R.string.im_in_place_message
-                    )
-
-                }
-
-                SpeedMessageActions.NOT_IN_THERE -> {
-                    speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
-                        "im there",
-                        SpeedMessageActions.IM_THERE,
-                        R.string.im_in_place,
-                        R.string.im_in_place_message,
-                        SpeedMessageActions.NOT_IN_THERE,
-                        R.string.not_in_place,
-                        R.string.not_in_place_message
-                    )
-
-                }
-            }
-            speedMessagesAdapter.notifyItemChanged(actionIndex)
+    /*
+        fun getFragmentLayoutDefaults(): ConstraintLayout.LayoutParams? {
+            return messagesDisplayRulesDefault
         }
-    }
 
+        fun setFragmentLayoutDefaults(layoutParams: ConstraintLayout.LayoutParams) {
+            messagesDisplayRulesDefault = layoutParams
+        }
+
+        fun turnActionInto(currentActionType: SpeedMessageActions, action: SpeedMessageActions) {
+            var actionIndex = findActionIndex(currentActionType)
+            if (actionIndex > -1) {
+                when (currentActionType) {
+                    SpeedMessageActions.GOING -> {
+                        speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
+                            "im not going",
+                            SpeedMessageActions.NOT_GOING,
+                            R.string.im_not_going,
+                            R.string.im_not_going_message,
+                            SpeedMessageActions.GOING,
+                            R.string.im_going,
+                            R.string.im_going_message
+                        )
+                    }
+
+                    SpeedMessageActions.NOT_GOING -> {
+                        speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
+                            "im going",
+                            SpeedMessageActions.GOING,
+                            R.string.im_going,
+                            R.string.im_going_message,
+                            SpeedMessageActions.NOT_GOING,
+                            R.string.im_not_going,
+                            R.string.im_not_going_message
+                        )
+                    }
+
+                    SpeedMessageActions.CALLED -> {
+                        speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
+                            "already called",
+                            SpeedMessageActions.NOT_CALLED,
+                            R.string.not_called,
+                            R.string.not_called_message,
+                            SpeedMessageActions.CALLED,
+                            R.string.already_called,
+                            R.string.already_called_message
+                        )
+
+                    }
+
+                    SpeedMessageActions.NOT_CALLED -> {
+                        speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
+                            "already called",
+                            SpeedMessageActions.CALLED,
+                            R.string.already_called,
+                            R.string.already_called_message,
+                            SpeedMessageActions.NOT_CALLED,
+                            R.string.not_called,
+                            R.string.not_called_message
+                        )
+
+                    }
+
+                    SpeedMessageActions.IM_THERE -> {
+                        speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
+                            "im there",
+                            SpeedMessageActions.NOT_IN_THERE,
+                            R.string.not_in_place,
+                            R.string.not_in_place_message,
+                            SpeedMessageActions.IM_THERE,
+                            R.string.im_in_place,
+                            R.string.im_in_place_message
+                        )
+
+                    }
+
+                    SpeedMessageActions.NOT_IN_THERE -> {
+                        speedMessagesAdapter.getData()[actionIndex] = SpeedMessage(
+                            "im there",
+                            SpeedMessageActions.IM_THERE,
+                            R.string.im_in_place,
+                            R.string.im_in_place_message,
+                            SpeedMessageActions.NOT_IN_THERE,
+                            R.string.not_in_place,
+                            R.string.not_in_place_message
+                        )
+
+                    }
+                }
+                speedMessagesAdapter.notifyItemChanged(actionIndex)
+            }
+        }
+    */
     private fun findActionIndex(actionType: SpeedMessageActions): Int {
         var index = -1
         speedMessagesAdapter.getData().forEach { action ->
@@ -1772,12 +1774,303 @@ class MessagesInEventFragment(
 
     }
 
+    /*
+        fun enableControls() {
+            binding.messageInputFix.isEnabled = true
+            binding.messageInputFix.inputEditText.isEnabled = true
+        }
+    */
+    private var toPickImagePermissionsRequest: ActivityResultLauncher<Array<String>>? =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
+            if (!permissionsStatusMap.containsValue(false)) {
 
-    fun enableControls() {
-        binding.messageInputFix.isEnabled = true
-        binding.messageInputFix.inputEditText.isEnabled = true
+                val imagePickerIntent =
+                    Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
+                        .setMaxCount(1).setGridSize(3)
+                        .setMediaType(MediaType.IMAGE) // MediaType : VIDEO IMAGE, AUDIO OR DOC
+                        .setCompressionRatio(50) // compress image for single item selection (can be 0 to 100)
+                        .setSupportedFileTypes(
+                            "jpg", "jpeg", "png", "webp", "gif"
+                        ).setMinFileSize(100) // Restrict by minimum file size
+                        .setMaxFileSize(1024) //  Restrict by maximum file size
+                        .setStatusBarColor(R.color.white).setToolbarResourceColor(R.color.white)
+                        .setProgressBarColor(R.color.colorAccent)
+                        .setPlaceHolder(R.drawable.ic_image_placeholder)
+                        .setErrorDrawable(R.drawable.ic_image_placeholder)
+                        .setSelectionDrawable(R.drawable.ic_checked_media)
+                        .setAlertDialogNegativeButtonColor(R.color.white)
+                        .setAlertDialogPositiveButtonColor(R.color.darkGray)
+                        .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
+                        .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .setCropAspectRatio(
+                            1, 1
+                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
+                        .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
+                        .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
+                        .build()
+
+
+                pickImageContract?.launch(imagePickerIntent)
+            } else {
+                requireActivity().permissionsForImages()
+            }
+        }
+
+    private var pickImageContract: ActivityResultLauncher<Intent>? =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                val selectedMedia =
+                    it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
+                if (!selectedMedia.isNullOrEmpty()) {
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+
+                        var eventKey =
+                            MapSituationFragmentViewModel.getInstance().eventFlow.value?.data?.event_key?.toString()
+                                ?: ""
+                        val localPath = selectedMedia[0].path.toString()/*
+                                                var fileName =
+                                                    CHAT_FILES_STORAGE_PATH + this@MessagesInEventFragment.eventKey.toString() + "/" + localPath.getJustFileName()
+                        */
+                        val fileName = localPath.getJustFileName()
+                        val mediaFile = File(localPath).toMediaFile(
+                            requireContext(),
+                            CHAT_FILES_STORAGE_PATH + eventKey
+                        )
+                        if (mediaFile != null) {
+                            viewModel.onNewMediaMessage(
+                                mainActivityViewModel.user.value!!, mediaFile
+                            )
+
+                        }
+                        /*
+                                                try {
+
+
+                                                    val mediaFile =
+                                                        prepareMediaMessage(MediaTypesEnum.IMAGE, fileName, localPath)
+
+                                                    if (mediaFile is MediaFile) {
+
+                                                        viewModel.onNewMediaMessage(
+                                                            mainActivityViewModel.user.value!!, mediaFile
+                                                        )
+                                                    }
+
+                                                    if (mediaFile is java.lang.Exception) {
+                                                        Toast.makeText(
+                                                            requireContext(), mediaFile.localizedMessage, Toast.LENGTH_LONG
+                                                        ).show()
+                                                    }
+
+                                                } catch (ex: Exception) {
+                                                    Looper.prepare()
+                                                    Toast.makeText(
+                                                        requireContext(), ex.localizedMessage, Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+
+                         */
+                    }
+                }
+            }
+        }
+
+    private var toTakeVideoPermissionsRequest: ActivityResultLauncher<Array<String>>? =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
+            if (!permissionsStatusMap.containsValue(false)) {
+
+                val videoPickerIntent =
+                    Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
+                        .setMaxCount(5).setGridSize(3).setMediaType(MediaType.VIDEO)
+                        .setMaxFileSize(1024)
+                        .setCompressionRatio(10) // compress image for single item selection (can be 0 to 100)
+                        .setMinTime(5) // for MediaType.VIDEO only
+                        .setMaxTime(60) // for MediaType.VIDEO only
+                        .setSupportedFileTypes(
+                            "mp4", "mkv", "webm", "avi", "flv", "3gp"
+                        ) // Filter by limited media format (Optional)
+                        .setMinFileSize(100) // Restrict by minimum file size
+                        .setMaxFileSize(1024) //  Restrict by maximum file size
+                        .disableCrop() // to remove crop from the single image selection (crop is enabled by default for single image)
+                        /*
+                     * Configuration for  UI
+                     */.setStatusBarColor(R.color.colorPrimaryDark)
+                        .setToolbarResourceColor(R.color.colorPrimary)
+                        .setProgressBarColor(R.color.colorAccent)
+                        .setPlaceHolder(R.drawable.ic_image_placeholder)
+                        .setErrorDrawable(R.drawable.ic_image_placeholder)
+                        .setSelectionDrawable(R.drawable.ic_checked_media)
+                        .setAlertDialogNegativeButtonColor(R.color.white)
+                        .setAlertDialogPositiveButtonColor(R.color.colorPrimary)
+                        .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
+                        .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
+                        .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
+                        .enableActualCircleCrop() // Enable actual circular crop (only for MediaType.Image and CropImageView.CropShape.OVAL)
+                        .build()
+
+                pickVideoContract?.launch(videoPickerIntent)
+            } else {
+                requireActivity().permissionsForVideo()
+            }
+        }
+
+    private var pickVideoContract: ActivityResultLauncher<Intent>? =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                val selectedMedia =
+                    it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
+                if (!selectedMedia.isNullOrEmpty()) {
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+
+                        try {
+
+                            Log.d("VIDEO_FILE", selectedMedia[0].path.toString())
+                            val localPath = selectedMedia[0].path.toString()
+
+                            Log.d("ENCODING", "1")
+                            val mediaFile = File(localPath).toMediaFile(requireContext(),CHAT_FILES_STORAGE_PATH + eventKey)
+                            Log.d("ENCODING", "2")
+
+                            if (mediaFile != null) {
+
+                                val videoDimentions = requireContext().getDimentions(Uri.parse(localPath))
+                                mediaFile.width = videoDimentions["width"]
+                                mediaFile.height = videoDimentions["height"]
+
+                                viewModel.onNewMediaMessage(
+                                    mainActivityViewModel.user.value!!, mediaFile
+                                )
+
+                            }
+
+
+                            /*
+                            val mediaFile =
+                                prepareMediaMessage(MediaTypesEnum.VIDEO, fileName, localPath)
+
+                            when (mediaFile) {
+                                is MediaFile -> {
+
+                                    val videoDimentions =
+                                        requireContext().getDimentions(Uri.parse(localPath))
+                                    mediaFile.width = videoDimentions["width"]
+                                    mediaFile.height = videoDimentions["height"]
+
+
+                                    //---- muevo el archivo grabado al Cache
+                                    val originalPath = localPath
+
+
+                                    val finalPath =
+                                        requireContext().cacheDir.toString() + "/" + fileName
+
+                                    var newFilePath = ""
+
+                                    if (originalPath.contains(requireContext().cacheDir.toString())) {
+
+                                        // Si el archivo fue generado en cache, lo mueve
+                                        newFilePath = FileUtils().moveFile(
+                                            originalPath.substringBeforeLast("/"),
+                                            originalPath.getJustFileName(),
+                                            finalPath.substringBeforeLast("/")
+                                        )
+                                    } else {
+                                        // Si el archivo no estaba en Cache , lo copio
+                                        newFilePath = FileUtils().copyFile(
+                                            originalPath.substringBeforeLast("/"),
+                                            originalPath.getJustFileName(),
+                                            finalPath.substringBeforeLast("/")
+                                        ).toString()
+                                    }
+                                    //     mediaFile.file_name = fileName
+
+                                    Log.d("VIDEO_FILE", "voy a llamar a onSendMediaMessage")
+
+                                    viewModel.onNewMediaMessage(
+                                        mainActivityViewModel.user.value!!, mediaFile
+                                    )
+
+                                }
+
+                                is java.lang.Exception -> {
+                                }
+                            }
+                            */
+                        } catch (ex: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    requireContext(), ex.localizedMessage, Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+
+    /**
+     * Prepara un objeto de tipo multimedia
+     * @param mediaType Tipo de multimedia
+     * @param fileName Nombre del archivo
+     * @param localFullPath Ruta local del archivo sin el nombre de archivo.
+     */
+
+    private fun prepareMediaMessage(
+        mediaType: MediaTypesEnum, fileName: String, localFullPath: String
+    ): Any {
+
+        if (fileName.compareTo(fileName.getJustFileName()) != 0) {
+            throw Exception("El parametro fileName debe contener solo el nombre del archivo")
+        }
+        try {
+
+            val media = MediaFile(mediaType, localFullPath, fileName)
+            if (mediaType == MediaTypesEnum.VIDEO || mediaType == MediaTypesEnum.AUDIO || mediaType == MediaTypesEnum.IMAGE) {
+                val fileExtension = media.file_name.getFileExtension(requireContext())
+                var fileUri = media.localFullPath
+                if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" || fileExtension?.lowercase(
+                        Locale.getDefault()
+                    ) == "png"
+                ) {
+                    fileUri = "file:" + media.localFullPath
+                }
+                var mediaFileEncoded: String? = null
+                if (fileExtension?.lowercase(Locale.getDefault()) == "jpg" || fileExtension?.lowercase(
+                        Locale.getDefault()
+                    ) == "png" || fileExtension?.lowercase(Locale.getDefault()) == "mp4" || fileExtension?.lowercase(
+                        Locale.getDefault()
+                    ) == "3gp"
+                ) {
+                    mediaFileEncoded = MultimediaUtils(requireContext()).convertFileToBase64(
+                        Uri.parse(
+                            fileUri
+                        )
+                    ).toString()
+
+                    if (!localFullPath.contains(requireContext().cacheDir.toString() + "/" + CHAT_FILES_STORAGE_PATH + chatroomKey.toString())) {
+                        val destination =
+                            requireContext().cacheDir.toString() + "/" + CHAT_FILES_STORAGE_PATH + chatroomKey
+                        FileUtils().copyFile(
+                            media.localFullPath.substringBeforeLast("/"),
+                            media.localFullPath.getJustFileName(),
+                            destination
+                        )
+                    }
+                }
+                media.bytesB64 = mediaFileEncoded
+            }
+
+            return media
+        } catch (ex: Exception) {
+            return ex
+        }
+
     }
-
 
 }
 

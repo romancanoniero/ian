@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -89,7 +88,7 @@ class EventNotificationDialog(private val mContext: Context, mActivity: Activity
 
     init {
         val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.event_notification_popup, null)
+        mDialoglayout = inflater.inflate(R.layout.dialog_event_notification, null)
         this.setView(mDialoglayout)
         val buttonOne = mDialoglayout.findViewById<Button>(R.id.buttonOne)
         val lp = WindowManager.LayoutParams()

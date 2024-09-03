@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.View.OnClickListener
 import android.view.WindowManager
 import androidx.core.view.WindowCompat
 import cn.pedant.SweetAlert.SweetAlertDialog
@@ -86,6 +87,26 @@ fun Activity.showConfirmationDialog(
     dialog.setButton2Caption(negativeButtonCaption)
     dialog.show()
 }
+
+
+fun Activity.showConfirmationDialog(
+    title: String,
+    message: String,
+    afirmativeButtonCaption: String,
+    negativeButtonCaption: String,
+    afirmativeButtonOnClick: OnClickListener
+) {
+    val dialog = ConfirmationDialog(this, this)
+    dialog.setTitle(title)
+    dialog.setLegend(message)
+    dialog.setButton1Caption(afirmativeButtonCaption)
+    dialog.setButton1ClickListener(afirmativeButtonOnClick)
+
+    dialog.setButton2Caption(negativeButtonCaption)
+    dialog.show()
+}
+
+
 
 fun Activity.showAnimatedDialog(title: String, message: String) {
     SweetAlertDialog(this, SweetAlertDialog.SUCCESS_TYPE)

@@ -3,63 +3,72 @@ package com.iyr.ian.ui.map.adapters
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
-import android.util.Log
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.graphics.drawable.ClipDrawable
+import android.graphics.drawable.LayerDrawable
 import android.view.LayoutInflater
+import android.view.View
+import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.chauthai.swipereveallayout.ViewBinderHelper
 import com.github.marlonlom.utilities.timeago.TimeAgo
 import com.github.marlonlom.utilities.timeago.TimeAgoMessages
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.iyr.ian.AppConstants
 import com.iyr.ian.Constants
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
-import com.iyr.ian.dao.models.Contact
 import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventFollowed
 import com.iyr.ian.dao.models.EventFollower
 import com.iyr.ian.dao.models.EventLocationType
 import com.iyr.ian.databinding.ItemEventHeaderAdapterBinding
 import com.iyr.ian.enums.EventStatusEnum
-import com.iyr.ian.glide.GlideApp
-import com.iyr.ian.repository.implementations.databases.realtimedatabase.EventRepositoryImpl
+import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.map.event_header.adapter.EventHeaderCallback
-import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
+import com.iyr.ian.utils.assignFileImageTo
+import com.iyr.ian.utils.geo.GeoFunctions
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getEventTypeName
+import com.iyr.ian.utils.openNavigatorTo
+import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 
-class EventHeaderAdapter(val activity: Activity, val callback: EventHeaderCallback) :
+class EventHeaderAdapter(
+    val activity: AppCompatActivity,
+    val _mapRef: GoogleMap?,
+    val callback: EventHeaderCallback
+) :
     RecyclerView.Adapter<EventHeaderAdapter.EventViewHolder>() {
-    private val viewBinderHelper = ViewBinderHelper()
 
-    var events: java.util.ArrayList<EventFollowed> = ArrayList<EventFollowed>()
-    var viewers: java.util.ArrayList<EventFollower> = ArrayList<EventFollower>()
-    private var resultsFromSearches: ArrayList<Contact> = ArrayList<Contact>()
-    private var compoundList: java.util.ArrayList<Contact> = ArrayList<Contact>()
+    private var mapRef: GoogleMap? = null
+    var events: java.util.ArrayList<EventFollowed> = ArrayList()
+    var viewers: java.util.ArrayList<EventFollower> = ArrayList()
 
-    var binding: ItemEventHeaderAdapterBinding? = null
+    private lateinit var binding: ItemEventHeaderAdapterBinding
 
     init {
-
+        mapRef = _mapRef
     }
 
-
     override fun onCreateViewHolder(parent: ViewGroup, p1: Int): EventViewHolder {
+
+
         binding = ItemEventHeaderAdapterBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
-        return EventViewHolder(binding!!, activity)
+        return EventViewHolder(binding, activity)
     }
 
     override fun getItemCount(): Int {
@@ -68,133 +77,89 @@ class EventHeaderAdapter(val activity: Activity, val callback: EventHeaderCallba
 
     var currentEvent: EventFollowed? = null
     private var eventData: Event? = null
+    private var eventLocationRef: LatLng? = null
 
-    private var eventRepositoryImpl: EventRepositoryImpl = EventRepositoryImpl()
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
         eventData?.let { event ->
-            holder.bind(event, viewers.toTypedArray())
+            val viewModel = MapSituationFragmentViewModel.getInstance()
+            holder.bind(event)
+
+            viewModel.eventFlow.observe(activity) { resource ->
+                val event = resource.data
+
+                if (event?.event_location_type == EventLocationType.FIXED.name) {
+                    eventLocationRef =
+                        LatLng(event.location?.latitude!!, event.location?.longitude!!)
+holder.eventLocationRef = eventLocationRef
+                }
+            }
+
+            viewModel.followers.observe(activity) { followers ->
+                viewers = followers
+                updateFollowesCounter(viewers.toTypedArray())
+
+                //-- Actualizo el nivel de bateria
+                binding.batteryStatusSection.visibility = View.INVISIBLE
+                val authorInfo = followers.find { it.is_author }
+                authorInfo?.let { info ->
+                    if (authorInfo.battery_percentage != 0.0) {
+                        // En algún lugar de tu código donde necesites actualizar el progreso
+                        updateProgressBarColor(
+                            binding.progressBattery,
+                            info.battery_percentage.toInt()
+                        ) // Ejemplo con un progreso del 30%
+                        binding.batteryStatusSection.visibility = VISIBLE
+                    }
+                    if (event?.event_location_type == EventLocationType.REALTIME.name) {
+                        eventLocationRef = LatLng(authorInfo.l[0], authorInfo.l[0])
+                        holder.eventLocationRef = eventLocationRef
+                    }
+                }
+                val meAsFollowerInfo = followers.find {
+                    it.user_key == UserViewModel.getInstance().getUser()?.user_key
+                }
+                eventLocationRef?.let { eventLocation ->
+                    meAsFollowerInfo?.let { thisUser ->
+                        updateDistanceToEvent(
+                            LatLng(thisUser.l[0], thisUser.l[1]),
+                            eventLocation
+
+                        )
+
+                    }
+                }
+            }
+            /*
+            viewModel.followers.value?.let { followers ->
+                viewers = followers
+                updateFollowesCounter(viewers.toTypedArray())
+            }
+            */
         }
-
         enableButtons()
-
-
-        //-------------------------------------------------------
-        /*
-
-                var viewersCount = 0
-                var goingCount = 0
-                var calledAuthoritiesCount = 0
-
-                Toast.makeText(activity, "Actualizando contadores - Cant. de  Seguidores ${followersList.size}", Toast.LENGTH_SHORT).show()
-
-
-                followersList.forEach { follower ->
-                    if (follower.user_key != FirebaseAuth.getInstance().uid.toString()) {
-                        viewersCount++
-
-                        if (follower.going_time != null) {
-                            goingCount++
-                        }
-                        if (follower.call_time != null) {
-                            calledAuthoritiesCount++
-                        }
-                    }
-                }
-                if (viewersCount == 0) {
-                    binding?.viewersCount?.setTextColor(activity.getColor(R.color.light_gray))
-                    binding?.viewersCount?.iconTint =
-                        ColorStateList.valueOf(activity.getColor(R.color.light_gray))
-                    binding?.viewersCount?.setBackgroundColor(activity.getColor(R.color.material_red300))
-                    binding?.viewersCount?.text = activity.resources.getString(R.string.nobody)
-                    binding?.viewersCount?.setOnClickListener(null)
-                } else
-                {
-                    binding?.viewersCount?.setTextColor(activity.getColor(R.color.white))
-                    binding?.viewersCount?.background =
-                        activity.getDrawable(R.drawable.primary_button_border)
-
-                    binding?.viewersCount?.text = viewersCount.toString()
-                    /*
-                    binding?.viewersCount?.setOnClickListener {
-                        callback.showUsersParticipatingFragment()
-                    }
-
-                     */
-
-                }
-                if (goingCount == 0 && (eventData?.author?.author_key != FirebaseAuth.getInstance().uid.toString() && eventData?.event_location_type?.compareTo(
-                        EventLocationType.REALTIME.name
-                    ) == 0)
-                ) {
-                    binding?.goingCount?.setTextColor(activity.getColor(R.color.light_gray))
-                    binding?.goingCount?.iconTint =
-                        ColorStateList.valueOf(activity.getColor(R.color.light_gray))
-                    binding?.goingCount?.setBackgroundColor(activity.getColor(R.color.material_red300))
-                    binding?.goingCount?.text = activity.resources.getString(R.string.nobody)
-                    binding?.goingCount?.setOnClickListener(null)
-                } else
-                {
-                    binding?.goingCount?.setTextColor(activity.getColor(R.color.white))
-                    binding?.goingCount?.iconTint =
-                        ColorStateList.valueOf(activity.getColor(R.color.white))
-                    binding?.goingCount?.background =
-                        activity.getDrawable(R.drawable.primary_button_border)
-                    binding?.goingCount?.text = goingCount.toString()
-                    /*
-                       binding?.goingCount?.setOnClickListener {
-                           callback.showUsersGoingFragment()
-                       }
-
-                     */
-                }
-
-                if (calledAuthoritiesCount == 0) binding?.calledCount?.text =
-                    activity.resources.getString(R.string.nobody)
-                else binding?.calledCount?.text = calledAuthoritiesCount.toString()
-
-                var auxMe = EventFollower(FirebaseAuth.getInstance().uid.toString())
-                Toast.makeText(activity, "Actualizando contadores - Cant. de  Seguidores ${followersList.size} ---- ${viewersCount} - ${goingCount} - ${calledAuthoritiesCount}", Toast.LENGTH_SHORT).show()
-
-                *//*
-                if (currentEvent != events[position]) {
-                    currentEvent = events[position]
-
-                    eventData?.let { event ->
-        //                eventData = null
-                        holder.bind(event)
-
-                    }
-
-                    /*
-                    GlobalScope.launch(Dispatchers.IO) {
-                        eventRepositoryImpl.listenEventFlow(currentEvent!!.event_key).collect {
-                            when (it) {
-                                is Resource.Success -> {
-                                    it.data?.let { data ->
-                                        eventData = data
-                                        holder.bind(data)
-                                    }
-
-                                }
-
-                                is Resource.Error -> {
-                                    Log.d("ERROR", "Error al obtener el evento")
-                                }
-
-                                is Resource.Loading -> {
-                                    Log.d("LOADING", "Cargando evento")
-                                }
-                            }
-                        }
-
-
-                    }
-
-        */
-                }
-        */
     }
 
+    private fun updateDistanceToEvent(latLng: LatLng, eventRef: LatLng) {
+        if (mapRef != null) {
+            binding.distanceFromYou.visibility = View.VISIBLE
+
+            mapRef?.let { map ->
+
+                val distance = GeoFunctions.getDistanceTo(
+                    eventLocationRef!!,
+                    latLng
+                )
+                binding.distanceFromYou.text = GeoFunctions.formatDistance(distance)
+            }
+        } else {
+            binding.distanceFromYou.visibility = View.GONE
+        }
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        MapSituationFragmentViewModel.getInstance().followers.removeObservers(activity)
+    }
 
     fun setData(events: ArrayList<EventFollowed>) {
         this.events = events
@@ -202,14 +167,14 @@ class EventHeaderAdapter(val activity: Activity, val callback: EventHeaderCallba
 
     fun setEventData(event: Event) {
         this.eventData = event
-        var index = events.indexOfFirst { it.event_key == event.event_key }
+        val index = events.indexOfFirst { it.event_key == event.event_key }
         if (index != -1) {
             notifyItemChanged(index)
         }
     }
 
     fun isEventExists(eventKey: String): Boolean {
-        var toReturn: Boolean = false
+        var toReturn = false
         this.events.forEach { event ->
             if (event.event_key == eventKey) {
                 toReturn = true
@@ -219,153 +184,301 @@ class EventHeaderAdapter(val activity: Activity, val callback: EventHeaderCallba
         return toReturn
     }
 
+    private fun updateProgressBarColor(progressBar: ProgressBar, progress: Int) {
+        val drawable = progressBar.progressDrawable as LayerDrawable
+        val progressDrawable =
+            drawable.findDrawableByLayerId(android.R.id.progress) as ClipDrawable
+
+        when {
+            progress > 50 -> {
+                val colorFilter = PorterDuffColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN)
+                progressDrawable.drawable?.colorFilter = colorFilter
+//                progressDrawable.drawable?.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN)
+            }
+
+            progress in 15..50 -> {
+                val ratio = (progress - 15) / 35.0f
+                val red = (255 * (1 - ratio)).toInt()
+                val yellow = (255 * ratio).toInt()
+                val colorFilter =
+                    PorterDuffColorFilter(Color.rgb(red, yellow, 0), PorterDuff.Mode.SRC_IN)
+                progressDrawable.drawable?.colorFilter = colorFilter
+
+                /* progressDrawable.drawable?.setColorFilter(
+
+                     Color.rgb(red, yellow, 0),
+                     PorterDuff.Mode.SRC_IN
+                 )*/
+            }
+
+            else -> {
+                val colorFilter = PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN)
+                progressDrawable.drawable?.colorFilter = colorFilter
+            }
+        }
+        progressBar.progress = progress
+    }
 
     /**
      * Actualiza los contadores de la pantalla
      * @param followersList Lista de seguidores del evento
      */
-    private fun updateFollowesCounter(
-        followersList: Array<EventFollower>
-    ) {
-        var viewersCount = 0
-        var goingCount = 0
-        var calledAuthoritiesCount = 0
 
-        followersList.forEach { follower ->
-            if (follower.user_key != FirebaseAuth.getInstance().uid.toString()) {
-                viewersCount++
+    private fun updateFollowesCounter(followersList: Array<EventFollower>) {
+        val myUserKey = UserViewModel.getInstance().getUser()?.user_key
+        var viewersCount = followersList.count { it.user_key != myUserKey && it.is_author == false }
+        val goingCount = followersList.count { it.going_time != null && it.user_key != myUserKey }
+        val calledAuthoritiesCount =
+            followersList.count { it.call_time != null && it.user_key != myUserKey }
 
-                if (follower.going_time != null) {
-                    goingCount++
+        val thisUser = followersList.find { it.user_key == myUserKey }
+
+
+        val buttonsVisibles = (SessionForProfile.getInstance(activity)
+            .getProfileProperty("map_fragment_button_expanded") ?: false) as Boolean
+        expandCompressActionButtons(buttonsVisibles)
+
+        binding.expandCollaps.setOnClickListener {
+            val isExpanded = binding.expandCollaps.rotation != 180f
+            SessionForProfile.getInstance(activity)
+                .setProfileProperty("map_fragment_button_expanded", isExpanded)
+
+            expandCompressActionButtons(isExpanded)
+        }
+
+        binding.viewersCount.apply {
+            val caption = StringBuilder()
+            when (thisUser?.following_start_time) {
+                null -> {
                 }
-                if (follower.call_time != null) {
-                    calledAuthoritiesCount++
+
+                else -> {
+                    if (thisUser.is_author == false) {
+                        caption.append(activity.resources.getString(R.string.you))
+                    }
                 }
             }
-        }
-        if (viewersCount == 0) {
-            binding?.viewersCount?.text = activity.resources.getString(R.string.nobody)
-            //    binding?.viewersCount?.setOnClickListener(null)
-        } else {
-            binding?.viewersCount?.setTextColor(activity.getColor(R.color.white))
-            binding?.viewersCount?.background =
-                activity.getDrawable(R.drawable.primary_button_border)
 
-            binding?.viewersCount?.text = viewersCount.toString()/*
-            binding?.viewersCount?.setOnClickListener {
-                callback.showUsersParticipatingFragment()
+            when (viewersCount) {
+                0 -> {
+                    if (thisUser?.following_start_time == null) {
+                        caption.append(activity.resources.getString(R.string.nobody))
+                    }
+                }
+
+                else -> {
+                    caption.append(viewersCount.toString())
+                }
             }
+            text = caption.toString()
 
-             */
 
         }
-        if (goingCount == 0 && (eventData?.author?.author_key != FirebaseAuth.getInstance().uid.toString() && eventData?.event_location_type?.compareTo(
-                EventLocationType.REALTIME.name
-            ) == 0)
-        ) {
-            binding?.goingCount?.setTextColor(activity.getColor(R.color.light_gray))
-            binding?.goingCount?.iconTint =
-                ColorStateList.valueOf(activity.getColor(R.color.light_gray))
-            binding?.goingCount?.setBackgroundColor(activity.getColor(R.color.material_red300))
-            binding?.goingCount?.text = activity.resources.getString(R.string.nobody)
-            binding?.goingCount?.setOnClickListener(null)
-        } else {
-            binding?.goingCount?.setTextColor(activity.getColor(R.color.white))
-            binding?.goingCount?.iconTint = ColorStateList.valueOf(activity.getColor(R.color.white))
-            binding?.goingCount?.background = activity.getDrawable(R.drawable.primary_button_border)
-            binding?.goingCount?.text = goingCount.toString()
+
+        binding.goingCount.apply {
+
+            val caption = StringBuilder()
+            when (thisUser?.going_time) {
+                null -> {
+                }
+
+                else -> {
+                    caption.append(activity.resources.getString(R.string.you))
+                }
+            }
+            when (goingCount) {
+                0 -> {
+                    if (thisUser?.going_time == null) {
+                        caption.append(activity.resources.getString(R.string.nobody))
+                    }
+                }
+
+                else -> {
+                    if (thisUser?.going_time != null) {
+                        caption.append(" ")
+                        caption.append(activity.resources.getString(R.string.and))
+                    }
+                    caption.append(" ")
+
+                    caption.append(goingCount.toString())
+                    if (thisUser?.going_time != null) {
+                        caption.append(" ")
+                        caption.append(activity.resources.getString(R.string.more))
+                    }
+                }
+            }
+            text = caption.toString()
         }
 
-        if (calledAuthoritiesCount == 0) binding?.calledCount?.text =
-            activity.resources.getString(R.string.nobody)
-        else binding?.calledCount?.text = calledAuthoritiesCount.toString()
+        binding.calledCount.apply {
 
-        var auxMe = EventFollower(FirebaseAuth.getInstance().uid.toString())
-        //     Toast.makeText(activity, "Actualizando contadores - Cant. de  Seguidores ${followersList.size} ---- ${viewersCount} - ${goingCount} - ${calledAuthoritiesCount}", Toast.LENGTH_SHORT).show()
+            val caption = StringBuilder()
+            when (thisUser?.call_time) {
+                null -> {
+                }
 
+                else -> {
+                    caption.append(activity.resources.getString(R.string.you))
+                }
+            }
+            when (calledAuthoritiesCount) {
+                0 -> {
+                    if (thisUser?.call_time == null) {
+                        caption.append(activity.resources.getString(R.string.nobody))
+                    }
+                }
+
+                else -> {
+                    if (thisUser?.call_time != null) {
+                        caption.append(" ")
+                        caption.append(activity.resources.getString(R.string.and))
+                    }
+                    caption.append(" ")
+
+                    caption.append(goingCount.toString())
+                    if (thisUser?.call_time != null) {
+                        caption.append(" ")
+                        caption.append(activity.resources.getString(R.string.more))
+                    }
+                }
+            }
+            text = caption.toString()
+        }
     }
 
-    fun updateFollowerByEventKey(eventKey: String?, follower: EventFollower) {
+    private fun expandCompressActionButtons(isExpanded: Boolean) {
+        if (isExpanded) {
+            binding.expandCollaps.rotation = 180f
+            binding.viewersCount.visibility = VISIBLE
+            binding.goingCount.visibility = VISIBLE
+            binding.calledCount.visibility = VISIBLE
+        } else {
+            binding.expandCollaps.rotation = 0f
+            binding.viewersCount.visibility = View.GONE
+            binding.goingCount.visibility = View.GONE
+            binding.calledCount.visibility = View.GONE
+        }
+    }
 
-        var index = viewers.indexOf(follower)
+
+    fun updateFollowerByEventKey(follower: EventFollower) {
+        val index = viewers.indexOf(follower)
         if (index != -1) {
             viewers[index] = follower
         } else {
             viewers.add(follower)
         }
-
-        updateFollowesCounter(viewers.toTypedArray())
-
-
+        if (::binding.isInitialized) {
+            updateFollowesCounter(viewers.toTypedArray())
+        }
     }
 
     fun disableButtons() {
-        binding?.viewersCount?.setOnClickListener(null)
-        binding?.goingCount?.setOnClickListener(null)
-        binding?.calledCount?.setOnClickListener(null)
+        binding.viewersCount.setOnClickListener(null)
+        binding.goingCount.setOnClickListener(null)
+        binding.calledCount.setOnClickListener(null)
     }
 
     fun enableButtons() {
-        binding?.viewersCount?.setOnClickListener {
+        binding.viewersCount.setOnClickListener {
             callback.showUsersParticipatingFragment()
         }
-        binding?.goingCount?.setOnClickListener {
+        binding.goingCount.setOnClickListener {
             callback.showUsersGoingFragment()
         }
-        binding?.calledCount?.setOnClickListener {
+        binding.calledCount.setOnClickListener {
             callback.showUsersWhoCalledFragment()
         }
 
+    }
+
+    fun setMapRef(map: GoogleMap) {
+        this.mapRef = map
     }
 
     class EventViewHolder(
         private val binding: ItemEventHeaderAdapterBinding, val activity: Activity
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(event: Event, followersList: Array<EventFollower>) {
+        var eventLocationRef: LatLng? = null
+            set(value) {
+                field = value
+            }
+            get() {
+                return field
+            }
 
-            var fileName = event.author?.profile_image_path.toString()
+        fun bind(event: Event) {
+
+            val fileName = event.author?.profile_image_path.toString()
+
+            binding.openRouteButton.setOnClickListener {
+                eventLocationRef?.let { eventLocation ->
+                    activity.openNavigatorTo(eventLocation)
+                }
+            }
 
             if (binding.userImage.tag != fileName) {
-                GlobalScope.launch {
+                /*
+                              GlobalScope.launch {
 
-                    try {
+                                  try {
 
-                        Log.d("UPDATEUI", "Refresco la imagen")
-                        var storageReferenceCache = FirebaseStorage.getInstance()
-                            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                            .child(event.author?.author_key!!).child(fileName)
-                            .downloadUrlWithCache(activity)
+                                      Log.d("UPDATEUI", "Refresco la imagen")
+                                      var storageReferenceCache = FirebaseStorage.getInstance()
+                                          .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
+                                          .child(event.author?.author_key!!).child(fileName)
+                                          .downloadUrlWithCache(activity)
 
-                        withContext(Dispatchers.Main) {
-                            if (binding.userImage.tag != storageReferenceCache) {
-                                GlideApp.with(activity)
+                                      withContext(Dispatchers.Main) {
+                                          if (binding.userImage.tag != storageReferenceCache) {
+                                              GlideApp.with(activity)
 
-                                    .asBitmap()
+                                                  .asBitmap()
 
-                                    .load(storageReferenceCache)
-                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .placeholder(activity.getDrawable(R.drawable.ic_sand_clock))
-                                    .error(activity.getDrawable(R.drawable.ic_error))
-                                    .into(binding.userImage)
-                            } else {
-                                Log.d("UPDATEUI", "No refresco la imagen")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.d("ERROR", "Error al cargar la imagen")
-                    }
-                    binding.userImage.tag = fileName
+                                                  .load(storageReferenceCache)
+                                                  .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                                  .placeholder(activity.getDrawable(R.drawable.ic_sand_clock))
+                                                  .error(activity.getDrawable(R.drawable.ic_error))
+                                                  .into(binding.userImage)
+                                          } else {
+                                              Log.d("UPDATEUI", "No refresco la imagen")
+                                          }
+                                      }
+
+
+
+
+
+                                  } catch (e: Exception) {
+                                      Log.d("ERROR", "Error al cargar la imagen")
+                                  }
+
+
+                              }
+              */
+                binding.userImage.visibility = View.INVISIBLE
+
+                GlobalScope.launch(Dispatchers.IO) {
+
+                    activity.assignFileImageTo(
+                        fileName,
+                        "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${event.author?.author_key!!}",
+                        binding.userImage
+                    )
                 }
-
+                binding.userImage.tag = fileName
             }
+
+
+
             binding.location.text = event.location?.formated_address
 
-            val LocaleBylanguageTag: Locale =
+            val localeBylanguageTag: Locale =
                 Locale.forLanguageTag(Locale.getDefault().toLanguageTag())
             val timeAgoLocale: TimeAgoMessages =
-                TimeAgoMessages.Builder().withLocale(LocaleBylanguageTag).build()
-            binding.timeMark.text = "( " + TimeAgo.using(event.time, timeAgoLocale) + " )"
+                TimeAgoMessages.Builder().withLocale(localeBylanguageTag).build()
+            binding.timeMark.text = String.format("(%s)", TimeAgo.using(event.time, timeAgoLocale))
 
             binding.userName.text = event.author!!.display_name
 
@@ -384,14 +497,12 @@ class EventHeaderAdapter(val activity: Activity, val callback: EventHeaderCallba
             } else {
                 binding.eventType.setTextColor(activity.getColor(R.color.text_color))
             }
-            binding.eventType.text = AppClass.instance.getEventStatus(event.status)
+            binding.eventStatus.text = AppClass.instance.getEventStatus(event.status)
 
+            /*
             var viewersCount = 0
             var goingCount = 0
             var calledAuthoritiesCount = 0
-
-            //         Toast.makeText(activity, "Actualizando contadores - Cant. de  Seguidores ${followersList.size}", Toast.LENGTH_SHORT).show()
-
 
             followersList.forEach { follower ->
                 if (follower.user_key != FirebaseAuth.getInstance().uid.toString()) {
@@ -404,52 +515,31 @@ class EventHeaderAdapter(val activity: Activity, val callback: EventHeaderCallba
                         calledAuthoritiesCount++
                     }
                 }
-            }/*
-                        if (viewersCount == 0) {
-                            binding?.viewersCount?.setTextColor(activity.getColor(R.color.light_gray))
-                            binding?.viewersCount?.iconTint =
-                                ColorStateList.valueOf(activity.getColor(R.color.light_gray))
-                            binding?.viewersCount?.setBackgroundColor(activity.getColor(R.color.material_red300))
-                            binding?.viewersCount?.text = activity.resources.getString(R.string.nobody)
-                            binding?.viewersCount?.setOnClickListener(null)
-                        } else {
-                            binding?.viewersCount?.setTextColor(activity.getColor(R.color.white))
-                            binding?.viewersCount?.background =
-                                activity.getDrawable(R.drawable.primary_button_border)
+            }
 
-                            binding?.viewersCount?.text = viewersCount.toString()
-                        }
-                        */
-            if (goingCount == 0 && (event?.author?.author_key != FirebaseAuth.getInstance().uid.toString() && event?.event_location_type?.compareTo(
+            if (goingCount == 0 && (event.author?.author_key != FirebaseAuth.getInstance().uid.toString() && event.event_location_type.compareTo(
                     EventLocationType.REALTIME.name
                 ) == 0)
             ) {
-                binding?.goingCount?.setTextColor(activity.getColor(R.color.light_gray))
-                binding?.goingCount?.iconTint =
+                binding.goingCount.setTextColor(activity.getColor(R.color.light_gray))
+                binding.goingCount.iconTint =
                     ColorStateList.valueOf(activity.getColor(R.color.light_gray))
-                binding?.goingCount?.setBackgroundColor(activity.getColor(R.color.material_red300))
-                binding?.goingCount?.text = activity.resources.getString(R.string.nobody)
-                binding?.goingCount?.setOnClickListener(null)
+                binding.goingCount.setBackgroundColor(activity.getColor(R.color.material_red300))
+                binding.goingCount.text = activity.resources.getString(R.string.nobody)
+                binding.goingCount.setOnClickListener(null)
             } else {
-                binding?.goingCount?.setTextColor(activity.getColor(R.color.white))
-                binding?.goingCount?.iconTint =
+                binding.goingCount.setTextColor(activity.getColor(R.color.white))
+                binding.goingCount.iconTint =
                     ColorStateList.valueOf(activity.getColor(R.color.white))
-                binding?.goingCount?.background =
-                    activity.getDrawable(R.drawable.primary_button_border)
-                binding?.goingCount?.text = goingCount.toString()
+                binding.goingCount.background =
+                    AppCompatResources.getDrawable(activity, R.drawable.primary_button_border)
+                binding.goingCount.text = goingCount.toString()
             }
 
-            if (calledAuthoritiesCount == 0) binding?.calledCount?.text =
+            if (calledAuthoritiesCount == 0) binding.calledCount.text =
                 activity.resources.getString(R.string.nobody)
-            else binding?.calledCount?.text = calledAuthoritiesCount.toString()
-
-            var auxMe = EventFollower(FirebaseAuth.getInstance().uid.toString())
-            //          Toast.makeText(activity, "Actualizando contadores - Cant. de  Seguidores ${followersList.size} ---- ${viewersCount} - ${goingCount} - ${calledAuthoritiesCount}", Toast.LENGTH_SHORT).show()
-
-
-            //       updateFollowesCounter(viewers)
-
-
+            else binding.calledCount.text = calledAuthoritiesCount.toString()
+*/
             if (ActivityCompat.checkSelfPermission(
                     activity, Manifest.permission.ACCESS_FINE_LOCATION
                 ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(

@@ -105,10 +105,8 @@ public class Message implements
             var action = new SpeedMessage((String) actionMap.get("messageTag"),
                     SpeedMessageActions.valueOf((String) actionMap.get("actionType")),
                     Integer.valueOf(String.valueOf(actionMap.get("actionTitleResId"))),
-                    Integer.valueOf(String.valueOf(actionMap.get("actionMessageResId"))),
-                    SpeedMessageActions.valueOf((String) actionMap.get("revertActionType")),
-                    Integer.valueOf(String.valueOf(actionMap.get("revertActionTitleResId"))),
-                    Integer.valueOf(String.valueOf(actionMap.get("revertActionMessageResId")))
+                    Integer.valueOf(String.valueOf(actionMap.get("actionMessageResId")))
+
             );
 
 

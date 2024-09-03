@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.chauthai.swipereveallayout.ViewBinderHelper
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.SpeedMessage
+import com.iyr.ian.utils.UIUtils.handleTouch
 
 
 interface SpeedMessagesCallback {
@@ -20,6 +21,9 @@ class SpeedMessagesAdapter(val mActivity: Activity, val callback: SpeedMessagesC
     RecyclerView.Adapter<SpeedMessagesAdapter.UserViewHolder>() {
     private val viewBinderHelper = ViewBinderHelper()
     var messages = ArrayList<SpeedMessage>()
+
+    private var areButtonsEnabled: Boolean = true
+
 
 
     init {
@@ -36,10 +40,13 @@ class SpeedMessagesAdapter(val mActivity: Activity, val callback: SpeedMessagesC
 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
 
-        val record = messages[position]
 
+
+        val record = messages[position]
+        holder.text.isEnabled = areButtonsEnabled
         holder.text.text = mActivity.getString(record.actionTitleResId)
         holder.text.setOnClickListener {
+            mActivity.handleTouch()
             callback.onSpeedMessageClick(record)
         }
     }
@@ -53,6 +60,10 @@ class SpeedMessagesAdapter(val mActivity: Activity, val callback: SpeedMessagesC
         return messages
     }
 
+    fun setButtonsEnabled(enabled: Boolean) {
+        areButtonsEnabled = enabled
+        notifyDataSetChanged()
+    }
 
     class UserViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var text: TextView = view.findViewById<TextView>(R.id.text)

@@ -178,7 +178,7 @@
                 android:background="@color/whiteTrans80"
                 android:elevation="24dp"
                 android:orientation="horizontal"
-                android:visibility="visible">
+                android:visibility="gone">
 
                 <LinearLayout
                     android:id="@+id/go_to_may_place_container"

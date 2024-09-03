@@ -6,10 +6,13 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.gson.Gson
 import com.iyr.ian.AppConstants
 import com.iyr.ian.dao.models.EventNotificationModel
 import com.iyr.ian.dao.repositories.NotificationsRepository
 import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.dao.ServerResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +30,7 @@ class NotificationsRepositoryImpl : NotificationsRepository() {
      * Forma correcta de emitir datos desde Firebase Realtime Database
      */
     @ExperimentalCoroutinesApi
-    override suspend fun getDataFlow(userKey: String) : Flow<DataEvent> = callbackFlow {
+    override suspend fun getDataFlow(userKey: String): Flow<DataEvent> = callbackFlow {
 
         val childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -139,8 +142,6 @@ class NotificationsRepositoryImpl : NotificationsRepository() {
                     }
 
 
-
-
                 }
             }
         }
@@ -207,6 +208,39 @@ class NotificationsRepositoryImpl : NotificationsRepository() {
     }
 
 
+    override suspend fun removeNotificationByKey(userKey: String, notificationKey: String): Resource<Boolean?> {
+        return try {
+            var tokenResult = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
+
+            if (tokenResult != null) {
+                val data: MutableMap<String, Any> = HashMap()
+                data["user_key"] = userKey
+                data["notification_key"] = notificationKey
+                data["auth_token"] = tokenResult.token.toString()
+                try {
+                    val call = FirebaseFunctions.getInstance()
+                        .getHttpsCallable("notificationRemoveByKey")
+                        .call(data)
+                        .await()
+
+                    val result: ServerResponse = Gson().fromJson<ServerResponse>(
+                        call.data.toString(),
+                        ServerResponse::class.java
+                    )
+                    Resource.Success<Boolean?>(result.status == 0)
+                } catch (exception: Exception) {
+                    return Resource.Error<Boolean?>(exception.message.toString())
+                }
+
+            } else {
+                return Resource.Error<Boolean?>("error_getting_token")
+            }
+
+        } catch (exception: Exception) {
+            return Resource.Error<Boolean?>(exception.message.toString())
+        }
+    }
+
 
     override suspend fun registerNotificationsToken(token: String): Resource<Boolean?> {
         return try {
@@ -225,5 +259,90 @@ class NotificationsRepositoryImpl : NotificationsRepository() {
         }
     }
 
+    override suspend fun setNotificationsAsRead(
+        userKey: String, vararg notificationKeys: String
+    ): Resource<Boolean?> {
 
+        val updates = hashMapOf<String, Any>()
+
+        for (key in notificationKeys) {
+            updates["${userKey}/${key}/read"] = true
+        }
+
+        try {
+            val call = databaseReference.updateChildren(updates).await()
+
+            //    val callAux = FirebaseDatabase.getInstance().getReference("events_notifications").updateChildren(updates).await()
+
+            return Resource.Success<Boolean?>(true)
+        } catch (e: Exception) {
+            return Resource.Error<Boolean?>(e.message.toString())
+        }
+    }
+
+    override suspend fun removeAllNotifications(userKey: String): Resource<Boolean?> {
+        return try {
+            var tokenResult = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
+
+            if (tokenResult != null) {
+                val data: MutableMap<String, Any> = HashMap()
+                data["user_key"] = userKey
+                data["auth_token"] = tokenResult.token.toString()
+                try {
+                    val call = FirebaseFunctions.getInstance()
+                        .getHttpsCallable("noficationRemoveByReceiver")
+                        .call(data)
+                        .await()
+
+                    val result: ServerResponse = Gson().fromJson<ServerResponse>(
+                        call.data.toString(),
+                        ServerResponse::class.java
+                    )
+                    Resource.Success<Boolean?>(result.status == 0)
+                } catch (exception: Exception) {
+                    return Resource.Error<Boolean?>(exception.message.toString())
+                }
+
+            } else {
+                return Resource.Error<Boolean?>("error_getting_token")
+            }
+
+        } catch (exception: Exception) {
+            return Resource.Error<Boolean?>(exception.message.toString())
+        }
+    }
+
+
+    override suspend fun removeNotificationsByChatroomKey(userKey: String, eventKey: String) : Resource<Boolean?> {
+        return try {
+            var tokenResult = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
+
+            if (tokenResult != null) {
+                val data: MutableMap<String, Any> = HashMap()
+                data["user_key"] = userKey
+                data["event_key"] = eventKey
+                data["auth_token"] = tokenResult.token.toString()
+                try {
+                    val call = FirebaseFunctions.getInstance()
+                        .getHttpsCallable("notificationRemoveByChatroom")
+                        .call(data)
+                        .await()
+
+                    val result: ServerResponse = Gson().fromJson<ServerResponse>(
+                        call.data.toString(),
+                        ServerResponse::class.java
+                    )
+                    Resource.Success<Boolean?>(result.status == 0)
+                } catch (exception: Exception) {
+                    return Resource.Error<Boolean?>(exception.message.toString())
+                }
+
+            } else {
+                return Resource.Error<Boolean?>("error_getting_token")
+            }
+
+        } catch (exception: Exception) {
+            return Resource.Error<Boolean?>(exception.message.toString())
+        }
+    }
 }

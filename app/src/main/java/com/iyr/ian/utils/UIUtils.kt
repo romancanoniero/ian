@@ -48,7 +48,14 @@ object UIUtils {
         return taskInfo.topActivity?.packageName == packageName
     }
 
-
+    fun Context.getStatusBarHeight(): Int {
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (resourceId > 0) {
+            resources.getDimensionPixelSize(resourceId)
+        } else {
+            0
+        }
+    }
 
     fun Activity.statusBarTransparent() {
         this.window.apply {

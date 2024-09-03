@@ -11,7 +11,11 @@ interface ContactsInterface {
     suspend fun putOnPendingInvitationList(userWhoInviteKey: String, phoneNumber: String): Boolean
     suspend fun postContactInvitation( userWhoInvitesKey: String, userToInviteKey: String ): Resource<Boolean?> // Crea invitacion de contacto a un usuario que ya existe en la App
     suspend fun searchContacts( myKey : String , searchString: String): Resource<ArrayList<Contact>?>
-    suspend fun contactAcceptInvitation(userWhoAccept: String,userToAcceptKey: String): Resource<HashMap<String, Contact>?>
+
+    suspend fun contactAcceptInvitation(
+        userWhoAccept: String,
+        userToAcceptKey: String
+    ): Resource<HashMap<String, Contact>?>
     suspend fun contactsByUserFlow(userKey: String): Flow<ContactsRepository.DataEvent>
 
     suspend fun searchContactsFromPhone(
@@ -34,6 +38,7 @@ interface ContactsInterface {
                                                group: ContactGroup,
                                                included: Boolean) : Resource<Boolean?>
     suspend fun alreadyFriends(userKey: String, otherUserKey: String): Resource<Boolean?>
+
 
 }
 

@@ -11,6 +11,7 @@ import com.iyr.ian.dao.models.Event
 import com.iyr.ian.dao.models.EventFollowed
 import com.iyr.ian.dao.repositories.EventsRepository
 import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.dao.ServerResponse
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -327,9 +328,11 @@ class EventsRepositoryImpl : EventsRepository() {
                     if (eventReturned != null) {
                         return Resource.Success<Event?>(eventReturned)
                     } else {
-                        return Resource.Error<Event?>((call.data as HashMap<String, Any>).get("message").toString())
+                        return Resource.Error<Event?>(
+                            (call.data as HashMap<String, Any>).get("message").toString()
+                        )
                     }
-                //    return Resource.Success<Event?>(eventReturned)
+                    //    return Resource.Success<Event?>(eventReturned)
 
                 } catch (exception: Exception) {
                     return Resource.Error<Event?>(exception.message.toString())
@@ -343,65 +346,73 @@ class EventsRepositoryImpl : EventsRepository() {
     }
 
 
-    /*
-        override fun getEventFlow(eventKey: String): Flow<Resource<Event>>? = callbackFlow {
+    override suspend fun subscribeToEvent(
+        notificationKey: String,
+        eventKey: String
+    ): Resource<Boolean?> {
+        return try {
+            var tokenResult = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
 
-            val eventsReference = FirebaseDatabase.getInstance().getReference(TABLE_EVENTS_LOCATIONS)
+            if (tokenResult != null) {
+                val data: MutableMap<String, Any> = HashMap()
+                data["user_key"] = FirebaseAuth.getInstance().uid.toString()
+                data["notification_key"] = notificationKey
+                data["auth_token"] = tokenResult.token.toString()
 
-            val eventListener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val event = snapshot.getValue(
-                            Event::class.java
-                        )
-                        val eventKey = snapshot.key
-                        event!!.event_key = eventKey!!
+                try {
+                    val call = FirebaseFunctions.getInstance()
+                        .getHttpsCallable("eventSubscribeTo")
+                        .call(data)
+                        .await()
 
-                        trySend(Resource.Success<Event>(event))
-                        /*
-                                            if (eventKeyShowing != event.event_key) {
-                                                eventKeyShowing = eventKey
-                                                resetMap()
-                                                if (mapConfigs.containsKey(eventKeyShowing)) {
-                                                    val config = mapConfigs[eventKeyShowing]!!
-                                                    mMap?.moveMapCamera(config.location, config.zoomLevel)
-                                                } else {
-                                                    mMap?.animateMapCamera(farthestZoom)
-                                                }
+                    val result: ServerResponse = Gson().fromJson<ServerResponse>(
+                        call.data.toString(),
+                        ServerResponse::class.java
+                    )
 
-                                                EventsWSClient.instance.eventViewed(
-                                                    FirebaseAuth.getInstance().uid.toString(),
-                                                    event.event_key,
-                                                    object : OnCompleteCallback {
-                                                        override fun onComplete(success: Boolean, result: Any?) {
-                                                            getEventFollowedByKey(event.event_key)?.last_read =
-                                                                result.toString().toLong()
-                                                            mainActivity.updateMapButton()
-                                                        }
-                                                    })
-                                            }
-                                            setCurrentEventData(event)
-                                            updateElapsedTimeIndicator()
-                                            updateViewersSection(event.viewers)
+                    Resource.Success<Boolean?>(result.status == 0)
+                    /*
+                    /*
+                    .continueWith(Continuation<HttpsCallableResult, String?> { task -> // This continuation runs on either success or failure, but if the task
 
-                                            updateMap()
-                        */
-                    } else {
-                        // cuando el evento dejo de existir
+                        (if (task.isSuccessful) {
+                            val result: ServerResponse = Gson().fromJson<ServerResponse>(
+                                task.result!!.data.toString(),
+                                ServerResponse::class.java
+                            )
 
-                        //                  Toast.makeText(context, "Evento Eliminado", Toast.LENGTH_LONG).show()
-                    }
+                            val resultCode: Int = result.status
+                            when (resultCode) {
+                                0 -> {
+                                    callback.onComplete(true, null).toString()
+
+                                }
+                                else -> {
+
+                                }
+                            } as String?
+
+                        } else {
+                            callback.onError(task.exception!!)
+                        }).toString()
+
+                    })
+*/
+               */
+                } catch (exception: Exception) {
+                    return Resource.Error<Boolean?>(exception.message.toString())
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
+            } else {
+                return Resource.Error<Boolean?>("error_getting_token")
             }
 
-            eventsReference.child(eventKey).addValueEventListener(eventListener)
-
-
-            awaitClose {
-                eventsReference.removeEventListener(eventListener)
-            }
+        } catch (exception: Exception) {
+            return Resource.Error<Boolean?>(exception.message.toString())
         }
-        */
+
+
+    }
+
+
 }

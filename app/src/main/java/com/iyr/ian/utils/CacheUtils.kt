@@ -47,7 +47,6 @@ fun Bitmap.saveImageToCache(context: Context, imageName: String, folderName: Str
  */
 fun Context.loadImageFromCache( imageName: String, folderName: String? = null): Bitmap? {
     var cacheDir: File? = null
-
     if (folderName == null) {
         cacheDir = File(this.cacheDir, "images")
     } else {

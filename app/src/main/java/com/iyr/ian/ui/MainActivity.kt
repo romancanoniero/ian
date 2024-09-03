@@ -11,6 +11,7 @@ import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.SEND_SMS
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PendingIntent
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
@@ -27,6 +28,7 @@ import android.graphics.Rect
 import android.location.GnssStatus
 import android.location.Location
 import android.location.LocationListener
+import android.location.LocationManager
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -60,6 +62,7 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
@@ -107,6 +110,8 @@ import com.iyr.ian.AppConstants.Companion.BROADCAST_EVENT_FOLLOWED_UPDATED
 import com.iyr.ian.AppConstants.Companion.BROADCAST_PULSE_REQUIRED
 import com.iyr.ian.AppConstants.Companion.DYNAMIC_LINK_ACTION_FRIENDSHIP
 import com.iyr.ian.AppConstants.Companion.DYNAMIC_LINK_ACTION_FRIENDSHIP_AND_SPEED_DIAL
+import com.iyr.ian.AppConstants.Companion.NOTIFICATION_TYPE_NEW_MESSAGE
+import com.iyr.ian.AppConstants.Companion.NOTIFICATION_TYPE_ON_NEW_MESSAGE
 import com.iyr.ian.AppConstants.Companion.PERMISSIONS_REQUEST_READ_CONTACTS
 import com.iyr.ian.AppConstants.ServiceCode.BROADCAST_MESSAGE_UPDATE_BLE_DEVICES_INDICATOR_REQUESTED
 import com.iyr.ian.BuildConfig
@@ -114,6 +119,7 @@ import com.iyr.ian.Constants
 import com.iyr.ian.Constants.Companion.MY_PERMISSION_REQUEST_SEND_SMS
 import com.iyr.ian.Constants.Companion.REQUEST_CODE_RECOVER_PLAY_SERVICES
 import com.iyr.ian.R
+import com.iyr.ian.apis.NotificationsApi
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.app_lifecycle_listener.AppLifecycleListener
 import com.iyr.ian.callbacks.MainActivityCommonDataInterface
@@ -128,6 +134,7 @@ import com.iyr.ian.dao.models.EventFollower
 import com.iyr.ian.dao.models.EventLocation
 import com.iyr.ian.dao.models.EventLocationType
 import com.iyr.ian.dao.models.EventNotificationModel
+import com.iyr.ian.dao.models.EventNotificationType
 import com.iyr.ian.dao.models.EventVisibilityTypes
 import com.iyr.ian.dao.models.GeoLocation
 import com.iyr.ian.dao.models.UnreadMessages
@@ -135,6 +142,7 @@ import com.iyr.ian.dao.models.User
 import com.iyr.ian.dao.models.UserMinimum
 import com.iyr.ian.dao.repositories.EventsFollowedRepository
 import com.iyr.ian.dao.repositories.EventsRepository
+import com.iyr.ian.dao.repositories.NotificationsRepository
 import com.iyr.ian.databinding.ActivityMainBinding
 import com.iyr.ian.enums.DialogsEnum
 import com.iyr.ian.enums.EventStatusEnum
@@ -157,13 +165,13 @@ import com.iyr.ian.repository.implementations.databases.realtimedatabase.EventRe
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.NotificationsRepositoryImpl
 import com.iyr.ian.services.bluetooth.Bluetooth
 import com.iyr.ian.services.bluetooth.interfaces.Callback
-import com.iyr.ian.services.eventservice.EventService
 import com.iyr.ian.services.falling_detection.Constants.BROADCAST_FALLING_EVENT
 import com.iyr.ian.services.falling_detection.FallDetectionServiceMethod
 import com.iyr.ian.services.location.LocationUpdatesService
 import com.iyr.ian.services.location.ServiceLocation
 import com.iyr.ian.services.location.ServiceLocation.ServiceLocationBinder
 import com.iyr.ian.services.location.isServiceRunning
+import com.iyr.ian.services.messaging.PushNotificationService
 import com.iyr.ian.services.receivers.AppStatusReceiver
 import com.iyr.ian.sharedpreferences.SessionApp
 import com.iyr.ian.sharedpreferences.SessionForProfile
@@ -214,6 +222,7 @@ import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.Validators.requestStatusConfirmationSingleton
 import com.iyr.ian.utils.Validators.showIsCloseToExpireDialogSingleton
 import com.iyr.ian.utils.animations.SpringAnimator
+import com.iyr.ian.utils.animations.correctAnimation
 import com.iyr.ian.utils.appsInternalStorageFolder
 import com.iyr.ian.utils.areLocationPermissionsGranted
 import com.iyr.ian.utils.bluetooth.ble.BLEConnectionState
@@ -263,6 +272,8 @@ import com.iyr.ian.utils.startActivity
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import com.lassi.common.utils.KeyUtils
 import com.lassi.data.media.MiMedia
 import com.lassi.domain.media.LassiOption
@@ -284,6 +295,10 @@ import java.util.UUID
 
 enum class ScreenModeEnum {
     NORMAL, FULLSCREEN
+}
+
+enum class KeyboardStatusEnum {
+    OPEN, CLOSED
 }
 
 interface EventsNotificationCallback {
@@ -957,6 +972,14 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
+
+                packageName -> {
+                    val bundle = intent!!.extras!!
+                    val notificationType: String = bundle.getString("notification_type")!!
+
+                    handleForegroundMessage(bundle)
+                }
+
                 "ON_NOTIFICATION_INCOME" -> {
                     Log.d(
                         "PUSH_MESSAGE_RECEIVER", Gson().toJson(
@@ -1663,7 +1686,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             setContentView(binding.root)
 
             startCoreObservers()
-
+            runServices()
             /*
             TODO: MOVER AL AREA DE INICIALIZCION DE LA APP
             getIntentData()
@@ -1857,35 +1880,35 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
 
     private fun runServices() {
+        /*
+                val eventService = EventService.getInstance(applicationContext)
+                val intent = Intent(this, EventService::class.java)
+                this.startService(intent)
+                eventService.getResult().observe(this) { status ->
+                    when (status) {
+                        is Resource.Error -> {
+                            showErrorDialog(status.message.toString())
+                        }
 
-        val eventService = EventService.getInstance(applicationContext)
-        val intent = Intent(this, EventService::class.java)
-        this.startService(intent)
-        eventService.getResult().observe(this) { status ->
-            when (status) {
-                is Resource.Error -> {
-                    showErrorDialog(status.message.toString())
-                }
+                        is Resource.Loading -> {
+                            showLoader()
+                        }
 
-                is Resource.Loading -> {
-                    showLoader()
-                }
+                        is Resource.Success -> {
 
-                is Resource.Success -> {
+                            findNavController(R.id.nav_host_fragment).apply {
+                                popBackStack(R.id.homeFragment, false)
+                                navigate(R.id.homeFragment)
+                            }
+                            hideLoader()
+        //                    viewModel.switchToModule(IANModulesEnum.MAIN.ordinal, "home")
+                            // volver a homescreen y borrar el stack para que no pueda volver atras
 
-                    findNavController(R.id.nav_host_fragment).apply {
-                        popBackStack(R.id.homeFragment, false)
-                        navigate(R.id.homeFragment)
+
+                        }
                     }
-                    hideLoader()
-//                    viewModel.switchToModule(IANModulesEnum.MAIN.ordinal, "home")
-                  // volver a homescreen y borrar el stack para que no pueda volver atras
-
-
                 }
-            }
-        }
-
+        */
         /*
                 if (isServiceRunning(NewLocationJobService::class.java) == false) {
                     applicationContext.scheduleLocationUpdateJob()
@@ -2009,7 +2032,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                 MainActivityViewModel.AppStatus.INITIALIZING -> {
 
                     lifecycleScope.launch {
-                        Toast.makeText(this@MainActivity, "INITIALIZING", Toast.LENGTH_SHORT).show()
+                        //       Toast.makeText(this@MainActivity, "INITIALIZING", Toast.LENGTH_SHORT).show()
 
                     }
 
@@ -2035,7 +2058,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                 }
 
                 MainActivityViewModel.AppStatus.READY -> {
-                    Toast.makeText(this, "READY", Toast.LENGTH_SHORT).show()
+                    //              Toast.makeText(this, "READY", Toast.LENGTH_SHORT).show()
                 }
 
                 null -> TODO()
@@ -2046,12 +2069,18 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     }
 
 
+    private val _isLocationEnabled = MutableLiveData<Boolean>()
+    val isLocationEnabled: LiveData<Boolean> get() = _isLocationEnabled
+
+
     fun stopCoreObservers() {
         viewModel.appStatus.removeObservers(this)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
-    fun startObservers() {/*
+    fun startObservers() {
+
+        /*
                 viewModel.serverTime.observe(this) { time ->
                     if (time != null) {
                         setServerTime(time)
@@ -2255,7 +2284,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         }
 
         viewModel.error.observe(this) { message ->
-            showErrorDialog(message.toString())
+            lifecycleScope.launch(Dispatchers.Main) {
+                showErrorDialog(message.toString())
+            }
         }
 
 
@@ -2365,20 +2396,51 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                 notifications.filter { notification -> notification.read == false }.size
             appToolbar.updateNotificationsBell(notifications.size, unreadnotifications)
         }
-        viewModel.notificationsFlow.observe(this) { dataEvent -> }
+
+        viewModel.notificationsFlow.observe(this) { dataEvent ->
+            when (dataEvent) {
+                is NotificationsRepository.DataEvent.ChildAdded -> {
+                    val notification = dataEvent.data
+                    val event = dataEvent.data
+                    val dataMap = (dataEvent.data.event_data as HashMap<String, Any>)
+                    val authorKey = dataMap["user_key"].toString()
+
+                    if (!notification.read && authorKey != UserViewModel.getInstance()
+                            .getUser()?.user_key ?: ""
+                    ) {
+                        when (event.event_type) {
+                            EventTypesEnum.SEND_POLICE.name -> {
+                                playSound(R.raw.policesiren, null, null)
+                            }
+
+                            EventTypesEnum.SEND_FIREMAN.name -> {
+                                playSound(R.raw.fire_truck_siren, null, null)
+                            }
+                        }
+                    }
+
+                }
+
+                else -> {}
+            }
+        }
 
         AppClass.instance.getEventsFollowedFlow.observe(this) { event ->
 
             when (event) {
                 is EventsFollowedRepository.EventsFollowedDataEvent.OnChildAdded -> {
                     onEventFollowedAdded(event.data)
-                    when (event.data.event_type) {
-                        EventTypesEnum.SEND_POLICE.name -> {
-                            playSound(R.raw.policesiren, null, null)
-                        }
+                    if (event.data.author.author_key.toString() != UserViewModel.getInstance()
+                            .getUser()?.user_key ?: ""
+                    ) {
+                        when (event.data.event_type) {
+                            EventTypesEnum.SEND_POLICE.name -> {
+                                playSound(R.raw.policesiren, null, null)
+                            }
 
-                        EventTypesEnum.SEND_FIREMAN.name -> {
-                            playSound(R.raw.fire_truck_siren, null, null)
+                            EventTypesEnum.SEND_FIREMAN.name -> {
+                                playSound(R.raw.fire_truck_siren, null, null)
+                            }
                         }
                     }
                 }
@@ -2417,7 +2479,24 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }
         }
 
+        viewModel.validationResult.observe(this) { result ->
+            when (result) {
+                is Resource.Loading -> {
+                    showLoader()
+                }
 
+                is Resource.Success -> {
+                    hideLoader()
+                    correctAnimation(binding.root)
+                    findNavController(R.id.nav_host_fragment).popBackStack()
+                }
+
+                is Resource.Error -> {
+                    hideLoader()
+                    showErrorDialog(result.message.toString())
+                }
+            }
+        }
 
 
         AppClass.instance.unreadMessagesFlow.observe(this) { unreadsList ->
@@ -2542,6 +2621,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
 
 
+        }
+
+        AppClass.instance.panic.observe(this) { inPanic ->
+            viewModel.onPanicStateChanged(inPanic)
         }
 
         viewModel.userSubscription.observe(this) { subscriptionType ->
@@ -2808,9 +2891,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }
         }
 
-        AppClass.instance.panic.observe(this) { inPanic ->
-            viewModel.onPanicStateChanged(inPanic)
-        }
+
 
         AppClass.instance.eventsMap.observe(this) { events ->
             Log.d("EVENTS_FOLLOWED", events?.size.toString())
@@ -3251,6 +3332,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     override fun onDestroy() {
         AppClass.instance.isKilling = true
         super.onDestroy()
+        if (UserViewModel.getInstance().getUser()?.user_key != null) {
+            UserViewModel.getInstance().offLine()
+        }
         keyboardHeightProvider?.close()
     }
 
@@ -3273,7 +3357,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                         }
 
                         ActivityResultsTarget.MAP_FRAGMENT -> {
-                            mMapFragment.chatFragment?.onImageSelected(intent)
+                            //          mMapFragment.chatFragment?.onImageSelected(intent)
                         }
 
                         else -> {
@@ -3293,7 +3377,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                         }
 
                         ActivityResultsTarget.MAP_FRAGMENT -> {
-                            mMapFragment.chatFragment?.onVideoRecorded(intent)
+                            //    mMapFragment.chatFragment?.onVideoRecorded(intent)
                         }
 
                         else -> {
@@ -3497,7 +3581,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                 }
                 else
                 {*/
-        if (FirebaseAuth.getInstance().currentUser != null) {
+
+
+        if (UserViewModel.getInstance().getUser()?.user_key != null) {
+            UserViewModel.getInstance().onLine()
             handleDynamicLinks()
         }
         //      }
@@ -3599,6 +3686,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         this.isActivityVisible = false
         if (videoDialog?.isShowing == true) {
             videoDialog?.dismiss()
+        }
+        if (UserViewModel.getInstance().getUser()?.user_key != null) {
+            UserViewModel.getInstance().offLine()
         }
         //  unregisterObservers()
 
@@ -3749,16 +3839,18 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                         override fun onRequirementsComplete() {
                             //getLastKnownLocation { location ->
                             if (AppClass.instance.lastLocation != null) {
-                                var eventKey = mMapFragment.getEventKey()
+                                var eventKey =
+                                    MapSituationFragmentViewModel.getInstance().auxEventKey.value
                                 if (eventKey == null) {
                                     eventKey = viewModel.getFirstEvent()?.event_key
                                 }
-
-                                val action =
-                                    HomeFragmentDirections.actionHomeFragmentToMapSituationFragment(
-                                        eventKey
-                                    )
-                                findNavController(R.id.nav_host_fragment).navigate(action)
+                                if (findNavController(R.id.nav_host_fragment).currentDestination?.id != R.id.mapSituationFragment) {
+                                    val action =
+                                        HomeFragmentDirections.actionHomeFragmentToMapSituationFragment(
+                                            eventKey
+                                        )
+                                    findNavController(R.id.nav_host_fragment).navigate(action)
+                                }
                             }
 
                         }
@@ -3903,21 +3995,13 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                     storageReference = me.image.file_name
                 }
                 try {
-
                     Log.d("GLIDEAPP", "4")
-
-
                     GlideApp.with(this).asBitmap().load(storageReference)
                         .placeholder(getDrawable(R.drawable.progress_animation))
                         .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
 
-
-//                    appToolbar.updateImage(storageReference.toString())
                 } catch (exception: Exception) {
-
                     Log.d("GLIDEAPP", "5")
-
-
                     showErrorDialog(exception.message.toString())
                 }
             } else {
@@ -3999,7 +4083,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         requestCode: Int, resultCode: Int, data: Intent?
     ) {
 
-        runOnUiThread {
+  //      runOnUiThread {
 /*
             if (multiPickerWrapper!!.onActivityResult(requestCode, resultCode, data)) {
 
@@ -4080,7 +4164,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                 }
             }
 
-        }
+//        }
+
+
 
     }
 
@@ -5082,7 +5168,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     private fun registerReceivers() {
 
         val broadcastIntentFilter = IntentFilter()
-
+        broadcastIntentFilter.addAction(packageName)
+        broadcastIntentFilter.addAction(NOTIFICATION_TYPE_ON_NEW_MESSAGE)
+        broadcastIntentFilter.addAction(NOTIFICATION_TYPE_NEW_MESSAGE)
         broadcastIntentFilter.addAction(BROADCAST_MESSAGE_BLE_DEVICE_CONNECTED)
         broadcastIntentFilter.addAction(BROADCAST_EVENT_CLOSE_TO_EXPIRE)
         broadcastIntentFilter.addAction(BROADCAST_DID_YOU_ARRIVE_REQUEST)
@@ -6497,9 +6585,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             */
         var unreadMessagesQty: Long = 0
         map.forEach { room ->
-            if (!mMapFragment.isVisible || !mMapFragment.chatFragment?.isVisible!!) {
-                unreadMessagesQty += room.value.qty
-            }
+            /*
+              if (!mMapFragment.isVisible || !mMapFragment.chatFragment?.isVisible!!) {
+                  unreadMessagesQty += room.value.qty
+              }
+
+             */
         }
         appToolbar.updateChatCount(unreadMessagesQty.toInt())/*
                     if (unreadMessagesQty > 0) {
@@ -6653,25 +6744,23 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             override fun onGlobalLayout() {
                 var r = Rect()
                 activityRootView.getGlobalVisibleRect(r)
-
-                var bottomToolbarRect = Rect()
-                binding.bottomToolbar.getGlobalVisibleRect(bottomToolbarRect)
-
+                /*
+                                var bottomToolbarRect = Rect()
+                                binding.bottomToolbar.getGlobalVisibleRect(bottomToolbarRect)
+                */
                 viewModel.setScreenSize(r.width(), r.height())
-                if (r.height() != bottomToolbarRect.bottom) { // 99% of the time the height diff will be due to a keyboard.
-                    if (!viewModel.isKeyboardOpen()) {
-                        viewModel.onKeyboardOpened()
-                    }
-                } else {
-                    if (viewModel.isKeyboardOpen()) {
-                        viewModel.onKeyboardClosed()
-                    }
-                }
-
-
-
-                binding.navHostFragment
-                //     }
+                /*
+                                if (r.height() != bottomToolbarRect.bottom) { // 99% of the time the height diff will be due to a keyboard.
+                                    Toast.makeText(this@MainActivity, "Keyboard Open", Toast.LENGTH_SHORT).show()
+                                    if (!viewModel.isKeyboardOpen()) {
+                                        viewModel.onKeyboardOpened()
+                                    }
+                                } else {
+                                    viewModel.onKeyboardClosed()
+                                    Toast.makeText(this@MainActivity, "Keyboard Closed", Toast.LENGTH_SHORT).show()
+                                }
+                                binding.navHostFragment
+                */
             }
         })
 
@@ -6716,5 +6805,283 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         viewModel.setAppStatus(status)
     }
 
+    fun checkLocationEnabled() {
+        val locationManager =
+            getApplication().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val isEnabled =
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(
+                LocationManager.NETWORK_PROVIDER
+            )
+        _isLocationEnabled.postValue(isEnabled)
+    }
+
+
+    fun restoreNavigationFragment() {
+        val layoutParams = binding.navHostFragment.layoutParams as ConstraintLayout.LayoutParams
+        layoutParams.bottomToTop = R.id.bottom_toolbar
+        layoutParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+        layoutParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+        layoutParams.topToBottom = R.id.include_custom_toolbar
+        layoutParams.topToTop = -1
+        binding.navHostFragment.layoutParams = layoutParams
+    }
+
+    fun expandNavigationFragmentToTop() {
+        val layoutParams = binding.navHostFragment.layoutParams as ConstraintLayout.LayoutParams
+        layoutParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+        binding.navHostFragment.layoutParams = layoutParams
+    }
+
+
+    ///-----------------------Manejo de mensajes y notificaciones.
+    fun handleForegroundMessage(messageInfo: Bundle) {
+        // Implementa la lógica para manejar el mensaje cuando la aplicación está en primer plano
+        // Puedes optar por mostrar una notificación personalizada o actualizar la interfaz de usuario directamente.
+
+        // Check if message contains a data payload.
+        val navController = findNavController(R.id.nav_host_fragment)
+
+
+        var showPushPopup = true
+
+        val notificationType = messageInfo.getString("notification_type")!!
+
+        val eventKey = messageInfo.getString("eventKey")
+        var isAMessageInCurrentEvent : Boolean = false
+        var iAMInNotificationsFragment : Boolean = false
+
+        eventKey?.let {
+            // Si llega un mensaje de un evento, estoy en el mapa y el evento es el mismo que el mensaje, no muestro el popup
+            isAMessageInCurrentEvent =
+                notificationType.equals(EventNotificationType.NOTIFICATION_TYPE_MESSAGE.toString()) &&
+                        navController.currentDestination?.id == R.id.mapSituationFragment &&
+                        (MapSituationFragmentViewModel.getInstance().auxEventKey.value?:"").equals(eventKey)
+
+        }
+        // Si estoy en el fragmento de notificaciones, no muestro el popup
+        iAMInNotificationsFragment = navController.currentDestination?.id == R.id.notificationsFragment
+        if (isAMessageInCurrentEvent || iAMInNotificationsFragment)
+        {
+            showPushPopup = false
+        }
+
+        if (showPushPopup) {
+            Log.d("PUSH_MESSAGE_SERVICE", messageInfo.toString())
+
+            //      if (remoteMessage.data.isNotEmpty()) {
+            var title = ""
+            var body = ""
+            if (messageInfo.getString("title") != null) {
+                title = messageInfo.getString("title")!!
+            } else {
+                try {
+                    title = this.getString(
+                        this.resources.getIdentifier(
+                            messageInfo.getString("titleLocKey"),
+                            "string",
+                            this.packageName
+                        )
+                    )
+                } catch (ex: Exception) {
+                    throw ex
+                }
+            }
+
+            if (messageInfo.getString("body") != null) {
+                body = messageInfo.getString("body")!!
+            } else {
+                try {
+                    body = this.getString(
+                        this.resources.getIdentifier(
+                            messageInfo.getString("bodyLocKey"),
+                            "string",
+                            this.packageName
+                        )
+                    )
+
+                } catch (ex: Exception) {
+                    throw ex
+                }
+                if (messageInfo.getStringArray("bodyLocArgs") != null) {
+                    val messageArgs = messageInfo.getStringArray("bodyLocArgs")
+                    var values = arrayOf(messageArgs)
+                    var counter = 1
+                    var auxBody = body
+                    messageArgs?.forEach { value ->
+                        auxBody =
+                            auxBody.replace("%" + counter.toString() + "$" + "s", value.toString())
+                        counter++
+                    }
+                    body = auxBody
+                }
+
+            }
+
+            val bundle = Bundle()
+            if (bundle.getString("image") != null) {
+                bundle.putString("image", bundle.getString("image"))
+            }
+
+            when (notificationType) {
+                EventNotificationType.NOTIFICATION_TYPE_MESSAGE.toString() -> {
+                    var showNotification = true
+
+                    AppClass.instance.getMainActivityRef()?.let { mainActivity ->
+
+                        if (mainActivity.currentModuleIndex == IANModulesEnum.EVENTS_TRACKING.ordinal) {
+                            var currentEventKey =
+                                mainActivity.mMapFragment.getEventKey().toString()
+                            if (currentEventKey == messageInfo.getString("eventKey")) {
+                                showNotification = false
+                            }
+
+                        }
+
+                    }
+
+                    // Reviso si el mensaje ya fue leido
+                    if (showNotification) {
+                        val broadcastIntent =
+                            Intent(this, MainActivity::class.java)
+
+                        broadcastIntent.putExtra(
+                            EventNotificationType.NOTIFICATION_TYPE_MESSAGE.toString(),
+                            "notification_type",
+                        )
+
+                        broadcastIntent.putExtra(
+                            "display_name",
+                            bundle.getString("bodyLocArgs")?.get(0).toString()
+                        )
+                        broadcastIntent.putExtra(
+                            "text",
+                            bundle.getString("bodyLocArgs")?.get(1).toString()
+                        )
+
+                        val pendingIntent = PendingIntent.getBroadcast(
+                            this,
+                            0,
+                            broadcastIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+
+                        /*
+                                                NotificationsApi.getInstance(AppClass.instance)
+                                                    .showNotification(title, body, Bundle(), pendingIntent)
+                        */
+                    }
+
+
+                }
+
+                EventNotificationType.NOTIFICATION_TYPE_EVENT_NOTIFICATION.name.toString() -> {
+                    var eventType: String = bundle.getString("event_type").toString()
+                    var eventKey = messageInfo.getString("event_key").toString()
+
+                    when (eventType) {
+                        EventTypesEnum.PANIC_BUTTON.name -> {
+                            var coco = 3
+                        }
+                    }
+
+                }
+
+                EventNotificationType.NOTIFICATION_TYPE_PANIC_BUTTON.toString() -> {
+
+                    val broadcastIntent =
+                        Intent(EventNotificationType.NOTIFICATION_TYPE_PANIC_BUTTON.toString())
+                    broadcastIntent.putExtra(
+                        "display_name", bundle.getString("user_name")
+                    )
+
+                    broadcastMessage(messageInfo, "action_type")
+
+                    val pendingIntent = PendingIntent.getBroadcast(
+                        applicationContext, 0, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                    NotificationsApi.getInstance(AppClass.instance)
+                        .showNotification(title, body, Bundle(), pendingIntent)
+
+                }
+
+                AppConstants.NOTIFICATION_TYPE_PULSE_REQUESTED -> {
+
+                }
+
+                EventNotificationType.NOTIFICATION_TYPE_NOTICE_CLOSE_TO_EXPIRE.toString() -> {
+                    val broadcastIntent =
+                        Intent(EventNotificationType.NOTIFICATION_TYPE_NOTICE_CLOSE_TO_EXPIRE.toString())
+                    broadcastIntent.putExtra(
+                        "display_name", bundle.getString("user_name")
+                    )
+                    broadcastIntent.putExtra(
+                        "remaining_time", bundle.getString("remaining_time").toString().toLong()
+                    )
+
+                    val pendingIntent = PendingIntent.getBroadcast(
+                        this, 0, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                    NotificationsApi.getInstance(AppClass.instance)
+                        .showNotification(title, body, Bundle(), pendingIntent)
+                }
+            }
+
+            //           }
+            var pp = 32
+            when (notificationType) {
+                AppConstants.NOTIFICATION_TYPE_ARE_YOU_ON_DESTINATION_REQUESTED -> {
+                    val broadcastIntent = Intent(
+                        AppClass.instance.applicationContext, PushNotificationService::class.java
+                    )
+                    broadcastIntent.action = AppConstants.BROADCAST_DID_YOU_ARRIVE_REQUEST
+                    broadcastIntent.putExtra(
+                        "event_key", bundle.getString("event_key").toString()
+                    )
+                    LocalBroadcastManager.getInstance(AppClass.instance).sendBroadcast(
+                        broadcastIntent
+                    )
+                }
+
+                AppConstants.NOTIFICATION_TYPE_PULSE_REQUESTED -> {
+                    val intent = Intent(
+                        AppClass.instance.applicationContext, PushNotificationService::class.java
+                    )
+                    intent.action = AppConstants.BROADCAST_PULSE_REQUIRED
+                    LocalBroadcastManager.getInstance(AppClass.instance).sendBroadcast(
+                        intent
+                    )
+                }
+
+                EventNotificationType.NOTIFICATION_TYPE_NOTICE_CLOSE_TO_EXPIRE.toString() -> {
+                    val intent = Intent(
+                        AppClass.instance.applicationContext, PushNotificationService::class.java
+                    )
+                    intent.action = AppConstants.BROADCAST_EVENT_CLOSE_TO_EXPIRE
+                    intent.putExtra("event_key", bundle.getString("event_key"))
+                    intent.putExtra("display_name", bundle.getString("user_name"))
+                    intent.putExtra(
+                        "remaining_time", bundle.getString("remaining_time").toString().toLong()
+                    )
+
+                    LocalBroadcastManager.getInstance(AppClass.instance).sendBroadcast(
+                        intent
+                    )
+                }
+
+
+            }
+
+            NotificationsApi.getInstance(this).showNotification(title, body, bundle, null)
+        }
+
+        //       }
+        /*
+                // Check if message contains a notification payload.
+                bundle.getString("").let {
+                    Log.d(TAG, "Message Notification Body: ${it.body}")
+                }
+        */
+
+    }
 
 }

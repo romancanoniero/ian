@@ -12,6 +12,7 @@
         android:name="com.iyr.ian.ui.main.HomeFragment"
         android:label="HomeFragment"
         tools:layout="@layout/fragment_main">
+
         <action
             android:id="@+id/action_homeFragment_to_eventTypeSelectorFragment"
             app:destination="@id/eventTypeSelectorFragment" />
@@ -33,6 +34,10 @@
         <action
             android:id="@+id/action_homeFragment_to_contactsFragment"
             app:destination="@id/contactsFragment" />
+        <argument
+            android:name="firstRun"
+            app:argType="boolean"
+            />
     </fragment>
     <fragment
         android:id="@+id/eventTypeSelectorFragment"
@@ -101,6 +106,22 @@
             android:name="eventKey"
             app:argType="string"
             app:nullable="true" />
+        <action
+            android:id="@+id/action_mapSituationFragment_to_usersParticipatingFragment"
+            app:destination="@id/usersParticipatingFragment" />
+        <action
+            android:id="@+id/action_mapSituationFragment_to_usersGoingFragment"
+            app:destination="@id/usersGoingFragment" />
+        <action
+            android:id="@+id/action_mapSituationFragment_to_usersThatCalledFragment"
+            app:destination="@id/usersThatCalledFragment" />
+        <action
+            android:id="@+id/action_mapSituationFragment_to_messagesInEventFragment"
+            app:destination="@id/messagesInEventFragment"
+            app:enterAnim="@anim/enter_from_right"
+            app:exitAnim="@anim/exit_to_right"
+            app:popEnterAnim="@anim/enter_from_right"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
     <fragment
         android:id="@+id/friendsFragment"
@@ -175,6 +196,7 @@
         <action
             android:id="@+id/action_splashFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
+
     </fragment>
     <fragment
         android:id="@+id/preLoaderFragment"
@@ -553,4 +575,54 @@
         android:name="com.iyr.ian.ui.events.fragments.dialogs.network_selection.NetworkSelectionDialog"
         android:label="NetworkSelectionDialog"
         tools:layout="@layout/fragment_network_selection_popup"/>
+    <dialog
+        android:id="@+id/GPSEnabledIsRequiredDialog"
+        android:name="com.iyr.ian.ui.dialogs.GPSEnabledIsRequiredDialog"
+        android:label="GPSEnabledIsRequiredDialog"
+        tools:layout="@layout/fragment_gps_is_required_popup"/>
+    <dialog
+        android:id="@+id/usersParticipatingFragment"
+        android:name="com.iyr.ian.ui.map.fragments.UsersParticipatingFragment"
+        android:label="UsersParticipatingFragment"
+        tools:layout="@layout/fragment_users_participating">
+        <action
+            android:id="@+id/action_usersParticipatingFragment_to_mapSituationFragment"
+            app:destination="@id/mapSituationFragment"
+            app:popUpTo="@id/usersParticipatingFragment"
+            app:popUpToInclusive="true"
+            />
+    </dialog>
+    <dialog
+        android:id="@+id/validatorDialog"
+        android:name="com.iyr.ian.ui.dialogs.ValidatorDialog"
+        android:label="ValidatorDialog"
+        tools:layout="@layout/fragment_validation_popup"/>
+    <dialog
+        android:id="@+id/usersGoingFragment"
+        android:name="com.iyr.ian.ui.map.fragments.UsersGoingFragment"
+        android:label="UsersGoingFragment"
+        tools:layout="@layout/fragment_users_going">
+        <action
+            android:id="@+id/action_usersGoingFragment_to_mapSituationFragment"
+            app:destination="@id/mapSituationFragment" />
+    </dialog>
+    <dialog
+        android:id="@+id/usersThatCalledFragment"
+        android:name="com.iyr.ian.ui.map.fragments.UsersThatCalledFragment"
+        android:label="UsersThatCalledFragment"
+        tools:layout="@layout/fragment_users_that_already_called">
+        <action
+            android:id="@+id/action_usersThatCalledFragment_to_mapSituationFragment"
+            app:destination="@id/mapSituationFragment" />
+    </dialog>
+    <dialog
+        android:id="@+id/messagesInEventFragment"
+        android:name="com.iyr.ian.ui.chat.MessagesInEventFragment"
+        android:label="MessagesInEventFragment"
+        tools:layout="@layout/fragment_bottom_sheet_messages"
+        >
+        <argument
+            android:name="config"
+            app:argType="java.io.Serializable" />
+    </dialog>
 </navigation>

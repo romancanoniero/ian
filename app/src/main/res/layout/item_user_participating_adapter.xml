@@ -86,25 +86,28 @@
                     android:layout_height="wrap_content">
 
                     <ImageView
-                        android:id="@+id/imageView12"
+                        android:id="@+id/battery_frame"
                         android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        app:layout_constraintBottom_toBottomOf="@+id/progress_battery"
-                        app:layout_constraintDimensionRatio="h,1:1"
+                        android:layout_height="@dimen/box_xxsmall"
+                        app:layout_constraintDimensionRatio="v,1:1"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/progress_battery"
+                        app:layout_constraintTop_toTopOf="parent"
                         app:srcCompat="@drawable/ic_battery_level" />
 
                     <ProgressBar
                         android:id="@+id/progress_battery"
                         style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="20dp"
+                        android:layout_width="0dp"
                         android:layout_height="0dp"
-                        android:layout_marginStart="4dp"
+                        android:layout_marginStart="1dp"
+                        android:layout_marginEnd="2dp"
+                        android:layout_marginVertical="3dp"
                         android:progress="50"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/imageView12"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        app:layout_constraintEnd_toEndOf="@+id/battery_frame"
+                        app:layout_constraintStart_toStartOf="@+id/battery_frame"
+                        app:layout_constraintTop_toTopOf="@+id/battery_frame"
+                        app:layout_constraintBottom_toBottomOf="@+id/battery_frame"
+                        android:progressDrawable="@drawable/progress_bar_custom"/>
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
             </LinearLayout>
@@ -120,31 +123,31 @@
                     android:id="@+id/going_indicator"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:alpha=".5"
                     android:background="@drawable/bg_small_button_transluscent_red"
                     android:drawablePadding="6dp"
                     android:padding="4dp"
                     android:text="@string/is_going"
                     android:textColor="@color/red"
-                    android:alpha=".5"
                     android:textSize="@dimen/text_size_subparagraph"
                     android:visibility="gone"
-                    app:drawableTint="@color/red"
-                    app:drawableStartCompat="@drawable/ic_double_tick" />
+                    app:drawableStartCompat="@drawable/ic_double_tick"
+                    app:drawableTint="@color/red" />
 
                 <TextView
                     android:id="@+id/already_called_indictator"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:alpha=".5"
                     android:background="@drawable/bg_small_button_transluscent_yellow"
                     android:drawablePadding="6dp"
                     android:padding="4dp"
                     android:text="Call  done"
                     android:textColor="@color/material_green500"
-                    android:alpha=".5"
                     android:textSize="@dimen/text_size_subparagraph"
                     android:visibility="gone"
-                    app:drawableTint="@color/material_green500"
-                    app:drawableStartCompat="@drawable/ic_double_tick" />
+                    app:drawableStartCompat="@drawable/ic_double_tick"
+                    app:drawableTint="@color/material_green500" />
 
                 <TextView
                     android:id="@+id/status_indictator"
@@ -156,8 +159,22 @@
                     android:text="No responde"
                     android:textColor="@color/material_green500"
                     android:textSize="@dimen/text_size_subparagraph"
-                    app:drawableTint="@color/material_green500"
-                    app:drawableStartCompat="@drawable/ic_double_tick" />
+                    app:drawableStartCompat="@drawable/ic_double_tick"
+                    app:drawableTint="@color/material_green500" />
+
+                <TextView
+                    android:id="@+id/following_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="4dp"
+                    android:background="@drawable/bg_small_button_transluscent_gray"
+                    android:drawablePadding="6dp"
+                    android:gravity="end"
+                    android:padding="4dp"
+                    android:text="@string/invited"
+                    android:textColor="@color/material_grey400"
+                    android:textSize="@dimen/text_size_subparagraph"
+                    />
             </LinearLayout>
 
         </LinearLayout>

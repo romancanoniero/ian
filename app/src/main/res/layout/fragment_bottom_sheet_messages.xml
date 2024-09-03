@@ -1,32 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="fill_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="top"
     android:background="@null"
     android:elevation="12dp"
-    android:minHeight="400dp"
-    android:name="com.iyr.ian.ui.chat.MessagesInEventFragment">
+    app:layout_anchorGravity="top">
 
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="20dp"
         app:cardElevation="2dp"
         app:cardPreventCornerOverlap="true"
-        app:cardUseCompatPadding="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:cardUseCompatPadding="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_actions"
@@ -40,53 +37,141 @@
                 app:layout_constraintStart_toStartOf="parent"
                 tools:listitem="@layout/item_speed_message_adapter" />
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/top_buttons_section"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:id="@+id/top_button_section"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="2dp"
+                android:orientation="horizontal"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/full_screen_button"
-                    android:layout_width="@dimen/box_small"
-                    android:layout_height="@dimen/box_small"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginTop="12dp"
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/full_screen_button"
+                        android:layout_width="@dimen/box_small"
+                        android:layout_height="@dimen/box_small"
+                        android:layout_gravity="center_vertical"
+                        android:foregroundGravity="center_vertical|right"
+                        android:src="@drawable/baseline_fullscreen_24"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <ImageView
+                        android:id="@+id/restore_screen_button"
+                        android:layout_width="@dimen/box_small"
+                        android:layout_height="@dimen/box_small"
+                        android:layout_gravity="center_vertical"
+                        android:foregroundGravity="center_vertical|right"
+                        android:src="@drawable/baseline_close_fullscreen_24"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:layout_weight="1">
+
+                    <ImageView
+
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/ic_dot_small" />
+
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <de.hdodenhof.circleimageview.CircleImageView
+                            android:id="@+id/going_status"
+                            android:layout_width="@dimen/box_small"
+                            android:layout_height="@dimen/box_small"
+                            android:src="@drawable/ic_man_running"
+                            app:civ_border_color="@color/gray_400"
+                            app:civ_circle_background_color="@color/gray_400" />
+
+
+                    </LinearLayout>
+
+
+                    <ImageView
+
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/ic_dot_small" />
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/call_status"
+                        android:layout_width="@dimen/box_small"
+                        android:layout_height="@dimen/box_small"
+                        android:src="@drawable/ic_phone_call_ok_by_smashicons"
+                        app:civ_border_color="@color/gray_400"
+                        app:civ_circle_background_color="@color/gray_400" />
+
+                    <ImageView
+
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:srcCompat="@drawable/ic_dot_small" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:foregroundGravity="right"
-                    android:src="@drawable/baseline_fullscreen_24"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:gravity="center_vertical|end"
+                    android:orientation="horizontal"
+                    app:layout_constraintEnd_toStartOf="@id/close_button"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/restore_screen_button"
-                    android:layout_width="@dimen/box_small"
-                    android:layout_height="@dimen/box_small"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginTop="12dp"
-                    android:foregroundGravity="right"
-                    android:src="@drawable/baseline_close_fullscreen_24"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    <ImageView
+                        android:id="@+id/restsore_screen_button"
+                        android:layout_width="@dimen/box_small"
+                        android:layout_height="@dimen/box_small"
+                        android:layout_gravity="center_vertical"
+                        android:foregroundGravity="center_vertical|right"
+                        android:src="@drawable/baseline_close_fullscreen_24"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-<!--
-                <ImageView
-                    android:id="@+id/close_button"
-                    android:layout_width="@dimen/box_small"
-                    android:layout_height="@dimen/box_small"
-                    android:cropToPadding="true"
-                    android:elevation="22dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginTop="9dp"
-                    android:src="@drawable/round_cancel_24"
-                    app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                    android:visibility="gone"
-                    />
--->
+                    <ImageView
+                        android:id="@+id/close_button"
+                        android:layout_width="@dimen/box_small"
+                        android:layout_height="@dimen/box_small"
+                        android:layout_gravity="center_vertical"
+                        android:cropToPadding="true"
+                        android:elevation="22dp"
+                        android:src="@drawable/ic_round_cancel_24"
+                        android:visibility="visible"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/colorPrimary" />
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
+
+
+            </LinearLayout>
 
             <com.stfalcon.chatkit.messages.MessagesList
                 android:id="@+id/messagesList"
@@ -105,7 +190,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/top_buttons_section"
+                app:layout_constraintTop_toBottomOf="@+id/top_button_section"
                 app:layout_constraintVertical_bias="0.0"
                 app:outcomingImageTimeTextSize="@dimen/text_size_subparagraph"
                 app:outcomingTextSize="@dimen/text_size_subparagraph"
@@ -189,4 +274,4 @@
 -->
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -242,7 +242,7 @@ class OtpVerificationFragment : Fragment(),
     private fun goToMainScreen(user: User) {
 
         val action =
-            OtpVerificationFragmentDirections.actionOtpVerificationActivityToHomeFragment(user)
+            OtpVerificationFragmentDirections.actionOtpVerificationActivityToHomeFragment(user, true)
 
         findNavController().navigate(action)
 

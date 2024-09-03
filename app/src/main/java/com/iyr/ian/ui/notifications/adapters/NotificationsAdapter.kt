@@ -1,6 +1,6 @@
 package com.iyr.ian.ui.notifications.adapters
 
-import android.content.Context
+import android.app.Activity
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.navigation.Navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.github.marlonlom.utilities.timeago.TimeAgo
 import com.github.marlonlom.utilities.timeago.TimeAgoMessages
@@ -26,14 +27,20 @@ import com.iyr.ian.ui.dialogs.NotificationAdapterCallback
 import com.iyr.ian.ui.interfaces.FriendsMainActivityInterface
 import com.iyr.ian.ui.interfaces.INotificationPopup
 import com.iyr.ian.utils.UIUtils.handleTouch
+import com.iyr.ian.utils.areLocationPermissionsGranted
 import com.iyr.ian.utils.assignFileImageTo
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getHtmlStyledText
+import com.iyr.ian.utils.isGPSEnabled
+import com.iyr.ian.utils.requestPermissionsLocation
 import com.iyr.ian.utils.support_models.MediaFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 
-class NotificationsAdapter(val context: Context,val callback: INotifications) :
+class NotificationsAdapter(val activity: Activity, val callback: INotifications) :
     RecyclerView.Adapter<NotificationsAdapter.NotificationViewHolder>() {
     private var mList: java.util.ArrayList<EventNotificationModel>? =
         ArrayList<EventNotificationModel>()
@@ -53,7 +60,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
     override fun onBindViewHolder(holder: NotificationViewHolder, position: Int) {
 
-        val record : EventNotificationModel = mList!![position]
+        val record: EventNotificationModel = mList!![position]
 
 
         var notificationType =
@@ -84,16 +91,16 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
                 var notificationRecord = record.event_data
 
-                holder.title.text = context.getText(R.string.new_messages)
+                holder.title.text = activity.getText(R.string.new_messages)
                 var userKey: String = record.event_info?.get("user_key").toString()
                 val displayName: String = record.event_info?.get("user_name").toString()
-                context.assignFileImageTo(record.event_info?.get("profile_image_path").toString(), "images", holder.userImage)
-/*
-
-                var userProfileFileName: String =
-                    record.event_info?.get("profile_image_path").toString()
-                displayUserImage(userKey, userProfileFileName, holder)
-*/
+               GlobalScope.launch(Dispatchers.IO) {
+                activity.assignFileImageTo(
+                    record.event_info?.get("profile_image_path").toString(),
+                    "images",
+                    holder.userImage
+                )
+               }
                 var qty = record.qty
                 var textMessage = formatRichTextMessage(
                     holder,
@@ -103,12 +110,14 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 // aca hay que ver si el evento esta en seguimiento y mostrar el icono
                 // para ir o que decida si lo va a seguir o lo abandona
 
-                holder.primaryButton.text = context.getText(R.string.go_to_chat)
+                holder.primaryButton.text = activity.getText(R.string.go_to_chat)
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotificationPopup) {
-                        context.handleTouch()
+                    if (callback is INotificationPopup) {
+                        activity.handleTouch()
 
-                        var firstUnreadMessageKey =(record.event_data?.get("messages") as List<HashMap<String, Any?>>).first().get("message_key").toString()
+                        var firstUnreadMessageKey =
+                            (record.event_data?.get("messages") as List<HashMap<String, Any?>>).first()
+                                .get("message_key").toString()
 
                         callback.onGoToChatPressed(
                             record.event_key,
@@ -122,7 +131,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
             EventNotificationType.NOTIFICATION_TYPE_ADDED_TO_SPEED_DIAL.name -> {
                 holder.title.text =
-                    context.getText(R.string.notification_user_added_speed_dial_title)
+                    activity.getText(R.string.notification_user_added_speed_dial_title)
                 var userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String =
                     record.event_data?.get("display_name").toString()
@@ -144,10 +153,10 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 // aca hay que ver si el evento esta en seguimiento y mostrar el icono
                 // para ir o que decida si lo va a seguir o lo abandona
 
-                holder.primaryButton.text = context.getText(R.string.ok)
+                holder.primaryButton.text = activity.getText(R.string.ok)
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotificationPopup) {
-                        context.handleTouch()
+                    if (callback is INotificationPopup) {
+                        activity.handleTouch()
                         callback.notificationDeleteByKey(
                             record,
                             holder.secondaryButton
@@ -159,7 +168,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
 
             EventNotificationType.NOTIFICATION_TYPE_USER_STATUS_OK.name -> {
-                holder.title.text = context.getText(R.string.notifications_user_status_ok_title)
+                holder.title.text = activity.getText(R.string.notifications_user_status_ok_title)
                 val userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String =
                     record.event_data?.get("display_name").toString()
@@ -170,7 +179,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 var textMessage = ""
                 holder.redField.text = displayName
                 holder.blackField.text =
-                    context.getString(R.string.notifications_user_status_ok_message)
+                    activity.getString(R.string.notifications_user_status_ok_message)
 
                 formatRichTextMessage(
                     holder,
@@ -184,22 +193,22 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
 
                 val alreadyFollowed =
-                    (context as MainActivityCallback).isFollingEvent(record.event_key)
+                    (activity as MainActivityCallback).isFollingEvent(record.event_key)
 
                 if (!alreadyFollowed) {
-                    holder.primaryButton.text = context.getText(R.string.follow)
+                    holder.primaryButton.text = activity.getText(R.string.follow)
                 } else {
-                    holder.primaryButton.text = context.getText(R.string.go)
+                    holder.primaryButton.text = activity.getText(R.string.go)
                 }
 
-//                holder.actionButtonText.setTextColor(context.getColor(R.color.colorPrimary))
+//                holder.actionButtonText.setTextColor(activity.getColor(R.color.colorPrimary))
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotificationPopup) {
-                        context.handleTouch()
+                    if (callback is INotificationPopup) {
+                        activity.handleTouch()
                         if (!alreadyFollowed) {
-                            (context as NotificationAdapterCallback).onStartToFollow(record.event_key)
+                            (activity as NotificationAdapterCallback).onStartToFollow(record.event_key)
                         } else {
-                            (context as NotificationAdapterCallback).onAgreeToAssist(
+                            (activity as NotificationAdapterCallback).onAgreeToAssist(
                                 record.notification_key,
                                 record.event_key
                             )
@@ -207,10 +216,10 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                     }
                 }
 
-                holder.secondaryButton.text = context.getText(R.string.delete)
+                holder.secondaryButton.text = activity.getText(R.string.delete)
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotificationPopup) {
-                        context.handleTouch()
+                    if (callback is INotificationPopup) {
+                        activity.handleTouch()
                         callback.notificationDeleteByKey(
                             record,
                             holder.secondaryButton
@@ -224,7 +233,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                            when (record.event_type) {
                                EventTypes.PANIC_BUTTON.name -> {
            */
-                holder.title.text = context.getText(R.string.phone_compromised)
+                holder.title.text = activity.getText(R.string.phone_compromised)
                 val userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String =
                     record.event_data?.get("display_name").toString()
@@ -237,7 +246,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 /*
                   if (displayName != null) {
                       textMessage = String.format(
-                          context.getString(R.string.notification_telephone_compromised_message),
+                          activity.getString(R.string.notification_telephone_compromised_message),
                           displayName
                       )
                   }
@@ -245,7 +254,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                   */
                 holder.redField.text = displayName
                 holder.blackField.text =
-                    context.getString(R.string.notification_telephone_compromised_message)
+                    activity.getString(R.string.notification_telephone_compromised_message)
 
 
                 formatRichTextMessage(
@@ -256,21 +265,21 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
 
                 val alreadyFollowed =
-                    (context as MainActivityCallback).isFollingEvent(record.event_key)
+                    (activity as MainActivityCallback).isFollingEvent(record.event_key)
                 if (!alreadyFollowed) {
-                    holder.primaryButton.text = context.getText(R.string.follow)
+                    holder.primaryButton.text = activity.getText(R.string.follow)
                 } else {
-                    holder.secondaryButton.text = context.getText(R.string.go)
+                    holder.secondaryButton.text = activity.getText(R.string.go)
                 }
 
-//                holder.actionButtonText.setTextColor(context.getColor(R.color.colorPrimary))
+//                holder.actionButtonText.setTextColor(activity.getColor(R.color.colorPrimary))
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotificationPopup) {
-                        context.handleTouch()
+                    if (callback is INotificationPopup) {
+                        activity.handleTouch()
                         if (!alreadyFollowed) {
-                            (context as NotificationAdapterCallback).onStartToFollow(record.event_key)
+                            (activity as NotificationAdapterCallback).onStartToFollow(record.event_key)
                         } else {
-                            (context as NotificationAdapterCallback).onAgreeToAssist(
+                            (activity as NotificationAdapterCallback).onAgreeToAssist(
                                 record.notification_key,
                                 record.event_key
                             )
@@ -279,8 +288,8 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 }
 
                 holder.secondaryButton.setOnClickListener {
-                    if (context is FriendsMainActivityInterface) {
-                        context.handleTouch()
+                    if (activity is FriendsMainActivityInterface) {
+                        activity.handleTouch()
                         callback.notificationDeleteByKey(
                             record,
                             holder.secondaryButton
@@ -307,9 +316,9 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 when (record.event_type) {
                     EventTypesEnum.PANIC_BUTTON.name -> {
                         title =
-                            context.getText(R.string.event_panic_button_user_safe_title).toString()
+                            activity.getText(R.string.event_panic_button_user_safe_title).toString()
                         message =
-                            context.getText(R.string.event_panic_button_user_safe_message) as String
+                            activity.getText(R.string.event_panic_button_user_safe_message) as String
 
                         formatRichTextMessage(
                             holder,
@@ -323,8 +332,8 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                     }
 
                     else -> {
-                        title = context.getText(R.string.event_close_successfully_title).toString()
-                        message = context.getString(R.string.event_close_successfully_message)
+                        title = activity.getText(R.string.event_close_successfully_title).toString()
+                        message = activity.getString(R.string.event_close_successfully_message)
                         formatRichTextMessage(
                             holder,
                             R.string.event_close_successfully_message_html,
@@ -359,10 +368,10 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 holder.primaryButton.visibility = View.VISIBLE
                 holder.secondaryButton.visibility = GONE
 
-                holder.primaryButton.text = context.getText(R.string.delete)
+                holder.primaryButton.text = activity.getText(R.string.delete)
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotificationPopup) {
-                        context.handleTouch()
+                    if (callback is INotificationPopup) {
+                        activity.handleTouch()
                         callback.notificationsDeleteByEvent(
                             record,
                             holder.primaryButton
@@ -372,7 +381,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
             }
 
             EventNotificationType.CONTACT_REQUEST.name -> {
-                holder.title.text = context.getText(R.string.notification_contact_request_title)
+                holder.title.text = activity.getText(R.string.notification_contact_request_title)
                 val userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 val userProfileFileName: String =
@@ -385,13 +394,13 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 if (displayName != null) {
                     /*
                                         textMessage = String.format(
-                                            context.getString(R.string.notification_contact_request_message),
+                                            activity.getString(R.string.notification_contact_request_message),
                                             displayName
                                         )
                       */
                     holder.redField.text = displayName
                     holder.blackField.text =
-                        context.getString(R.string.notification_contact_request_message)
+                        activity.getString(R.string.notification_contact_request_message)
 
                     formatRichTextMessage(
                         holder,
@@ -401,7 +410,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 }
                 //            holder.message.text = textMessage
                 /*
-                                holder.primaryButton.setBackgroundColor(context.getColor(R.color.white))
+                                holder.primaryButton.setBackgroundColor(activity.getColor(R.color.white))
                                 holder.actionButtonIcon.setImageResource(R.drawable.ic_check_mark)
                   */
 
@@ -416,26 +425,26 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 }
 
 
-                holder.primaryButton.text = context.getText(R.string.accept)
-                holder.secondaryButton.text = context.getText(R.string.refuse)
-//                holder.actionButtonText.setTextColor(context.getColor(R.color.colorPrimary))
+                holder.primaryButton.text = activity.getText(R.string.accept)
+                holder.secondaryButton.text = activity.getText(R.string.refuse)
+//                holder.actionButtonText.setTextColor(activity.getColor(R.color.colorPrimary))
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
+                    if (callback is INotifications) {
+                        activity.handleTouch()
                         val contact = Contact()
                         contact.user_key = userKey
                         contact.display_name = displayName
                         val image = MediaFile()
                         image.file_name = imageUrl
                         contact.image = image
-                        (context as INotifications).contactRequestAccept(contact)
+                        (callback as INotifications).contactRequestAccept(contact)
                     }
 
                 }
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -451,23 +460,18 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
                 displayEventAvatar(record.event_type, holder)
                 holder.redField.text = displayName
-                holder.blackField.text = context.getString(R.string.requires_you_help)
+                holder.blackField.text = activity.getString(R.string.requires_you_help)
 
                 formatRichTextMessage(holder, R.string.requires_you_help_html, displayName)
 
-                //       formatRichTextMessage(holder,  R.string.requires_you_help_html,displayName)
-
-
-                //      formatTextFlow(holder, context.getString(R.string.requires_you_help))
-
-                holder.primaryButton.text = context.getText(R.string.assist)
-                holder.secondaryButton.text = context.getText(R.string.ignore)
+                holder.primaryButton.text = activity.getText(R.string.assist)
+                holder.secondaryButton.text = activity.getText(R.string.ignore)
                 holder.primaryButton.visibility = View.VISIBLE
                 holder.secondaryButton.visibility = View.VISIBLE
 
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
+                    if (callback is INotifications) {
+                        activity.handleTouch()
                         val contact = Contact()
                         contact.user_key = userKey
                         contact.display_name = displayName
@@ -477,47 +481,23 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
                         var eventType = record.event_type
 
-                        (context as INotifications).onAgreeToAssist(
-                            record.notification_key,
-                            record.event_key
-                        )
-                        /*
-                            when (eventType) {
-                                EventTypes.FRIENSHIP_REQUEST.name -> {
-                                      (context  as NotificationsInterface).contactRequestAccept(contact)
-                                }
-                                EventTypes.SEND_POLICE.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.SEND_FIREMAN.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.ROBBER_ALERT.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.SEND_AMBULANCE.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.SCORT_ME.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.PET_LOST.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.KID_LOST.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                                EventTypes.PANIC_BUTTON.name -> {
-                                    (context as NotificationsInterface).onAgreeToAssist(record.event_key)
-                                }
-                            }
-                  */
+                        if (activity.isGPSEnabled()) {
+                            if (activity.areLocationPermissionsGranted())
+                                (callback as INotifications).onAgreeToAssist(
+                                    record.notification_key,
+                                    record.event_key
+                                )
+                            else
+                                activity.requestPermissionsLocation()
+                        } else {
+                            findNavController(holder.itemView).navigate(R.id.GPSEnabledIsRequiredDialog)
+                        }
                     }
                 }
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -526,7 +506,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
             }
 
             EventNotificationType.EVENT_LEAVED.name -> {
-                holder.title.text = context.getText(R.string.event_leave)
+                holder.title.text = activity.getText(R.string.event_leave)
                 var userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 //            var imageUrl: String =record.event_data?.get("image").toString()
@@ -534,12 +514,12 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 if (displayName != null) {
                     /*
                                       textMessage = String.format(
-                                          context.getString(R.string.item_event_leave_message),
+                                          activity.getString(R.string.item_event_leave_message),
                                           displayName
                                       )
                   */
                     holder.redField.text = displayName
-                    holder.blackField.text = context.getString(R.string.item_event_leave_message)
+                    holder.blackField.text = activity.getString(R.string.item_event_leave_message)
 
                     formatRichTextMessage(
                         holder,
@@ -551,9 +531,9 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 //                holder.message.text = textMessage
                 holder.secondaryButton.visibility = GONE
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -562,7 +542,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
             }
 
             EventNotificationType.PULSE_VERIFICATION_FAILED.name -> {
-                holder.title.text = context.getText(R.string.pulse_verification_failed_title)
+                holder.title.text = activity.getText(R.string.pulse_verification_failed_title)
                 val userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 //          var imageUrl: String =record.event_data?.get("image").toString()
@@ -578,13 +558,13 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 if (displayName != null) {
                     /*
                     textMessage = String.format(
-                        context.getString(R.string.pulse_verification_failed_message),
+                        activity.getString(R.string.pulse_verification_failed_message),
                         displayName
                     )
                     */
                     holder.redField.text = displayName
                     holder.blackField.text =
-                        context.getString(R.string.pulse_verification_failed_message)
+                        activity.getString(R.string.pulse_verification_failed_message)
 
                     formatRichTextMessage(
                         holder,
@@ -604,24 +584,24 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
               */
 //                holder.actionButton.visibility = View.GONE
 
-                //            holder.primaryButton.setBackgroundColor(context.getColor(R.color.colorRed))
+                //            holder.primaryButton.setBackgroundColor(activity.getColor(R.color.colorRed))
                 //              holder.actionButtonIcon.setImageResource(R.drawable.ic_viewers)
 
-                holder.primaryButton.text = context.getText(R.string.open)
-                //        holder.actionButtonText.setTextColor(context.getColor(R.color.white))
+                holder.primaryButton.text = activity.getText(R.string.open)
+                //        holder.actionButtonText.setTextColor(activity.getColor(R.color.white))
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).goToEvent(record.event_key)
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).goToEvent(record.event_key)
                     }
 
                 }
 
 
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -631,7 +611,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
             }
 
             EventNotificationType.NOTIFICATION_TYPE_PANIC_BUTTON.name -> {
-                holder.title.text = context.getText(R.string.event_panic_button_title)
+                holder.title.text = activity.getText(R.string.event_panic_button_title)
                 var userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 //            var imageUrl: String =record.event_data?.get("image").toString()
@@ -639,12 +619,12 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 if (displayName != null) {
                     /*
                     textMessage = String.format(
-                        context.getString(R.string.event_panic_button_message),
+                        activity.getString(R.string.event_panic_button_message),
                         displayName
                     )
                     */
                     holder.redField.text = displayName
-                    holder.blackField.text = context.getString(R.string.event_panic_button_message)
+                    holder.blackField.text = activity.getString(R.string.event_panic_button_message)
 
                     formatRichTextMessage(
                         holder,
@@ -656,9 +636,9 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 //                holder.message.text = textMessage
                 holder.primaryButton.visibility = GONE
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -669,7 +649,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
 
             EventNotificationType.NOTIFICATION_TYPE_FALLING_USER.name -> {
-                holder.title.text = context.getText(R.string.event_notification_falling_title)
+                holder.title.text = activity.getText(R.string.event_notification_falling_title)
                 var userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 //            var imageUrl: String =record.event_data?.get("image").toString()
@@ -677,13 +657,13 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                 if (displayName != null) {
                     /*
                                         textMessage = String.format(
-                                            context.getString(R.string.event_notification_falling_message),
+                                            activity.getString(R.string.event_notification_falling_message),
                                             displayName
                                         )
                     */
                     holder.redField.text = displayName
                     holder.blackField.text =
-                        context.getString(R.string.event_notification_falling_message)
+                        activity.getString(R.string.event_notification_falling_message)
 
                     formatRichTextMessage(
                         holder,
@@ -702,9 +682,9 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
                               }
               */
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationsDeleteByEvent(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationsDeleteByEvent(
                             record,
                             holder.primaryButton
                         )
@@ -715,7 +695,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
             }
 
             EventNotificationType.NOTIFICATION_TYPE_NOT_RESPONSE.name -> {
-                holder.title.text = context.getText(R.string.event_notification_falling_title)
+                holder.title.text = activity.getText(R.string.event_notification_falling_title)
                 val userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 //            var imageUrl: String =record.event_data?.get("image").toString()
@@ -734,17 +714,17 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
                 holder.primaryButton.setText(R.string.go_to_event)
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).goToEvent(record.event_key)
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).goToEvent(record.event_key)
                     }
                 }
                 holder.secondaryButton.visibility = View.VISIBLE
                 holder.secondaryButton.setText(R.string.ignore)
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -756,7 +736,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
             EventNotificationType.NOTIFICATION_TYPE_NOTICE_CLOSE_TO_EXPIRE.name -> {
                 holder.title.text =
-                    context.getText(R.string.notification_event_close_to_expire_title)
+                    activity.getText(R.string.notification_event_close_to_expire_title)
                 val userKey: String = record.event_data?.get("user_key").toString()
                 val displayName: String = record.event_data?.get("display_name").toString()
                 //            var imageUrl: String =record.event_data?.get("image").toString()
@@ -775,17 +755,17 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
 
                 holder.primaryButton.setText(R.string.extend_the_event)
                 holder.primaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).goToEvent(record.event_key)
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).goToEvent(record.event_key)
                     }
                 }
                 holder.secondaryButton.visibility = View.VISIBLE
                 holder.secondaryButton.setText(R.string.ignore)
                 holder.secondaryButton.setOnClickListener {
-                    if (context is INotifications) {
-                        context.handleTouch()
-                        (context as INotifications).notificationDeleteByKey(
+                    if (callback is INotifications) {
+                        activity.handleTouch()
+                        (callback as INotifications).notificationDeleteByKey(
                             record,
                             holder.secondaryButton
                         )
@@ -804,7 +784,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
         vararg params: String
     ) {
 
-        val dynamicStyledText = context.getHtmlStyledText(resId, *params)
+        val dynamicStyledText = activity.getHtmlStyledText(resId, *params)
         holder.richTextView.text = dynamicStyledText
 
     }
@@ -832,11 +812,11 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
             Log.d("GLIDEAPP", "13")
 
 
-            GlideApp.with(context)
+            GlideApp.with(activity)
                 .asBitmap()
                 .load(storageReference)
-                .placeholder(context.getDrawable(R.drawable.progress_animation))
-                .error(context.getDrawable(R.drawable.ic_error))
+                .placeholder(activity.getDrawable(R.drawable.progress_animation))
+                .error(activity.getDrawable(R.drawable.ic_error))
                 .into(holder.userImage)
 
         } catch (exception: Exception) {
@@ -853,7 +833,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
         holder.userImage.visibility = GONE
         holder.circularBG.visibility = View.VISIBLE
         holder.avatarImage.visibility = View.VISIBLE
-        holder.avatarImage.setImageDrawable(context.getEventTypeDrawable(eventType))
+        holder.avatarImage.setImageDrawable(activity.getEventTypeDrawable(eventType))
     }
 
     private fun displayDrawable(
@@ -863,7 +843,7 @@ class NotificationsAdapter(val context: Context,val callback: INotifications) :
         holder.userImage.visibility = GONE
         holder.circularBG.visibility = GONE
         holder.avatarImage.visibility = View.VISIBLE
-        holder.avatarImage.setImageDrawable(context.getDrawable(resId))
+        holder.avatarImage.setImageDrawable(activity.getDrawable(resId))
     }
 
     fun setData(EventNotifications: ArrayList<EventNotificationModel>?) {

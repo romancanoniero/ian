@@ -3,6 +3,7 @@ package com.iyr.ian.ui.events.fragments
 //@file:Suppress("ControlFlowWithEmptyBody")
 
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +29,7 @@ import com.iyr.ian.utils.requestLocationRequirements
 import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.viewmodels.EventsFragmentViewModel
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.lassi.presentation.common.decoration.GridSpacingItemDecoration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -43,7 +45,6 @@ class EventTypeSelectorFragment() :
 
     private var recyclerEventTypes: RecyclerView? = null
 
-    //Add empty constructor to avoid the exception
 
     fun newInstance(): EventTypeSelectorFragment {
 //        return EventTypeSelectorFragment(parentFragment, viewModel, mainActivityViewModel)
@@ -75,6 +76,18 @@ class EventTypeSelectorFragment() :
     private fun setupUI() {
         recyclerEventTypes?.layoutManager = GridLayoutManager(requireContext(), 2)
         recyclerEventTypes?.adapter = eventTypeAdapter
+
+        val displayMetrics: DisplayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val itemWidth = (screenWidth * .348837)
+        val spacing = (screenWidth - (itemWidth * 2)) / 3
+        recyclerEventTypes?.addItemDecoration(
+            GridSpacingItemDecoration(
+                2,
+                spacing.toInt(),
+                true
+            )
+        )
     }
 
 
@@ -175,7 +188,7 @@ class EventTypeSelectorFragment() :
     private fun startObservers() {
         MainActivityViewModel.getInstance().subscriptionType.observe(viewLifecycleOwner, {
             if (it != null) {
-                    this@EventTypeSelectorFragment.accessLevel = it.access_level
+                this@EventTypeSelectorFragment.accessLevel = it.access_level
             }
         })
     }

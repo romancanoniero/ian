@@ -16,7 +16,7 @@ import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.EventFollower
 import com.iyr.ian.glide.GlideApp
-import java.util.*
+import java.util.Locale
 
 
 class UsersGoingAdapter(val activity: Activity) :
@@ -35,14 +35,14 @@ class UsersGoingAdapter(val activity: Activity) :
         val record = list[position]
 
         holder.userName.text = record.display_name.toString()
-        storageReference = FirebaseStorage.getInstance()
-            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-            .child(record.user_key)
-            .child(record.profile_image_path)
+
 
         try {
 
-
+            storageReference = FirebaseStorage.getInstance()
+                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
+                .child(record.user_key)
+                .child(record.profile_image_path)
             GlideApp.with(activity)
                 .asBitmap()
                 .load(storageReference)

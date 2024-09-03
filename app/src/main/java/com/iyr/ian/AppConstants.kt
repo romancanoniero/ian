@@ -29,6 +29,7 @@ class AppConstants(val context: Context) {
 
         const val NOTIFICATION_TYPE_PANIC_BUTTON = "NOTIFICATION_TYPE_PANIC_BUTTON"
         const val NOTIFICATION_ACTION_OPEN_CHAT = "NOTIFICATION_ACTION_OPEN_CHAT"
+        const val NOTIFICATION_TYPE_ON_NEW_MESSAGE = "ON_NEW_MESSAGE"
         const val NOTIFICATION_TYPE_NEW_MESSAGE = "NOTIFICATION_TYPE_MESSAGE"
         const val NOTIFICATION_TYPE_PULSE_REQUESTED = "NOTIFICATION_TYPE_PULSE_REQUESTED"
         const val NOTIFICATION_TYPE_ARE_YOU_ON_DESTINATION_REQUESTED =
@@ -70,7 +71,7 @@ class AppConstants(val context: Context) {
         const val ZOOM_TO_STREETS = 18f
 
         //-- STORAGE
-        const val PROFILE_IMAGES_STORAGE_PATH: String = "images/users/profiles/"
+        const val PROFILE_IMAGES_STORAGE_PATH: String = "images/users/profiles"
         const val CHAT_FILES_STORAGE_PATH = "chats/"
 
         //-- NOTIFICATION CHANNELS -->

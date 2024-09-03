@@ -2,7 +2,6 @@ package com.iyr.ian.ui.events.fragments
 
 
 import android.Manifest
-import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.graphics.Color
@@ -148,7 +147,7 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
 
     private var pickImageContract: ActivityResultLauncher<Intent>? =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
+            if (it.resultCode == RESULT_OK) {
                 val selectedMedia =
                     it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as ArrayList<MiMedia>
                 if (!selectedMedia.isNullOrEmpty()) {
@@ -205,7 +204,7 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
 
     private var pickVideoContract: ActivityResultLauncher<Intent>? =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
+            if (it.resultCode == RESULT_OK) {
                 val selectedMedia =
                     it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as ArrayList<MiMedia>
                 if (!selectedMedia.isNullOrEmpty()) {
@@ -236,17 +235,8 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         binding = FragmentEventAditionalMediaBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        mediaRecyclerView = view.findViewById(R.id.media_recyclerview)
-        setupUI()
-    }
 
 
-    private fun setupUI() {
         setupMediaAdapter()
         setupRecordButton()
 
@@ -276,83 +266,30 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
             binding.sendButton.isEnabled = false
             isSaving = true
 
-            //-----------------
-
             viewModel.onPostEventClicked()
 
-
-            //-------------------
-
-
-            /*
-                            requireActivity().showLoader(R.raw.lottie_campana_emitiendo)
-                            lifecycleScope.launch(Dispatchers.IO) {
-
-                                val notificationListResource =
-                                    viewModel.getNotificationList(viewModel.event.value?.author_key.toString())
-
-                                when (notificationListResource) {
-                                    is Resource.Error -> {
-                                        requireActivity().hideLoader()
-                                        requireActivity().showErrorDialog(notificationListResource.message.toString())
-                                    }
-
-                                    is Resource.Loading -> {
-                                        requireActivity().showLoader("Consultando las Listas de Notificaciones")
-                                    }
-
-                                    is Resource.Success -> {
-                                        val list = notificationListResource.data!!
-
-                                        val event = viewModel.event.value!!
-
-                                        if (list.size > 0) {
-                                            val callback: OnNetworkListSelection =
-                                                object : OnNetworkListSelection {
-                                                    override fun onSelected(listKey: String) {
-                                                        // Register the service
-                                                        val eventService =
-                                                            EventService.getInstance(requireContext())
-                                                        event.group_key = listKey
-                                                        eventService.fireEvent(event)
-                                                    }
-
-                                                    override fun onCanceled() {
-                                                        binding.sendButton.isEnabled = true
-                                                    }
-                                                }
-
-                                            val networkSelectionDialog = NetworkSelectionDialog(
-                                                requireContext(), requireActivity(), callback
-                                            )
-
-                                            networkSelectionDialog.show(list)
-                                        } else {
-                                            // Register the service
-                                            val eventService = EventService.getInstance(requireContext())
-                                            event.group_key = "_default"
-                                            eventService.fireEvent(event)
-                                        }
-
-                                    }
-                                }
-                            }
-            */
-            /*
-        } else {
-            requireActivity().showSnackBar(
-                binding.root, getString(R.string.no_connectivity)
-            )
         }
-        */
-        }
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupUI()
+    }
+
+
+    private fun setupUI() {
+
     }
 
     private fun setupMediaAdapter() {
         mediaAdapter = EventMediaAdapter(requireContext(), this)
-        mediaRecyclerView.layoutManager =
+
+        binding.mediaRecyclerview.layoutManager =
             LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        mediaRecyclerView.adapter = mediaAdapter
+        binding.mediaRecyclerview.adapter = mediaAdapter
     }
 
     private fun setupRecordButton() {
@@ -509,13 +446,18 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
         eventService.flow.observe(this) { status ->
             when (status) {
                 is Resource.Loading -> {
-                    requireActivity().showLoader(R.raw.lottie_posting_event_3)
+                    requireActivity().showLoader(R.raw.lottie_bell_expansion_by_jennifer_hood)
                 }
 
                 is Resource.Success -> {
                     requireActivity().hideLoader()
-                    mainActivityViewModel.switchToModule(0, "home")
+                    // mainActivityViewModel.switchToModule(0, "home")
 
+                    findNavController().navigate(R.id.homeFragment).apply {
+                        // borrar el backstack
+                        findNavController().clearBackStack(R.id.homeFragment)
+                        eventService.resetFlow()
+                    }
                     val callbackDialog: OnEventPublishedDone = object : OnEventPublishedDone {
                         override fun onBringMeToEvent() {
                             if (requireActivity() is MainActivityCallback) {
@@ -530,106 +472,39 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                     val doneDialog = EventPublishedDoneDialog(
                         requireContext(), requireActivity(), callbackDialog
                     )
-                    doneDialog.show()
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        doneDialog.show()
+                    }
                 }
 
                 is Resource.Error -> {
                     requireActivity().hideLoader()
                     requireActivity().showErrorDialog(status.message.toString())
+                    eventService.resetFlow()
                     binding.sendButton.isEnabled = true
+                }
+
+                else -> {
+                    var pp = 22
                 }
             }
         }
 
         viewModel.showContactGroupSelector.observe(this) { status ->
-            findNavController().navigate(R.id.action_eventAdditionalMediaFragment_to_networkSelectionDialog)
-
-            /*   when (status) {
-                   is Resource.Loading -> {
-                       requireActivity().showLoader(resources.getString(R.string.please_wait))
-                   }
-
-
-                   is Resource.Error -> {
-                       requireActivity().hideLoader()
-                       requireActivity().showErrorDialog(status.message.toString())
-                   }
-
-
-                   is Resource.Success -> {
-                       requireActivity().hideLoader()
-                       val list = status.data!!
-                       if (list.size > 0) {
-                           val callback: OnNetworkListSelection = object : OnNetworkListSelection {
-                               override fun onSelected(listKey: String) {
-   //                                publishEvent(listKey)
-
-                                   // Register the service
-                                   val eventService = EventService.getInstance(requireContext())
-   //                                val livePostEventData = eventService.getResult()
-                                   viewModel.event.value!!.group_key = listKey
-                                   eventService.fireEvent(viewModel.event.value!!)
-                               }
-
-                               override fun onCanceled() {
-                                   binding.sendButton.isEnabled = true
-                               }
-                           }
-
-                           val networkSelectionDialog = NetworkSelectionDialog(
-                               requireContext(), requireActivity(), callback
-                           )
-
-                           networkSelectionDialog.show(list)
-
-
-                       } else {
-                           // Register the service
-                           val eventService = EventService.getInstance(requireContext())
-                           viewModel.event.value!!.group_key = "_default"
-                           eventService.fireEvent(viewModel.event.value!!)
-                       }
-                   }
-               }
-   */
-        }
-
-        /*
-                eventsFragmentViewModel.postingEventStatus.observe(this) { status ->
-                    when (status) {
-                        is Resource.Loading -> {
-                            requireActivity().showLoader(R.raw.lottie_posting_event_3)
-                        }
-
-                        is Resource.Success -> {
-                            requireActivity().hideLoader()
-                            mainActivityViewModel.switchToModule(0, "home")
-
-                            val callbackDialog: OnEventPublishedDone = object : OnEventPublishedDone {
-                                override fun onBringMeToEvent() {
-                                    if (requireActivity() is MainActivityCallback) {
-                                        (requireActivity() as MainActivityCallback).goToEvent(status.data?.event_key!!)
-                                    }
-                                }
-
-                                override fun onRefuse() {
-
-                                }
-                            }
-                            val doneDialog = EventPublishedDoneDialog(
-                                requireContext(), requireActivity(), callbackDialog
-                            )
-                            doneDialog.show()
-                        }
-
-                        is Resource.Error -> {
-                            requireActivity().hideLoader()
-                            requireActivity().showErrorDialog(status.message.toString())
-
-                        }
-                    }
+            when (status) {
+                true -> {
+                    findNavController().navigate(R.id.action_eventAdditionalMediaFragment_to_networkSelectionDialog)
+                    viewModel.resetShowContactGroupSelector()
                 }
-        */
+
+                false -> {
+                    MainActivityViewModel.getInstance().onEventReadyToFire(viewModel.event.value!!)
+                    viewModel.resetShowContactGroupSelector()
+                }
+
+                null -> {}
+            }
+        }
 
         viewModel.fixedLocation.observe(this) { location ->
             eventLocationType = viewModel.eventLocationType.value ?: "missing"
@@ -661,36 +536,6 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
         viewModel.eventMediaFlow.observe(this) { mediaList ->
             mediaAdapter.setData(mediaList)
             mediaAdapter.notifyDataSetChanged()
-            /*
-                  when (media) {
-                      is DataAdaptersSupport.AdapterEventMediaFile.ItemAdded -> {
-                          val mediaFile = media.data
-                          val mediaArray = mediaAdapter.getData()
-                          if (!mediaArray.contains(mediaFile)) {
-                              mediaArray.add(mediaFile)
-                              mediaAdapter.notifyItemInserted(mediaArray.size - 1)
-                          }
-                      }
-
-                      is DataAdaptersSupport.AdapterEventMediaFile.ItemChanged -> {
-                      }
-
-                      is DataAdaptersSupport.AdapterEventMediaFile.ItemMoved -> {
-
-                      }
-
-                      is DataAdaptersSupport.AdapterEventMediaFile.ItemRemoved -> {
-                          val mediaFile = media.data
-                          val mediaArray = mediaAdapter.getData()
-                          val index: Int = mediaArray.indexOf(mediaFile)
-                          if (index > -1) {
-                              mediaArray.removeAt(index)
-                              mediaAdapter.notifyItemRemoved(index)
-                          }
-                      }
-                  }
-
-                 */
         }
 
         mainActivityViewModel.newMedia.observe(this) { media ->
@@ -738,6 +583,9 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
     }
 
     private fun stopObservers() {
+        viewModel.contactsGroupsListFlow.removeObservers(this)
+        viewModel.groupsList.removeObservers(this)
+
         eventService.flow.removeObservers(this)
         viewModel.showContactGroupSelector.removeObservers(this)
         viewModel.fixedLocation.removeObservers(this)
@@ -745,6 +593,7 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
         viewModel.eventMediaFlow.removeObservers(this)
         mainActivityViewModel.newMedia.removeObservers(this)
         mainActivityViewModel.recordingStatus.removeObservers(this)
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

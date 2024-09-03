@@ -130,8 +130,16 @@ class EventService : Service, IEventService {
 
     }
 
-     val flow = MutableLiveData<Resource<Event?>>()
+     val flow = MutableLiveData<Resource<Event?>?>()
 
+    fun getResult(): MutableLiveData<Resource<Event?>?> = flow
+    fun resetFlow() {
+        flow.postValue(null)
+    }
 
-    fun getResult(): MutableLiveData<Resource<Event?>> = flow
+    override fun onDestroy() {
+        super.onDestroy()
+        _instance = null
+    }
+
 }

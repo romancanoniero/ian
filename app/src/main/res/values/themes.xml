@@ -17,7 +17,7 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
 
-        <item name="cardViewStyle">@style/MyCardViewStyle</item>
+      <!--  <item name="cardViewStyle">@style/MyCardViewStyle</item> -->
         <item name="android:windowAnimationStyle">@style/MyWindowAnimationStyle</item>
         <item name="android:statusBarColor">#ff0000</item>
         <item name="android:windowLightStatusBar">true</item>
@@ -148,7 +148,7 @@
     </style>
 
     <style name="SmallSecondaryButton" parent="SecondaryButton">
-        <item name="android:minHeight">0dp</item>
+
         <item name="android:minWidth">80dp</item>
         <item name="layout_gravity">center_vertical</item>
         <item name="android:minHeight">@dimen/thumb_size</item>

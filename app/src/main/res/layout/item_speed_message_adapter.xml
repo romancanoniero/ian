@@ -11,10 +11,12 @@
         android:layout_marginHorizontal="10dp"
         android:layout_weight="1"
         android:background="@drawable/button_gradient_rounded"
-        android:fontFamily="@font/muli"
+        android:fontFamily="@font/muli_bold"
+        android:includeFontPadding="false"
         android:paddingHorizontal="10dp"
-        android:paddingVertical="6dp"
+        android:paddingVertical="10dp"
         android:text="I'm on way"
-        android:textColor="@color/white"
-        android:textSize="@dimen/text_size_subparagraph" />
+        android:textColor="@color/primary_button_text_color"
+        android:textSize="@dimen/text_size_paragraph"
+        android:textStyle="bold" />
 </LinearLayout>

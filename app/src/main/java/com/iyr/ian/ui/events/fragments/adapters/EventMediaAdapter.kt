@@ -13,6 +13,9 @@ import com.iyr.ian.R
 import com.iyr.ian.utils.getBitmapFromVectorDrawable
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 
@@ -24,7 +27,7 @@ interface MediaHandlingCallback {
     fun onShowTextMessage(text: String) {}
     fun openMediaSelector() {}
 
-    fun onDeleteMediaButtonPressed(mediaFile : MediaFile) {}
+    fun onDeleteMediaButtonPressed(mediaFile: MediaFile) {}
 }
 
 class EventMediaAdapter(val con: Context, val additionalCallback: MediaHandlingCallback) :
@@ -51,27 +54,41 @@ class EventMediaAdapter(val con: Context, val additionalCallback: MediaHandlingC
 
         when (record.media_type) {
             MediaTypesEnum.TEXT -> {
-                val iconBitmap = con.getBitmapFromVectorDrawable(
-                    R.drawable.ic_icon_chat_h
-                )
-                holder.previewImage.setImageBitmap(iconBitmap)
-                holder.caption.text = ""
+                GlobalScope.launch(Dispatchers.Default)
+                {
+                    val iconBitmap = con.getBitmapFromVectorDrawable(
+                        R.drawable.ic_icon_chat_h
+                    )
+                    launch(Dispatchers.Main) {
+
+                        holder.previewImage.setImageBitmap(iconBitmap)
+                        holder.caption.text = ""
+                    }
+                }
             }
 
             MediaTypesEnum.AUDIO -> {
-                val iconBitmap = con.getBitmapFromVectorDrawable(
-                    R.drawable.ic_play_audio
-                )
-                holder.previewImage.setImageBitmap(iconBitmap)
+                GlobalScope.launch(Dispatchers.Default)
+                {
 
-                val duration = String.format(
-                    "%02d min, %02d sec",
-                    TimeUnit.MILLISECONDS.toMinutes(record.duration.toLong()),
-                    TimeUnit.MILLISECONDS.toSeconds(record.duration.toLong()) -
-                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(record.duration.toLong()))
-                )
-                holder.caption.text = duration
-
+                    val iconBitmap = con.getBitmapFromVectorDrawable(
+                        R.drawable.ic_play_audio
+                    )
+                    launch(Dispatchers.Main) {
+                        holder.previewImage.setImageBitmap(iconBitmap)
+                        val duration = String.format(
+                            "%02d min, %02d sec",
+                            TimeUnit.MILLISECONDS.toMinutes(record.duration.toLong()),
+                            TimeUnit.MILLISECONDS.toSeconds(record.duration.toLong()) -
+                                    TimeUnit.MINUTES.toSeconds(
+                                        TimeUnit.MILLISECONDS.toMinutes(
+                                            record.duration.toLong()
+                                        )
+                                    )
+                        )
+                        holder.caption.text = duration
+                    }
+                }
 
             }
 
@@ -83,13 +100,7 @@ class EventMediaAdapter(val con: Context, val additionalCallback: MediaHandlingC
                 requestOptions.override(70, 70)
                 Glide.with(con).setDefaultRequestOptions(requestOptions).load(record.file_name)
                     .into(holder.previewImage)
-                /*
-                                Glide
-                                    .with(con)
-                                    .asBitmap()
-                                    .load(Uri.fromFile( File(record.url)))
-                                    .into(holder.previewImage);
-                */
+
                 val duration = String.format(
                     "%02d min, %02d sec",
                     TimeUnit.MILLISECONDS.toMinutes(record.duration.toLong()),
@@ -97,8 +108,6 @@ class EventMediaAdapter(val con: Context, val additionalCallback: MediaHandlingC
                             TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(record.duration.toLong()))
                 )
                 holder.caption.text = duration
-
-
             }
 
             MediaTypesEnum.IMAGE -> {

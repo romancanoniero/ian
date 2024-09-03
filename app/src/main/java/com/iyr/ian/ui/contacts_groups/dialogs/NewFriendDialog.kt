@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.BounceInterpolator
 import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.Contact
@@ -21,6 +22,8 @@ import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.assignFileImageTo
 import com.iyr.ian.utils.playSound
 import com.iyr.ian.viewmodels.UserViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class NewFriendDialog() :
     AppCompatDialogFragment() {
@@ -65,19 +68,21 @@ class NewFriendDialog() :
 
         }
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            requireContext().assignFileImageTo(
+                me.image.file_name,
+                "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${me.user_key}",
+                binding.image1
+            )
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
 
-        requireContext().assignFileImageTo(
-            me.image.file_name,
-            "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${me.user_key}",
-            binding.image1
-        )
-
-        requireContext().assignFileImageTo(
-            theOtherUser?.image?.file_name ?: "",
-            "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${theOtherUser?.user_key}",
-            binding.image2
-        )
-
+            requireContext().assignFileImageTo(
+                theOtherUser?.image?.file_name ?: "",
+                "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${theOtherUser?.user_key}",
+                binding.image2
+            )
+        }
 
         binding.buttonClose.visibility = View.INVISIBLE
         binding.buttonClose.setOnClickListener { view ->
@@ -126,8 +131,9 @@ class NewFriendDialog() :
             override fun onAnimationStart(animation: Animator) {
                 requireContext().playSound(R.raw.bell)
             }
+
             override fun onAnimationEnd(animation: Animator) {
-                   binding.buttonClose.visibility = View.VISIBLE
+                binding.buttonClose.visibility = View.VISIBLE
             }
 
             override fun onAnimationCancel(animation: Animator) {}
@@ -154,6 +160,7 @@ class NewFriendDialog() :
 
         override fun onAnimationRepeat(animation: Animator) {}
     }
+
     fun animateUserImages() {
 
         val dialogCardView = binding.dialogCard

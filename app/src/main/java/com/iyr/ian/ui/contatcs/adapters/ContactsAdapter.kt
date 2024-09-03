@@ -23,6 +23,9 @@ import com.iyr.ian.ui.contatcs.ContactsFragmentDirections
 import com.iyr.ian.ui.friends.enums.FriendshipStatusEnums
 import com.iyr.ian.utils.assignFileImageTo
 import com.iyr.ian.viewmodels.UserViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class ContactsAdapter(val fragment: Fragment) :
     RecyclerView.Adapter<ContactsAdapter.MyViewHolder>() {
@@ -58,11 +61,14 @@ class ContactsAdapter(val fragment: Fragment) :
 
 
                 val context = holder.userImage.context
+
+                GlobalScope.launch(Dispatchers.IO) {
                 context.assignFileImageTo(
                     contact.image?.file_name.toString(),
                     AppConstants.PROFILE_IMAGES_STORAGE_PATH + "/" + contact.user_key,
                     holder.userImage
                 )
+                }
 /*
                 Glide.with(holder.userImage.context)
                     .load(R.drawable.ic_close)

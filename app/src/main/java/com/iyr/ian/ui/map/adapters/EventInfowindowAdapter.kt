@@ -15,7 +15,7 @@ class EventInfowindowAdapter(context: Context, val fragment: MapSituationFragmen
 
     var mContext = context
     private var mWindow: View =
-        (context as Activity).layoutInflater.inflate(R.layout.infowindow_event, null)
+        (context as Activity).layoutInflater.inflate(R.layout.dialog_infowindow_event, null)
 
     private fun rendowWindowText(marker: Marker, view: View) {
 

@@ -316,4 +316,60 @@ class UsersRepositoryImpl : UsersRespository() {
         map.put("image/file_name", image.file_name)
         return this.updateUserDataByMap(userKey, map)
     }
+
+    /***
+     * This method is used to set the user online
+     */
+    override suspend fun onOnLine(userKey: String): Resource<Boolean?> {
+        return try {
+
+            val call = FirebaseDatabase.getInstance()
+                .getReference("users_online_status")
+                .child(userKey)
+                .setValue(true).await()
+
+            Resource.Success<Boolean?>(true)
+        } catch (exception: Exception) {
+            Resource.Error<Boolean?>(exception.message.toString())
+        }
+    }
+
+    /***
+     * This method is used to set the user offline
+     */
+    override suspend fun onOffLine(userKey: String): Resource<Boolean?> {
+        return try {
+            val call = FirebaseDatabase.getInstance()
+                .getReference("users_online_status")
+                .child(userKey)
+                .removeValue().await()
+            Resource.Success<Boolean?>(true)
+        } catch (exception: Exception) {
+            Resource.Error<Boolean?>(exception.message.toString())
+        }
+    }
+
+    override suspend fun onLineFlow(userKey: String): Flow<Resource<Boolean?>> = callbackFlow {
+        var onLineReference =
+            FirebaseDatabase.getInstance().getReference("users_online_status").child(userKey)
+
+        var statusListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    trySend(Resource.Success<Boolean?>(true))
+                } else {
+                    trySend(Resource.Success<Boolean?>(false))
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+        onLineReference.addValueEventListener(statusListener)
+
+        awaitClose {
+            onLineReference.removeEventListener(statusListener)
+        }
+    }.conflate()
+
 }

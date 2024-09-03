@@ -17,6 +17,8 @@ class AppStatusReceiver(val service: ServiceLocation) : BroadcastReceiver() {
    // crea un constructor sin argumentos
     constructor() : this(ServiceLocation())
 
+
+
     override fun onReceive(context: Context, intent: Intent?) {
 
         if (intent?.action == BROADCAST_ACTION_ENTER_BACKGROUND) {

@@ -6,6 +6,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.iyr.ian.dao.models.EventFollower
 import com.iyr.ian.dao.repositories.EventFollowersRepository
 import com.iyr.ian.utils.coroutines.Resource
@@ -123,6 +124,59 @@ class EventFollowersRepositoryImpl : EventFollowersRepository() {
         }
 
         return Resource.Error<ArrayList<EventFollower>?>("Error")
+
+    }
+
+
+    /**
+     * Forma correcta de emitir datos desde Firebase Realtime Database
+     */
+    @ExperimentalCoroutinesApi
+    override suspend fun followFollowerFlow(eventKey: String, userKey : String): Flow<EventFollowerDataEvent?> =
+        callbackFlow {
+
+            followersReference = databaseReference
+                .child(eventKey).child(userKey)
+
+
+            val eventFollowersListener = object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    try {
+
+                        val eventFollower = snapshot.getValue(EventFollower::class.java)!!
+                        eventFollower.user_key = snapshot.key!!
+
+                        trySend(
+                            EventFollowerDataEvent.OnChildAdded(
+                                eventFollower,
+                                null
+                            )
+                        )
+                    }catch (e: Exception){
+                        trySend(EventFollowerDataEvent.OnError(e))
+                    }
+
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    trySend(EventFollowerDataEvent.OnError(error.toException()))
+                }
+            }
+            followersReference?.addValueEventListener(eventFollowersListener!!)
+
+            awaitClose {
+                followersReference?.removeEventListener(eventFollowersListener!!)
+            }
+        }
+
+
+    override suspend fun setOnLine(eventKey: String, userKey: String) {
+        databaseReference.child(eventKey).child(userKey).child("on_line").setValue(true).await()
+    }
+
+    override suspend fun setOffLine(eventKey: String, userKey: String) {
+        databaseReference.child(eventKey).child(userKey).child("on_line").setValue(false).await()
 
     }
 }

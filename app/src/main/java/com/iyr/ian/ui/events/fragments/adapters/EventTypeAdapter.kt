@@ -1,6 +1,7 @@
 package com.iyr.ian.ui.events.fragments.adapters
 
 import android.content.Context
+import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,6 +35,21 @@ class EventTypeAdapter(val con: Context, val callback: EventTypeSelectorCallback
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
 
         val record: EventType = mList[position]
+
+
+
+        // Calculate item width
+        val displayMetrics: DisplayMetrics = mContext.resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val itemWidth = (screenWidth *.348837)
+        val spacing = (screenWidth - (itemWidth*2)) / 3
+
+//        val itemWidth = (screenWidth - 3 * spacing) / 2
+
+        // Set item width
+        val layoutParams = holder.itemView.layoutParams
+        layoutParams.width = itemWidth.toInt()
+        holder.itemView.layoutParams = layoutParams
 
         Glide.with(con)
             .asBitmap()

@@ -234,6 +234,7 @@ class ContactsRepositoryImpl : ContactsRepository() {
                 data["auth_token"] = token.token.toString()
                 data["user_key"] = userWhoAccept
                 data["user_from_key"] = userToAcceptKey
+
                 try {
                     call =
                         FirebaseFunctions.getInstance().getHttpsCallable("contactAccept").call(data)

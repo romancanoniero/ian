@@ -15,6 +15,26 @@ interface NotificationsRepositoryInterface {
     suspend fun onMessageRead(userKey: String, eventKey: String, messageKey: String): Resource<Boolean?>
     suspend fun onAllMessagesRead(userKey: String, eventKey: String): Resource<Boolean?>
     fun updateNotificationStatusByUserKey(userKey: String, status: String): Resource<Boolean?>
+    suspend fun setNotificationsAsRead(
+        userKey: String,
+        vararg notificationKeys: String
+    ): Resource<Boolean?>
+
+
+    suspend fun removeNotificationByKey(
+        userKey: String,
+        notificationKey: String
+    ): Resource<Boolean?>
+
+    /***
+     * Elimina todas las notificaciones de un usuario
+     */
+    suspend fun removeAllNotifications(userKey: String) : Resource<Boolean?>
+
+    suspend fun removeNotificationsByChatroomKey(
+        userKey: String,
+        eventKey: String
+    ): Resource<Boolean?>
 }
 
 abstract class NotificationsRepository : NotificationsRepositoryInterface {
@@ -42,5 +62,5 @@ abstract class NotificationsRepository : NotificationsRepositoryInterface {
 
     private var authManager: Any? = null
     private val tableReference: Any? = null
-    protected val tableName = "events_notifications"
+    protected val tableName = "notifications"
 }

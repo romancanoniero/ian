@@ -10,6 +10,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.gson.Gson
+import com.iyr.ian.AppConstants.Companion.CHAT_FILES_STORAGE_PATH
 import com.iyr.ian.dao.models.UnreadMessages
 import com.iyr.ian.dao.repositories.ChatRepository
 import com.iyr.ian.utils.chat.models.Message
@@ -32,12 +33,35 @@ class ChatRepositoryImpl : ChatRepository() {
 
     override fun getChatFlow(eventKey: String): Flow<Resource<ChatDataEvent>> =
         callbackFlow {
+            var chatFilestPath= CHAT_FILES_STORAGE_PATH + eventKey +"/"
+
 
             chatRoomReference = databaseReference.child(eventKey)
             chatRoomListener = object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     val message = Message(snapshot.value as java.util.HashMap<String, Any>)
                     message.id = snapshot.key!!
+
+                    // actualizo la ruta de los archivos multimedia.
+                    when
+                    {
+                        message.image != null -> {
+                            if (!message.image.url.startsWith(chatFilestPath)) {
+                                message.image!!.url = chatFilestPath + message.image!!.url
+                            }
+                        }
+                        message.video != null -> {
+                            if (!message.video.url.startsWith(chatFilestPath)) {
+                                message.video!!.url = chatFilestPath + message.video!!.url
+                            }
+                        }
+                        message.voice != null -> {
+                            if (!message.voice.url.startsWith(chatFilestPath)) {
+                                message.voice!!.url = chatFilestPath + message.voice!!.url
+                            }
+                        }
+
+                    }
 
                     var toReturn = Resource.Success<ChatDataEvent>(
                         ChatDataEvent.OnChildAdded(
@@ -175,7 +199,7 @@ class ChatRepositoryImpl : ChatRepository() {
 
                     var result = (call.data as HashMap<String, Any>)
                     when (result["status"]) {
-                        0 -> {
+                        200 -> {
                             return Resource.Success<String?>(messageKey.toString())
                         }
 
@@ -288,7 +312,6 @@ class ChatRepositoryImpl : ChatRepository() {
 
 
     override fun unreadMessagesFlow(userKey: String): Flow<List<UnreadMessages>> = callbackFlow {
-
         val unreadMessagesReference =
             FirebaseDatabase.getInstance().getReference("chats_unreads_by_user").child(userKey)
 
@@ -302,6 +325,34 @@ class ChatRepositoryImpl : ChatRepository() {
                         record.chat_room_key = snapshot.key.toString()
                         unreads.add(record)
                     }
+                    trySend(unreads)
+                }
+                trySend(unreads)
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        unreadMessagesReference.addValueEventListener(chatListener)
+
+        awaitClose {
+            unreadMessagesReference.removeEventListener(chatListener)
+        }
+    }.conflate()
+
+
+
+    override fun unreadMessagesFlow(userKey: String, eventKey: String): Flow<Long> = callbackFlow {
+        val unreadMessagesReference =
+            FirebaseDatabase.getInstance().getReference("chats_unreads_by_user").child(userKey).child(eventKey)
+
+        val chatListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var unreads : Long = 0
+
+                if (snapshot.exists()) {
+
+                    val result = snapshot.getValue(UnreadMessages::class.java)
+                    unreads = (result?.qty as Long).toInt().toLong()
                     trySend(unreads)
                 }
                 trySend(unreads)

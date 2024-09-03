@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -33,6 +32,7 @@ class ConfirmationDialog(context: Context, activity: Activity) :
     private val mContext: Context
     private var mActivity: Activity
     private var mCallback: IAcceptDenyDialog? = null
+    private var button1ClickListener: View.OnClickListener? = null
     private val mDialoglayout: View
     private var mTitle: String? = null
     private var mLegend: String? = null
@@ -82,14 +82,21 @@ class ConfirmationDialog(context: Context, activity: Activity) :
     fun setButton1Caption(resId: Int) {
         mButton1Caption = mContext.getString(resId)
     }
+
     fun setButton1Caption(text: String) {
         mButton1Caption = text
     }
+
     fun setButton2Caption(resId: Int) {
         mButton2Caption = mContext.getString(resId)
     }
+
     fun setButton2Caption(text: String) {
         mButton2Caption = text
+    }
+
+    fun setButton1ClickListener(clickListener: View.OnClickListener) {
+        button1ClickListener = clickListener
     }
 
     init {
@@ -97,7 +104,7 @@ class ConfirmationDialog(context: Context, activity: Activity) :
         mActivity = activity
         mThisDialog = this
         val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.fragment_confirmation_popup, null)
+        mDialoglayout = inflater.inflate(R.layout.dialog_status_confirmation, null)
         this.setView(mDialoglayout)
         val acceptButton = mDialoglayout.findViewById<Button>(R.id.acceptButton)
         val cancelButton = mDialoglayout.findViewById<Button>(R.id.cancelButton)
@@ -113,6 +120,9 @@ class ConfirmationDialog(context: Context, activity: Activity) :
             mThisDialog.dismiss()
             if (mCallback != null) {
                 mCallback!!.onAccept()
+            }
+            if (button1ClickListener != null) {
+                button1ClickListener!!.onClick(acceptButton)
             }
             dismiss()
         }

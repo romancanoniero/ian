@@ -3,22 +3,25 @@ package com.iyr.ian.ui.notifications
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.OnClickListener
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.iyr.ian.R
-import com.iyr.ian.app.AppClass
 import com.iyr.ian.callbacks.INotifications
-import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.dao.models.EventNotificationModel
 import com.iyr.ian.dao.repositories.NotificationsRepository
 import com.iyr.ian.databinding.FragmentNotificationsBinding
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.notifications.adapters.NotificationsAdapter
+import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.connectivity.NetworkStateReceiver
+import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.loaders.hideLoader
+import com.iyr.ian.utils.loaders.showLoader
+import com.iyr.ian.utils.showConfirmationDialog
 import com.iyr.ian.utils.showErrorDialog
-import com.iyr.ian.utils.showSnackBar
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.NotificationsFragmentViewModel
 
@@ -33,12 +36,9 @@ class NotificationsFragment() :
     private var hasConnectivity: Boolean = true
     private lateinit var networkStateReceiver: NetworkStateReceiver
     private lateinit var binding: FragmentNotificationsBinding
-    private val adapter by lazy { NotificationsAdapter(requireContext(), this) }
+    private val adapter by lazy { NotificationsAdapter(requireActivity(), this) }
 
     private lateinit var viewModel: NotificationsFragmentViewModel
-
-
-//    private var usersSearchAdapter: CustomCompleteTextViewAdapter? = null
 
 
     companion object {
@@ -59,7 +59,28 @@ class NotificationsFragment() :
     ): View {
 
         binding = FragmentNotificationsBinding.inflate(layoutInflater, container, false)
-        setupUI()
+
+        binding.clearAll.visibility = View.INVISIBLE
+
+
+        binding.clearAll.setOnClickListener {
+            requireContext().handleTouch()
+            requireActivity().showConfirmationDialog(
+                getString(R.string.action_delete_all_notifications),
+                getString(R.string.action_delete_all_notifications_message),
+                getString(R.string.yes),
+                getString(R.string.no),
+                object : OnClickListener {
+                    override fun onClick(v: View?) {
+                        viewModel.onDeleteAllNotificationsRequested()
+                    }
+                }
+            )
+        }
+
+        binding.recyclerNotifications.layoutManager =
+            LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+        binding.recyclerNotifications.adapter = adapter
         return binding.root
     }
 
@@ -79,13 +100,8 @@ class NotificationsFragment() :
     }
 
     private fun startObservers() {
-        MainActivityViewModel.getInstance().notifications.observe(viewLifecycleOwner, {
+        MainActivityViewModel.getInstance().notifications.observe(viewLifecycleOwner, { it ->
             adapter.setData(it)
-
-//            NotificationsRepository.getInstance().setNotificationsAsRead(it.map { it.notification_key })
-            //generar un mapa con solamente notification_key donde read sea true
-
-
             val notReadNotifications = it.filter { !it.read || it.read == null }
             if (notReadNotifications.isNotEmpty()) {
                 viewModel.updateNotificationsAsRead(notReadNotifications.map { it.notification_key })
@@ -97,11 +113,17 @@ class NotificationsFragment() :
         MainActivityViewModel.getInstance().notificationsFlow.observe(this) { dataEvent ->
             when (dataEvent) {
                 is NotificationsRepository.DataEvent.ChildAdded -> {
+
                     if (!adapter.getData().contains(dataEvent.data)) {
                         dataEvent.data.read = true
                         adapter.getData().add(dataEvent.data)
+
                         adapter.notifyItemInserted(adapter.getData().size - 1)
-                        viewModel.updateNotificationsAsRead(listOf(dataEvent.data.notification_key) )
+                        viewModel.updateNotificationsAsRead(listOf(dataEvent.data.notification_key))
+
+                    }
+                    if (adapter.getData().size > 0) {
+                        binding.clearAll.visibility = View.VISIBLE
                     }
                 }
 
@@ -119,8 +141,11 @@ class NotificationsFragment() :
                 is NotificationsRepository.DataEvent.ChildRemoved -> {
                     val index = adapter.getData().indexOf(dataEvent.data)
                     if (index > -1) {
-                        adapter.getData().removeAt(-1)
+                        adapter.getData().removeAt(index)
                         adapter.notifyItemRemoved(index)
+                        if (adapter.getData().size == 0) {
+                            findNavController().popBackStack()
+                        }
                     }
                 }
 
@@ -133,59 +158,35 @@ class NotificationsFragment() :
             }
         }
 
-    }
+        viewModel.deletionLivaData.observe(this) { resource ->
+            when (resource) {
+                is Resource.Error -> {
+                    requireActivity().hideLoader()
+                    requireActivity().showErrorDialog(resource.message.toString())
+                }
 
+                is Resource.Loading -> {
+                    requireActivity().showLoader()
+                }
+
+                is Resource.Success -> {
+                    requireActivity().hideLoader()
+                    adapter.getData().clear()
+                    adapter.notifyDataSetChanged()
+                    findNavController().popBackStack()
+                }
+
+                else -> {
+
+                }
+            }
+        }
+    }
 
     private fun stopObservers() {
         MainActivityViewModel.getInstance().notifications.removeObservers(viewLifecycleOwner)
         MainActivityViewModel.getInstance().notificationsFlow.removeObservers(viewLifecycleOwner)
-    }
-
-    private fun setupUI() {
-        binding.clearAll.setOnClickListener {
-            if (!isBussy) {
-                if (hasConnectivity) {
-                    isBussy = true
-                    val callback: OnCompleteCallback = object : OnCompleteCallback {
-                        override fun onComplete(success: Boolean, result: Any?) {
-                            super.onComplete(success, result)
-                            isBussy = false
-                            //     (requireActivity() as MainActivity).switchToModule(0, "home")
-
-
-                            Toast.makeText(
-                                requireContext(),
-                                "Enviar mensaje para que cambie de module",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                        }
-
-                        override fun onError(exception: Exception) {
-                            super.onError(exception)
-                            isBussy = false
-                            requireActivity().showErrorDialog(exception.localizedMessage.toString())
-                        }
-                    }
-
-                    requireActivity().showSnackBar(
-                        binding.root,
-                        "Implementar notificationsRemoveAll"
-                    )
-                    //NotificationsWSClient.instance.notificationsRemoveAll(callback)
-                    AppClass.instance.getCurrentActivity()?.onBackPressed()
-                } else {
-                    requireActivity().showSnackBar(
-                        binding.root,
-                        getString(R.string.no_connectivity)
-                    )
-                }
-            }
-        }
-
-        binding.recyclerNotifications.layoutManager =
-            LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-        binding.recyclerNotifications.adapter = adapter
+        viewModel.deletionLivaData.removeObservers(viewLifecycleOwner)
     }
 
 
@@ -209,5 +210,16 @@ class NotificationsFragment() :
 
     override fun onError(exception: Exception) {
         requireActivity().showErrorDialog(exception.localizedMessage.toString())
+    }
+
+    override fun onAgreeToAssist(notificationKey: String, eventKey: String) {
+        viewModel.agreeToAssist(notificationKey, eventKey)
+    }
+
+    override fun notificationDeleteByKey(
+        notification: EventNotificationModel,
+        viewPressed: View
+    ) {
+        viewModel.onDeleteNotificationByKeyRequested(notification.notification_key)
     }
 }

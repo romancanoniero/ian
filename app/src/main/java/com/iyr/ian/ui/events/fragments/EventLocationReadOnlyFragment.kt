@@ -5,12 +5,9 @@ package com.iyr.ian.ui.events.fragments
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Rect
-import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,8 +15,6 @@ import android.view.ViewTreeObserver
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import at.markushi.ui.CircleButton
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
@@ -38,7 +33,6 @@ import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.utils.GoogleGeoCodingApiUtils
 import com.iyr.ian.utils.coroutines.Resource
-import com.iyr.ian.utils.geo.GeoFunctions
 import com.iyr.ian.utils.geo.models.CustomAddress
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getEventTypeName
@@ -51,11 +45,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class EventLocationReadOnlyFragment() : Fragment() {
+class EventLocationReadOnlyFragment: Fragment() {
     private lateinit var binding: FragmentEventLocationReadOnlyBinding
-    private var locationAsAddress: CustomAddress? = null
-    private var lastLocationAquired: LatLng? = null
-    private var editButton: CircleButton? = null
     private var mSelectedLocation: CustomAddress? = null
     private var eventTravelMode: String? = null
 
@@ -89,33 +80,12 @@ class EventLocationReadOnlyFragment() : Fragment() {
             val transparentViewRect = Rect()
             this.binding.transparentView?.getGlobalVisibleRect(transparentViewRect)
             keyboardVisible =
-                this.invisibleViewBottomDefault!! > this.binding.transparentView.bottom!!
+                this.invisibleViewBottomDefault!! > this.binding.transparentView.bottom
         }
         if (keyboardVisible) {
             this.binding?.confirmButton?.visibility = View.GONE
-            /*
-                        this.requireActivity().currentFocus?.let { objeto ->
-                            val keypadHeight = this.binding.root.height!! - r.bottom
-                            val scrollY = (objeto.bottom + keypadHeight) - r.bottom
-                            this.binding?.avatarArea?.layoutParams?.height = 80.px
-                            this.binding?.avatarArea?.requestLayout()
-                            this.binding?.scrollView?.smoothScrollTo(0, scrollY)
-                            this.binding?.confirmButton?.visibility = View.GONE
-                            keyboardWasShownOnce = true
-                        }
-                        */
         } else {
             this.binding?.confirmButton?.visibility = View.VISIBLE
-
-            /*
-                      if (keyboardWasShownOnce == true) {
-                          this.binding?.confirmButton?.visibility = View.VISIBLE
-                          this.binding.avatarArea?.layoutParams?.height =
-                              this.requireContext().resources.getDimension(R.dimen.box_xsuperbig).toInt()
-                          this.binding?.avatarArea?.requestLayout()
-                      }
-
-             */
         }
     }
 
@@ -125,19 +95,6 @@ class EventLocationReadOnlyFragment() : Fragment() {
             this.eventTravelMode = TravelMode.CAR.name
         }
     }
-
-    private val pair: Pair<EventTypesEnum, Parcelable?>
-        get() {
-            val eventType =
-                EventTypesEnum.valueOf(this.arguments?.getString("event_type").toString())
-            val eventLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                this.arguments?.getParcelable("event_location", EventLocation::class.java)
-            } else {
-                this.arguments?.getParcelable("event_location")
-
-            }
-            return Pair(eventType, eventLocation)
-        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -194,38 +151,7 @@ class EventLocationReadOnlyFragment() : Fragment() {
                     }
                 }
             }
-            /*
-                if (location != null) {
 
-                    getAddressFromLatLng(
-                        com.google.maps.model.LatLng(
-                            location.latitude,
-                            location.longitude
-                        )
-                    )
-                    mainActivityViewModel.onLocationSearchEnd()
-                } else {
-
-                    SmartLocation.with(context).location().oneFix().start { location ->
-
-                        if (location != null) {
-                            getAddressFromLatLng(
-                                com.google.maps.model.LatLng(
-                                    location.latitude,
-                                    location.longitude
-                                )
-                            )
-                            mainActivityViewModel.onLocationSearchEnd()
-                        } else {
-                            mainActivityViewModel.onLocationSearchEnd()
-                            mainActivityViewModel.hideLoader()
-                            mainActivityViewModel.showError("No se puede obtener su Ubicación")
-                            binding.addressReadOnly.isEnabled = true
-                        }
-                    }
-                }
-
-             */
         }
         /*
                 binding?.floorFieldApt?.setOnFocusChangeListener { view, hasFocus ->
@@ -241,48 +167,6 @@ class EventLocationReadOnlyFragment() : Fragment() {
         return this.binding.root
     }
 
-    /***
-     * Obtiene la direccion a partir de la latitud y la longitud y actualiza los campos
-     */
-    private fun getAddressFromLatLng(latLng: com.google.maps.model.LatLng) {
-        this.lifecycleScope.launch {
-            val response =
-                GeoFunctions.getInstance(this@EventLocationReadOnlyFragment.requireContext())
-                    .getAddressFromLatLng(latLng.lat, latLng.lng)
-
-            val address = EventLocation()
-            with(response.data) {
-                address.latitude = this?.latitude!!
-                address.longitude = this.longitude
-                address.formated_address = this.formatedAddress
-                // no existe en nominatim -- location.address_components = nominatimAddress!!.
-                val zipCode: String = this.postalCode.toString()
-                zipCode?.let { zip ->
-                    if (address.formated_address?.startsWith(zip) == true) {
-                        address.formated_address =
-                            address.formated_address?.replaceFirst(
-                                "$zip,", "", true
-                            )
-                    }
-                }
-            }
-
-            if (address != null) {
-                this@EventLocationReadOnlyFragment.mainActivityViewModel.hideLoader()
-                this@EventLocationReadOnlyFragment.eventsFragmentViewModel.onFixedLocation(address)
-                this@EventLocationReadOnlyFragment.binding.addressReadOnly.isEnabled = true
-
-                try {
-                    this@EventLocationReadOnlyFragment.binding.addressInputLayout.hint =
-                        this@EventLocationReadOnlyFragment.getString(R.string.address_to_delibery)
-                    this@EventLocationReadOnlyFragment.binding.addressReadOnly.setText(address.formated_address.toString())
-                } catch (ex: Exception) {
-                    Log.e("GETTING_ADDRESS", ex.message.toString())
-                }
-
-            }
-        }
-    }
 
     private fun startObservers() {
         this.eventsFragmentViewModel.eventType.observe(this) { eventTypeName ->
@@ -332,11 +216,11 @@ class EventLocationReadOnlyFragment() : Fragment() {
         //  super.onActivityResult(requestCode, resultCode, data)
 
         if (resultCode === Activity.RESULT_OK && requestCode === AUTOCOMPLETE_REQUEST_CODE) {
-            val place = Autocomplete.getPlaceFromIntent(data)
+            val place = Autocomplete.getPlaceFromIntent(data!!)
             this.setCurrentLocationAsAddress(place)
             val location = EventLocation()
-            location.latitude = place.latLng.latitude
-            location.longitude = place.latLng.longitude
+            location.latitude = place.latLng!!.latitude
+            location.longitude = place.latLng!!.longitude
             location.formated_address = place.address
             location.address_components = place.addressComponents
             this.eventsFragmentViewModel.onFixedLocation(location)
@@ -354,7 +238,6 @@ class EventLocationReadOnlyFragment() : Fragment() {
 
     private fun setupUI() {
 
-        var eventType = this.eventsFragmentViewModel.eventType.value
 
 
         this.binding.floorFieldApt.addTextChangedListener(object : TextWatcher {
@@ -471,90 +354,14 @@ class EventLocationReadOnlyFragment() : Fragment() {
                 EventLocationReadOnlyFragmentDirections.actionEventLocationReadOnlyFragmentToEventAdditionalMediaFragment()
             findNavController().navigate(action)
         }
-        /*
-                this.binding.editButton.setOnClickListener {
-                    this.callback.OnSwitchFragmentRequest(
-                        R.id.event_fragment_location_manual_input,
-                        this.arguments
-                    )
-                }
-        */
 
-//        updateUI()
-    }
-    /*
-        private fun updateUI() {
-            var fixedLocation = eventsFragmentViewModel.fixedLocation.value
-            var eventType = eventsFragmentViewModel.eventType.value
-
-        }
-    */
-    /*
-        private fun getMyLocation(target: Int) {
-
-
-            lifecycleScope.launch(Dispatchers.IO) {
-                var call = GeoFunctions.getInstance(requireContext()).getAddressFromLatLng(
-                    lastLocationAquired!!.latitude, lastLocationAquired!!.longitude
-                )
-
-
-                var pepe = 33
-            }
-
-            GeoFunctions.getInstance(requireContext())
-                .getAddressFromLatLng(lastLocationAquired!!.latitude,
-                    lastLocationAquired!!.longitude,
-                    object : OnCompleteCallback {
-                        override fun onError(exception: Exception) {
-                            requireActivity().showErrorDialog(exception.localizedMessage.toString())
-                        }
-
-                        override fun onComplete(success: Boolean, result: Any?) {
-                            locationAsAddress = result as CustomAddress?/*
-                                            GeoFunctions.getInstance(AppClass.instance)?.getLastKnownLocation {
-                                                object : LocationSource.OnLocationChangedListener {
-                                                    override fun onLocationChanged(location: Location) {
-                                                    }
-                                                }
-                                            }
-                        */
-                            activity!!.runOnUiThread {
-                                setCurrentLocationAsAddress(locationAsAddress)
-                                val location = EventLocation()
-                                //               location.locationType = EventLocationTypes.FIXED.name
-                                location.latitude = locationAsAddress!!.latitude
-                                location.longitude = locationAsAddress!!.longitude
-                                location.formated_address = locationAsAddress!!.formatedAddress
-
-    //                        eventLocation = location
-                                eventsFragmentViewModel.onFixedLocation(location)
-                                when (target) {
-                                    R.id.target_location_read_only -> {
-                                        binding.addressReadOnly.setText(locationAsAddress!!.formatedAddress.toString())
-                                    }
-                                }
-                                //     updateUI()
-                                requireActivity().hideLoader()
-                            }
-
-
-                        }
-                    })
-        }
-    */
-//----------- RECEIVERS -------------------------------------------------
-
-
-    fun setCurrentLocationAsAddress(locationAsAddress: CustomAddress?) {
-        this.mSelectedLocation = locationAsAddress
     }
 
     private fun setCurrentLocationAsAddress(place: Place): CustomAddress {
         val geoCodingUtils = GoogleGeoCodingApiUtils(this.requireContext())
         val customAddres = CustomAddress()
-        customAddres.latitude = place.latLng.latitude
-        customAddres.longitude = place.latLng.longitude
+        customAddres.latitude = place.latLng!!.latitude
+        customAddres.longitude = place.latLng!!.longitude
         customAddres.formatedAddress = place.address
         customAddres.streetNumber = geoCodingUtils.getAddressComponent(
             place.addressComponents, AddressComponentType.STREET_NUMBER
@@ -564,7 +371,7 @@ class EventLocationReadOnlyFragment() : Fragment() {
         this.mSelectedLocation = customAddres
 
         return customAddres
-        var pp = 3
+
 
     }
 

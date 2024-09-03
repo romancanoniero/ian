@@ -1,54 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/fragment_root"
     android:layout_width="match_parent"
-    android:layout_height="fill_parent"
-    android:background="@color/float_transparent"
-    android:clipToPadding="false"
-    android:elevation="28dp"
-    android:minHeight="400dp">
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/layout_card"
-        style="@style/CardViewStyleFromBottom"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+    android:layout_height="match_parent">
 
 
-        android:elevation="22dp"
-        app:cardBackgroundColor="@color/white"
-        app:cardElevation="6dp"
-        app:cardPreventCornerOverlap="true"
-        app:cardUseCompatPadding="true"
-        app:contentPadding="2dp"
-
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent=".80"
-        app:layout_constraintStart_toStartOf="parent">
+    <LinearLayout
+        android:id="@+id/bottomSheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:behavior_hideable="true"
+        app:behavior_peekHeight="400dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
+        android:layout_height="wrap_content"
+       >
         <TextView
             android:id="@+id/textView19"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="1"
             android:text="@string/users_going"
+            android:layout_gravity="center_vertical"
+            android:gravity="center_horizontal"
             android:textSize="@dimen/text_size_subheading"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="@+id/close_button"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+          />
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/close_button"
-            android:layout_width="@dimen/circle_8"
-            android:layout_height="@dimen/circle_8"
+            android:layout_width="@dimen/circle_9"
+            android:layout_height="@dimen/circle_9"
             android:layout_marginTop="6dp"
             android:layout_marginEnd="6dp"
             android:cropToPadding="true"
@@ -61,75 +52,69 @@
             app:civ_circle_background_color="@color/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
+    </androidx.constraintlayout.widget.ConstraintLayout>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginBottom="20dp"
-            app:layout_constraintBottom_toTopOf="@+id/buttons_section"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView19"
-            tools:listitem="@layout/item_user_going_adapter" />
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginVertical="10dp"
+
+            android:layout_weight="1"
+            tools:listitem="@layout/item_user_going_adapter"
+           />
 
 
         <LinearLayout
             android:id="@+id/buttons_section"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp"
-            android:layout_marginBottom="30dp"
+            android:layout_marginBottom="10dp"
             android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+       >
 
-            <Button
-                android:id="@+id/ref_button"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/button_action"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="10dp"
-                android:layout_weight="0"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
-
-
-            <Button
-                android:id="@+id/button_going_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="10dp"
-                android:layout_weight="1"
+                android:layout_height="@dimen/button_height"
+                android:layout_weight="4"
+                android:background="@drawable/primary_button_border"
+                android:contentDescription="@string/im_going"
                 android:text="@string/im_going"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                android:textColor="@color/white"
+                android:textStyle="bold" />
 
             <ImageButton
                 android:id="@+id/go_button"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
 
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
                 android:background="@drawable/primary_button_border"
+                android:contentDescription="@string/open_in_maps"
                 android:src="@android:drawable/ic_menu_directions"
-                app:layout_constraintDimensionRatio="v;1,1"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/layoutCard"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:elevation="16dp"
+            android:orientation="vertical">
+        </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout></com.google.android.material.card.MaterialCardView>
+</LinearLayout>
+
 
     <!--
     </androidx.core.widget.NestedScrollView>
 -->
 
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

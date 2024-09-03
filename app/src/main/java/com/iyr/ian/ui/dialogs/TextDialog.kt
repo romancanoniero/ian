@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.View.GONE
@@ -48,7 +47,7 @@ class TextDialog(mContext: Context, mActivity: Activity) :
 
     init {
         val inflater = mActivity.layoutInflater
-        mDialoglayout = inflater.inflate(R.layout.fragment_text_popup, null)
+        mDialoglayout = inflater.inflate(R.layout.dialog_text_input, null)
         this.setView(mDialoglayout)
         acceptButton = mDialoglayout.findViewById<Button>(R.id.buttonOne)
         val cancelButton = mDialoglayout.findViewById<Button>(R.id.cancel_button)

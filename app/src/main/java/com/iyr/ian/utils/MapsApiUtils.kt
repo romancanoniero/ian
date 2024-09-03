@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.LinearInterpolator
+import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -38,7 +39,6 @@ import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.glide.GlideApp
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
-import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -299,7 +299,8 @@ suspend fun GoogleMap.zoomToFitMarkers(
             b.include(marker.position)
         }
         // agrego la posicion central
-        var centralPoint : com.google.android.gms.maps.model.LatLng = com.google.android.gms.maps.model.LatLng(center.lat,center.lng)
+        var centralPoint: com.google.android.gms.maps.model.LatLng =
+            com.google.android.gms.maps.model.LatLng(center.lat, center.lng)
         b.include(centralPoint)
         val bounds: LatLngBounds = b.build()
 
@@ -333,14 +334,16 @@ fun getMarkerFromView(
 ): Bitmap? {
 
     val view = LayoutInflater.from(context).inflate(layout, null)
-    val root = view.findViewById<ConstraintLayout>(R.id.root)/*
+    val root = view.findViewById<ConstraintLayout>(R.id.root)
+
+    /*
       view.measure(0,0)
         root.layoutParams = ConstraintLayout.LayoutParams(0, 45)
     */
 
 
     if (view.findViewById<View>(R.id.user_image) != null) {
-        val imageView = view.findViewById<CircleImageView>(R.id.user_image) as CircleImageView
+        val imageView = view.findViewById<View>(R.id.user_image) as ImageView
         imageView.setImageBitmap(userImage)
         if (res != 0) {
             imageView.setBackgroundResource(res)
@@ -355,21 +358,33 @@ fun getMarkerFromView(
 }
 
 
-
-
-fun GoogleMap.drawBounds( limites: LatLngBounds): Polygon {
+fun GoogleMap.drawBounds(limites: LatLngBounds): Polygon {
     val opcionesRecuadro = PolygonOptions()
         .add(limites.southwest)
-        .add(com.google.android.gms.maps.model.LatLng(limites.southwest.latitude, limites.northeast.longitude))
+        .add(
+            com.google.android.gms.maps.model.LatLng(
+                limites.southwest.latitude,
+                limites.northeast.longitude
+            )
+        )
         .add(limites.northeast)
-        .add(com.google.android.gms.maps.model.LatLng(limites.northeast.latitude, limites.southwest.longitude))
+        .add(
+            com.google.android.gms.maps.model.LatLng(
+                limites.northeast.latitude,
+                limites.southwest.longitude
+            )
+        )
         .add(limites.southwest)
 
-   return this.addPolygon(opcionesRecuadro)
+    return this.addPolygon(opcionesRecuadro)
 }
 
 
-fun GoogleMap.drawControlCircle(latLng: com.google.android.gms.maps.model.LatLng, resColor : Int, newRadius : Double = 100.0): Circle {
+fun GoogleMap.drawControlCircle(
+    latLng: com.google.android.gms.maps.model.LatLng,
+    resColor: Int,
+    newRadius: Double = 100.0
+): Circle {
 
     val circleOptions = com.google.android.gms.maps.model.CircleOptions()
         .center(latLng)
@@ -379,6 +394,7 @@ fun GoogleMap.drawControlCircle(latLng: com.google.android.gms.maps.model.LatLng
         .fillColor(resColor)
     return this.addCircle(circleOptions)
 }
+
 /*
 fun GoogleMap.generateMarkerIconForEvent(viewer: Viewer, callback: OnCompleteCallback) {
 
@@ -543,7 +559,7 @@ fun GoogleMap.getUserMarkerOptions(
 
 
 // Método para calcular el tamaño del marcador en función del nivel de zoom
-fun GoogleMap.calculateMarkerSize(baseMarkerSize : Int, zoomLevel: Float): Float {
+fun GoogleMap.calculateMarkerSize(baseMarkerSize: Int, zoomLevel: Float): Float {
     // Ajusta esta escala según tus preferencias y prueba
     val scale = 1.0f
 
@@ -555,12 +571,97 @@ fun GoogleMap.calculateMarkerSize(baseMarkerSize : Int, zoomLevel: Float): Float
 }
 
 //-------------------------------------
+
+suspend fun GoogleMap.getUserMarkerOptions(
+    context: Context,
+    ll: com.google.android.gms.maps.model.LatLng,
+    userKey: String,
+    resourceLocation: Any,
+    isAuthor: Boolean
+): HashMap<String, Any> = suspendCancellableCoroutine { continuation ->
+
+    val responseMap = HashMap<String, Any>()
+
+    val viewerMarker: MarkerOptions = MarkerOptions().position(ll).flat(true)
+    if (resourceLocation is String) {
+        val profileImagePath: String = resourceLocation.toString()
+        val fileFolder = AppConstants.PROFILE_IMAGES_STORAGE_PATH + userKey + "/"
+
+
+        GlobalScope.launch(Dispatchers.IO) {
+
+            val resource = context.getFileImage(profileImagePath, fileFolder)
+
+            var markerIcon: Bitmap? = null
+            if (!isAuthor) {
+                markerIcon = getMarkerFromView(
+                    AppClass.instance,
+                    R.layout.custom_marker_pin_viewer_circle_point,
+                    resource,
+                    0,
+                    AppClass.instance.resources.getDimension(R.dimen.marker_user_image_size)
+                        .toFloat(),
+                    0
+                )
+            } else {
+                markerIcon = getMarkerFromView(
+                    AppClass.instance,
+                    R.layout.custom_marker_pin_viewer_circle_point_author,
+                    resource,
+                    0,
+                    AppClass.instance.resources.getDimension(R.dimen.marker_user_image_size)
+                        .toInt().toFloat(),
+                    0
+                )
+            }
+
+            viewerMarker.icon(
+                BitmapDescriptorFactory.fromBitmap(
+                    markerIcon!!
+                )
+            )
+
+            responseMap.put("markerOptions", viewerMarker)
+            responseMap.put("bitmap", markerIcon)
+
+
+            continuation.resume(responseMap)
+
+            /*
+                        var localStorageFolder = AppConstants.PROFILE_IMAGES_STORAGE_PATH + userKey+"/"
+                        var fileLocation = FirebaseStorage.getInstance()
+                            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
+                            .child(userKey)
+                            .child(profileImagePath)
+                            .downloadUrlWithCache(AppClass.instance,localStorageFolder)
+
+                        GlideApp.with(AppClass.instance)
+                            .asBitmap()
+                            .load(fileLocation)
+                            .into(object : CustomTarget<Bitmap?>() {
+                                override fun onResourceReady(
+                                    resource: Bitmap, transition: Transition<in Bitmap?>?
+                                ) {
+
+                                }
+
+                                override fun onLoadCleared(placeholder: Drawable?) {}
+                            })
+            */
+        }
+
+    }
+}
+
+
 suspend fun GoogleMap.getUserMarkerOptions(
     ll: com.google.android.gms.maps.model.LatLng,
     userKey: String,
     resourceLocation: Any,
     isAuthor: Boolean
-): MarkerOptions = suspendCancellableCoroutine { continuation ->
+): HashMap<String, Any> = suspendCancellableCoroutine { continuation ->
+
+    val responseMap = HashMap<String, Any>()
 
     val storageRepository: StorageRepositoryImpl = StorageRepositoryImpl()
 
@@ -571,12 +672,12 @@ suspend fun GoogleMap.getUserMarkerOptions(
 
         GlobalScope.launch(Dispatchers.IO) {
 
-            var localStorageFolder = AppConstants.PROFILE_IMAGES_STORAGE_PATH + userKey+"/"
+            var localStorageFolder = AppConstants.PROFILE_IMAGES_STORAGE_PATH + userKey + "/"
             var fileLocation = FirebaseStorage.getInstance()
                 .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
                 .child(userKey)
                 .child(profileImagePath)
-                .downloadUrlWithCache(AppClass.instance,localStorageFolder)
+                .downloadUrlWithCache(AppClass.instance, localStorageFolder)
 
             GlideApp.with(AppClass.instance)
                 .asBitmap()
@@ -589,7 +690,7 @@ suspend fun GoogleMap.getUserMarkerOptions(
                         if (!isAuthor) {
                             markerIcon = getMarkerFromView(
                                 AppClass.instance,
-                                R.layout.custom_marker_pin_viewer_circle_point,
+                                R.layout.custom_marker_pin_viewer_fat_follower,
                                 resource,
                                 0,
                                 AppClass.instance.resources.getDimension(R.dimen.marker_user_image_size)
@@ -599,7 +700,7 @@ suspend fun GoogleMap.getUserMarkerOptions(
                         } else {
                             markerIcon = getMarkerFromView(
                                 AppClass.instance,
-                                R.layout.custom_marker_pin_viewer_circle_point_author,
+                                R.layout.custom_marker_pin_viewer_fat,
                                 resource,
                                 0,
                                 AppClass.instance.resources.getDimension(R.dimen.marker_user_image_size)
@@ -607,19 +708,23 @@ suspend fun GoogleMap.getUserMarkerOptions(
                                 0
                             )
                         }
-
                         viewerMarker.icon(
                             BitmapDescriptorFactory.fromBitmap(
                                 markerIcon!!
                             )
                         )
-                        continuation.resume(viewerMarker)
-//                    callback.onComplete(true, viewerMarker)
+
+                        responseMap.put("markerOptions", viewerMarker)
+                        responseMap.put("bitmap", markerIcon)
+
+
+                        continuation.resume(responseMap)
+
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {}
                 })
         }
 
-  }
+    }
 }

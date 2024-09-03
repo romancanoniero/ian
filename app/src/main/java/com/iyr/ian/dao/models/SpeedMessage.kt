@@ -54,18 +54,14 @@ class SpeedMessage() : Parcelable {
         actiontype: SpeedMessageActions,
         actionTitleResId: Int,
         actionMessageResId: Int,
-        revertActionType: SpeedMessageActions,
-        revertActionTitleResId: Int,
-        revertActionMessageResId: Int
+
     ) : this() {
         this.messageTag = messageTag
         this.actionType = actiontype.toString()
         this.actionTitleResId = actionTitleResId
         this.actionMessageResId = actionMessageResId
-        this.revertActionType = revertActionType.toString()
-        this.revertActionTitleResId = revertActionTitleResId
-        this.revertActionMessageResId = revertActionMessageResId
-    }
+
+        }
 
     override fun describeContents(): Int {
         return 0
@@ -73,6 +69,19 @@ class SpeedMessage() : Parcelable {
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         TODO("Not yet implemented")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SpeedMessage
+
+        return messageTag == other.messageTag
+    }
+
+    override fun hashCode(): Int {
+        return messageTag.hashCode()
     }
 
     companion object CREATOR : Parcelable.Creator<SpeedMessage> {
