@@ -4,6 +4,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.gson.Gson
+import com.iyr.ian.Constants.Companion.HTTP_CALL_OK
 import com.iyr.ian.dao.models._LatLng
 import com.iyr.ian.dao.repositories.CoreRepository
 import com.iyr.ian.utils.coroutines.Resource
@@ -28,7 +29,7 @@ class CoreRepositoryImpl : CoreRepository() {
                         .call(data).await()
 
                     var result = call.data as HashMap<String, Any?>
-                    if (result["status"] ?: -1 == 0) {
+                    if (result["status"] ?: -1 == HTTP_CALL_OK) {
                         Resource.Success<Boolean?>(true)
                     }
                     else
@@ -63,7 +64,7 @@ class CoreRepositoryImpl : CoreRepository() {
                         .call(data).await()
 
                     var result = call.data as HashMap<String, Any?>
-                    if (result["status"] ?: -1 == 0) {
+                    if (result["status"] ?: -1 == HTTP_CALL_OK) {
                         Resource.Success<Boolean?>(true)
                     }
                     else

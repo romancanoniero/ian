@@ -208,5 +208,14 @@
     <string name="event_no_longer_exist">O Evento não existe mais</string>
     <string name="new_messages">Novas Mensagens</string>
 
+    <!--- BLUETOOTH -->
+    <string name="hello_no_ble_fragment">Seu dispositivo não possui adaptador Bluetooth</string>
+    <string name="bluetooth_device_discovered_title">Dispositivo detectado</string>
+    <string name="bluetooth_device_connected_title">Dispositivo conectado</string>
+    <string name="rssi">Força do sinal: %d</string>
+    <string name="try_enable_bt">O Bluetooth está ligando</string>
+    <string name="try_enable_bt_failed">Você precisa ativar o Bluetooth manualmente nas Configurações do Dispositivo.</string>
+    <string name="open_bt_settings">Ligar Bluetooth</string>
+
 
 </resources>

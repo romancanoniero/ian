@@ -10,6 +10,8 @@ class AppConstants(val context: Context) {
         const val MINIMUM_TAPS = 3
         const val MINIMUM_TOUCH_TIME = 3
 
+        const val chatMessagesWidthPercent = .38
+
         const val NEW_CONTACT_LIST_KEY = "new_contact_list"
 
 
@@ -72,7 +74,7 @@ class AppConstants(val context: Context) {
 
         //-- STORAGE
         const val PROFILE_IMAGES_STORAGE_PATH: String = "images/users/profiles"
-        const val CHAT_FILES_STORAGE_PATH = "chats/"
+        const val CHAT_FILES_STORAGE_PATH = "chats"
 
         //-- NOTIFICATION CHANNELS -->
         val CHANNEL_DEFAULT_ID = "IAN_NOTIFICATIONS"
@@ -88,9 +90,6 @@ class AppConstants(val context: Context) {
         const val BACKGROUND_STATE_CHANNEL_ID = "IAN_NOTIFICATIONS_BACKGROUND_STATE"
         const val BACKGROUND_STATE_CHANNEL_NAME = "IAN_NOTIFICATIONS_BACKGROUND_STATE"
         const val BACKGROUND_STATE_CHANNEL_DESCRIPTION = "Notificacion de estado de la aplicacion"
-
-
-
 
 
     }

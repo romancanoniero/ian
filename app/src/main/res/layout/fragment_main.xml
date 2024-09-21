@@ -14,6 +14,13 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <ImageView
+                android:id="@+id/button_qr"
+                android:layout_width="@dimen/circle_7"
+                android:layout_height="@dimen/circle_7"
+                android:layout_gravity="end"
+                app:layout_constraintEnd_toEndOf="@+id/linearLayout7"
+                app:srcCompat="@drawable/ic_qr" />
 
             <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/guideline5"
@@ -24,33 +31,18 @@
                 app:layout_constraintHeight_percent=".5" />
 
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@null"
-            android:foregroundGravity="center_horizontal"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-
-
             <LinearLayout
+                android:id="@+id/linearLayout7"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center_horizontal"
-                android:layout_weight="1"
-                android:gravity="center_horizontal|center_vertical"
-                android:minHeight="@dimen/circle_1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content"
 
-                <ImageView
-                    android:id="@+id/button_qr"
-                    android:layout_width="@dimen/circle_7"
-                    android:layout_height="@dimen/circle_7"
-                    android:layout_gravity="end"
-                    android:layout_marginEnd="10dp"
-                    app:srcCompat="@drawable/ic_qr" />
+
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
 
                 <TextView
                     android:id="@+id/status_title"
@@ -97,24 +89,7 @@
                         app:avatarPreviewItems="2"
                         app:avatarSizeValue="@dimen/box_medium" />
                 </LinearLayout>
-                <!--
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Te están acompañando:"
-                    android:textSize="@dimen/text_size_subheading" />
 
-                <com.iyr.ian.utils.avatarsviewgroup.AvatarGroupView
-                    android:id="@+id/panic_viewers"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    app:avatarBorderColorValue="@color/gray_400"
-                    app:avatarBorderWidth="1dp"
-                    app:avatarMaxVisibleAvatarsValue="4"
-                    app:avatarPreviewItems="2"
-                    app:avatarSizeValue="@dimen/box_medium" />
--->
                 <TextView
                     android:id="@+id/activation_instructions"
                     android:layout_width="match_parent"
@@ -124,282 +99,309 @@
                     android:text="Press for 2 seconds to activate"
                     android:textSize="@dimen/text_size_subheading" />
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
+            </LinearLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/constraintLayout3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                app:layout_constraintBottom_toTopOf="@+id/recycler_contacts"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout7">
+
+                <!-- In your layout XML file -->
+                <com.iyr.ian.utils.efx.CircularRippleView
+                    android:id="@+id/circularRippleView"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:initialDiameter="400dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:rippleSpeed="1000" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+
+                    android:layout_marginTop="30dp"
+                    android:layout_marginBottom="30dp"
+                    android:minHeight="@dimen/box_superbig"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintDimensionRatio="h,1:1"
+                    app:layout_constraintEnd_toStartOf="@+id/vertical_end_guideline"
+                    app:layout_constraintStart_toStartOf="@+id/vertical_start_guideline"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <com.visualizer.amplitude.AudioRecordView
+                        android:id="@+id/audioRecordView"
+                        android:layout_width="256dp"
+                        android:layout_height="@dimen/box_big"
+                        android:elevation="10dp"
+                        app:chunkAlignTo="center"
+                        app:chunkColor="@color/blue"
+                        app:chunkMaxHeight="48dp"
+                        app:chunkMinHeight="2dp"
+                        app:chunkRoundedCorners="true"
+                        app:chunkSoftTransition="true"
+                        app:chunkSpace="1dp"
+                        app:chunkWidth="2dp"
+                        app:layout_constraintBottom_toBottomOf="@+id/button_border"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/guideline5"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.triggertrap.seekarc.SeekArc
+                        android:id="@+id/seekCounter"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="5dp"
+                        android:clickable="false"
+                        android:elevation="1dp"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
+                        android:padding="20dp"
+                        android:text="15"
+                        android:visibility="invisible"
+                        app:arcColor="@color/transparent"
+                        app:arcWidth="12dp"
+                        app:enabled="false"
+                        app:layout_constraintDimensionRatio="v,1:1"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:max="6"
+                        app:progress="4"
+                        app:progressColor="@color/colorPrimary"
+                        app:progressWidth="8dp"
+                        app:thumb="@drawable/circle_primary_color"
+                        app:touchInside="false"
+                        seekarc:rotation="180"
+                        seekarc:startAngle="0"
+                        seekarc:sweepAngle="360"
+                        seekarc:touchInside="true" />
+
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/red_button"
                         android:layout_width="0dp"
                         android:layout_height="0dp"
+                        android:layout_centerInParent="true"
 
-                        android:minHeight="@dimen/box_superbig"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintDimensionRatio="h,1:1"
-                        app:layout_constraintEnd_toStartOf="@+id/vertical_end_guideline"
-                        app:layout_constraintStart_toStartOf="@+id/vertical_start_guideline"
-                        app:layout_constraintTop_toTopOf="parent">
+                        android:elevation="6dp"
+                        android:padding="10dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/sos_big"
+                        android:visibility="visible"
+                        app:civ_border_color="@color/white"
+                        app:civ_border_width="0dp"
 
-                        <com.visualizer.amplitude.AudioRecordView
-                            android:id="@+id/audioRecordView"
-                            android:layout_width="256dp"
-                            android:layout_height="@dimen/box_big"
-                            android:elevation="10dp"
-                            app:chunkAlignTo="center"
-                            app:chunkColor="@color/blue"
-                            app:chunkMaxHeight="48dp"
-                            app:chunkMinHeight="2dp"
-                            app:chunkRoundedCorners="true"
-                            app:chunkSoftTransition="true"
-                            app:chunkSpace="1dp"
-                            app:chunkWidth="2dp"
-                            app:layout_constraintBottom_toBottomOf="@+id/button_border"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/guideline5"
-                            app:layout_constraintTop_toTopOf="parent" />
+                        app:civ_circle_background_color="@null"
+                        app:layout_constraintDimensionRatio="v,1:1"
+                        app:layout_constraintEnd_toEndOf="@id/seekCounter"
+                        app:layout_constraintStart_toStartOf="@id/seekCounter"
+                        app:layout_constraintTop_toTopOf="@id/seekCounter" />
 
-                        <com.triggertrap.seekarc.SeekArc
-                            android:id="@+id/seekCounter"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_margin="5dp"
-                            android:clickable="false"
-                            android:elevation="1dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false"
-                            android:padding="20dp"
-                            android:text="15"
-                            android:visibility="invisible"
-                            app:arcColor="@color/transparent"
-                            app:arcWidth="12dp"
-                            app:enabled="false"
-                            app:layout_constraintDimensionRatio="v,1:1"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:max="6"
-                            app:progress="4"
-                            app:progressColor="@color/colorPrimary"
-                            app:progressWidth="8dp"
-                            app:thumb="@drawable/circle_primary_color"
-                            app:touchInside="false"
-                            seekarc:rotation="180"
-                            seekarc:startAngle="0"
-                            seekarc:sweepAngle="360"
-                            seekarc:touchInside="true" />
+                    <LinearLayout
+                        android:id="@+id/panic_multi_button"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:elevation="7dp"
+                        android:foregroundGravity="center"
+                        android:orientation="vertical"
+                        android:padding="14dp"
+                        android:visibility="gone"
+                        app:layout_constraintBottom_toBottomOf="@+id/red_button"
+                        app:layout_constraintEnd_toEndOf="@+id/red_button"
+                        app:layout_constraintStart_toStartOf="@+id/red_button"
 
+                        app:layout_constraintTop_toTopOf="@+id/red_button"
 
-                        <de.hdodenhof.circleimageview.CircleImageView
-                            android:id="@+id/red_button"
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_centerInParent="true"
+                        >
 
-                            android:elevation="6dp"
-                            android:padding="10dp"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/sos_big"
-                            android:visibility="visible"
-                            app:civ_border_color="@color/white"
-                            app:civ_border_width="0dp"
-
-                            app:civ_circle_background_color="@null"
-                            app:layout_constraintDimensionRatio="v,1:1"
-                            app:layout_constraintEnd_toEndOf="@id/seekCounter"
-                            app:layout_constraintStart_toStartOf="@id/seekCounter"
-                            app:layout_constraintTop_toTopOf="@id/seekCounter" />
 
                         <LinearLayout
-                            android:id="@+id/panic_multi_button"
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:elevation="7dp"
-                            android:foregroundGravity="center"
-                            android:orientation="vertical"
-                            android:padding="14dp"
-                            android:visibility="gone"
-                            app:layout_constraintBottom_toBottomOf="@+id/red_button"
-                            app:layout_constraintEnd_toEndOf="@+id/red_button"
-                            app:layout_constraintStart_toStartOf="@+id/red_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal"
+                            android:weightSum="3">
 
-                            app:layout_constraintTop_toTopOf="@+id/red_button"
-
-                            >
-
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="horizontal"
-                                android:weightSum="3">
-
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_weight="1" />
-
-                                <ImageView
-                                    android:id="@+id/message_button"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_marginTop="3dp"
-                                    android:layout_marginBottom="18dp"
-                                    android:layout_weight="1"
-                                    android:focusable="false"
-                                    android:focusableInTouchMode="true"
-                                    app:srcCompat="@drawable/ic_upload_message"
-                                    app:tint="@color/white" />
-
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_weight="1" />
-
-
-                            </LinearLayout>
-
-
-                            <LinearLayout
+                            <View
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:orientation="horizontal"
-                                android:weightSum="3">
+                                android:layout_weight="1" />
 
-                                <ImageView
-                                    android:id="@+id/send_picture_button"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_marginStart="3dp"
-                                    android:layout_marginEnd="18dp"
-                                    android:layout_weight="1"
-                                    android:focusable="false"
-                                    android:focusableInTouchMode="true"
-
-                                    app:srcCompat="@drawable/ic_upload_picture"
-                                    app:tint="@color/white" />
-
-                                <ImageView
-                                    android:id="@+id/stop_panic_button"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-
-                                    android:layout_marginStart="2dp"
-                                    android:layout_marginBottom="4dp"
-                                    android:layout_weight="1"
-                                    android:focusable="false"
-                                    android:focusableInTouchMode="false"
-                                    android:padding="10dp"
-                                    app:srcCompat="@drawable/ic_audio_stop"
-                                    app:tint="@color/white" />
-
-                                <ImageView
-                                    android:id="@+id/send_video_button"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_marginStart="18dp"
-                                    android:layout_marginEnd="3dp"
-                                    android:layout_weight="1"
-                                    android:focusable="false"
-                                    android:focusableInTouchMode="true"
-
-                                    app:srcCompat="@drawable/ic_upload_video"
-                                    app:tint="@color/white" />
-
-                            </LinearLayout>
-
-
-                            <LinearLayout
+                            <ImageView
+                                android:id="@+id/message_button"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
+                                android:layout_marginTop="3dp"
+                                android:layout_marginBottom="18dp"
                                 android:layout_weight="1"
-                                android:orientation="horizontal"
-                                android:weightSum="3">
+                                android:focusable="false"
+                                android:focusableInTouchMode="true"
+                                app:srcCompat="@drawable/ic_upload_message"
+                                app:tint="@color/white" />
 
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_weight="1" />
-
-                                <ImageView
-                                    android:id="@+id/send_voice_message_button"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_marginTop="18dp"
-                                    android:layout_marginBottom="5dp"
-                                    android:layout_weight="1"
-                                    android:focusable="false"
-                                    android:focusableInTouchMode="true"
-                                    app:srcCompat="@drawable/ic_upload_voice_message"
-                                    app:tint="@color/white" />
-
-                                <View
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_weight="1" />
-                            </LinearLayout>
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1" />
 
 
                         </LinearLayout>
 
-                        <View
-                            android:id="@+id/button_border"
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_margin="10dp"
-                            android:background="@drawable/circular_shape_filled"
-                            app:layout_constraintBottom_toBottomOf="@id/seekCounter"
-                            app:layout_constraintEnd_toEndOf="@id/seekCounter"
-                            app:layout_constraintStart_toStartOf="@id/seekCounter"
-                            app:layout_constraintTop_toTopOf="@id/seekCounter" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <androidx.constraintlayout.widget.Guideline
-                        android:id="@+id/vertical_start_guideline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        app:layout_constraintGuide_percent=".12" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:orientation="horizontal"
+                            android:weightSum="3">
 
-                    <androidx.constraintlayout.widget.Guideline
-                        android:id="@+id/vertical_end_guideline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        app:layout_constraintGuide_percent=".88" />
+                            <ImageView
+                                android:id="@+id/send_picture_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="3dp"
+                                android:layout_marginEnd="18dp"
+                                android:layout_weight="1"
+                                android:focusable="false"
+                                android:focusableInTouchMode="true"
+
+                                app:srcCompat="@drawable/ic_upload_picture"
+                                app:tint="@color/white" />
+
+                            <ImageView
+                                android:id="@+id/stop_panic_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+
+                                android:layout_marginStart="2dp"
+                                android:layout_marginBottom="4dp"
+                                android:layout_weight="1"
+                                android:focusable="false"
+                                android:focusableInTouchMode="false"
+                                android:padding="10dp"
+                                app:srcCompat="@drawable/ic_audio_stop"
+                                app:tint="@color/white" />
+
+                            <ImageView
+                                android:id="@+id/send_video_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="18dp"
+                                android:layout_marginEnd="3dp"
+                                android:layout_weight="1"
+                                android:focusable="false"
+                                android:focusableInTouchMode="true"
+
+                                app:srcCompat="@drawable/ic_upload_video"
+                                app:tint="@color/white" />
+
+                        </LinearLayout>
+
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:orientation="horizontal"
+                            android:weightSum="3">
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/send_voice_message_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginTop="18dp"
+                                android:layout_marginBottom="5dp"
+                                android:layout_weight="1"
+                                android:focusable="false"
+                                android:focusableInTouchMode="true"
+                                app:srcCompat="@drawable/ic_upload_voice_message"
+                                app:tint="@color/white" />
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/button_border"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_margin="10dp"
+                        android:background="@drawable/circular_shape_filled"
+                        app:layout_constraintBottom_toBottomOf="@id/seekCounter"
+                        app:layout_constraintEnd_toEndOf="@id/seekCounter"
+                        app:layout_constraintStart_toStartOf="@id/seekCounter"
+                        app:layout_constraintTop_toTopOf="@id/seekCounter" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-
-                <com.yarolegovich.discretescrollview.DiscreteScrollView
-                    android:id="@+id/recycler_contacts"
-                    android:layout_width="match_parent"
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/vertical_start_guideline"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="@dimen/box_xxsmall"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent=".20" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/vertical_end_guideline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent=".80" />
+
+
+                <TextView
+                    android:id="@+id/count_down_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    app:dsv_orientation="horizontal"
-                    tools:listitem="@layout/item_speed_dial_adapter" />
+                    android:fontFamily="@font/muli_extrabold"
+
+                    android:gravity="center_horizontal|top"
+                    android:singleLine="true"
+                    android:text="5"
+                    android:textSize="360sp"
+                    android:visibility="gone" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-            </LinearLayout>
-
-
-            <TextView
-                android:id="@+id/count_down_number"
-                android:layout_width="wrap_content"
+            <com.yarolegovich.discretescrollview.DiscreteScrollView
+                android:id="@+id/recycler_contacts"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/muli_extrabold"
 
-                android:gravity="center_horizontal|top"
-                android:singleLine="true"
-                android:text="5"
-                android:textSize="360sp"
-                android:visibility="gone" />
+                android:orientation="horizontal"
+                app:dsv_orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:listitem="@layout/item_speed_dial_adapter" />
 
-        </LinearLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
 
 
 

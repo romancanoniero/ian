@@ -30,6 +30,7 @@ import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.utils.NotificationsUtils
 import java.util.Random
 
@@ -92,11 +93,8 @@ class NotificationsApi {
         if (hasImage) {
             val imageUrl = extras.getString("image")
 
+            val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${FirebaseAuth.getInstance().uid.toString()}/${imageUrl.toString()}")
 
-            val storageReference = FirebaseStorage.getInstance()
-                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                .child(FirebaseAuth.getInstance().uid.toString())
-                .child(imageUrl.toString())
 
             GlideApp.with(AppClass.instance)
                 .asBitmap()

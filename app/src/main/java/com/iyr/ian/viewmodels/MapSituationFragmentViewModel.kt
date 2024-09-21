@@ -23,13 +23,18 @@ import com.iyr.ian.repository.implementations.databases.realtimedatabase.UsersRe
 import com.iyr.ian.ui.map.infowindow.InfoWindowData
 import com.iyr.ian.utils.chat.models.Message
 import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.getJustFileName
+import com.iyr.ian.utils.getJustPath
+import com.iyr.ian.utils.getLocationInCache
+import com.iyr.ian.utils.getStoredFileSuspend
 import com.lassi.domain.common.SingleLiveEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MapSituationFragmentViewModel private constructor() : ViewModel(), LifecycleObserver {
 
@@ -77,6 +82,7 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
     val subscriptedEvents: LiveData<EventRepository.EventDataEvent> = _subscriptedEvents
 
 
+
     // --- MAP
     /*
       private val _resetMap = MutableLiveData<String>()
@@ -90,6 +96,7 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
     fun chatOpenButtonVisibility(visible: Boolean) {
         _isChatButtonVisible.postValue(visible)
     }
+
 
     private val _isChatOpen = MutableLiveData<Boolean?>(false)
     val isChatOpen: LiveData<Boolean?> = _isChatOpen
@@ -172,14 +179,8 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
     val eventFlow: LiveData<Resource<Event>> get() = _eventFlow
 
     //---- Mensajes
-//    private var messages = ArrayList<Message>() // array de mensajes recibidos
     private val _messages = MutableLiveData<ArrayList<Message>>(ArrayList<Message>())
     val messages: LiveData<ArrayList<Message>> = _messages
-
-    /*
-    private val _conversation = MutableLiveData<ArrayList<Message>>(ArrayList<Message>())
-    val conversation: LiveData<ArrayList<Message>> = _conversation
-*/
 
     private val _messageIncomming = MutableLiveData<Resource<ChatRepository.ChatDataEvent>?>()
     val messageIncomming: LiveData<Resource<ChatRepository.ChatDataEvent>?> = _messageIncomming
@@ -194,6 +195,7 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
      */
     fun connectToEvent(eventKey: String) {
         Log.d("CHAT_FLOW", "1 - Conecto al evento = " + eventKey)
+
         if (eventKey == currentEventKey) return
 
         _shimmmerVisible.postValue(true)
@@ -229,48 +231,65 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
         eventJob?.start()
     }
 
-
+    private val _onResetEvent = MutableLiveData<Event>()
+    val onResetEvent: LiveData<Event> = _onResetEvent
+    var eventFlowJob: Job? = null
     private suspend fun listenEventFlow() {
-        eventRepository.listenEventFlow(currentEventKey)?.collect { resource ->
-            when (resource) {
-                is Resource.Error -> {
-                    _shimmmerVisible.postValue(false)
-                    _spinner.postValue(false)
-                }
+        eventFlowJob = viewModelScope.launch(Dispatchers.IO) {
+            eventRepository.listenEventFlow(currentEventKey)?.collect { resource ->
+                when (resource) {
+                    is Resource.Error -> {
+                        _shimmmerVisible.postValue(false)
+                        _spinner.postValue(false)
+                    }
 
-                is Resource.Loading -> {
-                    _spinner.postValue(true)
-                }
+                    is Resource.Loading -> {
+                        _spinner.postValue(true)
+                    }
 
-                is Resource.Success -> {
-                    _shimmmerVisible.postValue(false)
+                    is Resource.Success -> {
+                        _shimmmerVisible.postValue(false)
 
-                    var event: Event? = resource.data
-                    _spinner.postValue(false)
+                        var event: Event? = resource.data
+                        _spinner.postValue(false)
 
-                    if (event == null) {
-                        AppClass.instance.onEventRemoved(currentEventKey)
-                        onDisconnectionRequested()
-                        onEventClosed(currentEventKey)
-                    } else {
-                        lastEventUpdate = event
-                        _eventFlow.postValue(resource)
-                        Log.d(
-                            "EVENT_FLOWS",
-                            "Recibo datos del Evento = " + event.event_key.toString()
-                        )
+                        if (event == null) {
+                            AppClass.instance.onEventRemoved(currentEventKey)
+                            onDisconnectionRequested()
+                            onEventClosed(currentEventKey)
+                        } else {
+                            lastEventUpdate = event
+                            if (_eventFlow.value?.data == null) {
+                                if (_eventFlow.value?.data?.event_key != event.event_key) {
+                                    // si cambio de evento, muevo el mapa
+                                    _onResetEvent.postValue(lastEventUpdate)
+                                }
+                            }
+
+
+
+                            _eventFlow.postValue(resource)
+                            Log.d(
+                                "EVENT_FLOWS",
+                                "Recibo datos del Evento = " + event.event_key.toString()
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
+    fun listEventFlowCancel() {
+        eventFlowJob?.cancel()
+    }
+
     private suspend fun listenFollowersFlow() {
         println("Current thread: ${Thread.currentThread().name}")
         // -- Primero busco todos los registros de seguidores para luego seguir escuchandolos
-  //      Log.d("FOLLOWERS", "Busco los followers del evento")
+        //      Log.d("FOLLOWERS", "Busco los followers del evento")
         val followersListCall = eventFollowersRepository.getEventFollowers(currentEventKey)
-    //    Log.d("FOLLOWERS", "Obtuve los followers del evento")
+        //    Log.d("FOLLOWERS", "Obtuve los followers del evento")
         val followers: ArrayList<EventFollower> = _followers.value!!
         if (followersListCall is Resource.Success) {
 
@@ -278,12 +297,11 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
                 if (followers.contains(follower) == true) {
                     return@forEach
                 }
-      //          Log.d("FOLLOWERS", "Agrego un follower del evento")
+                //          Log.d("FOLLOWERS", "Agrego un follower del evento")
                 _eventFollowersFlow.postValue(
                     Resource.Success(
                         EventFollowersRepository.EventFollowerDataEvent.OnChildAdded(
-                            follower,
-                            null
+                            follower, null
                         )
                     )
                 )
@@ -348,6 +366,8 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
                             MainActivityViewModel.getInstance()
                                 .onError(update.exception.localizedMessage.toString())
                         }
+
+                        else -> {}
                     }
                     //     eventFollowersConnector.emit(update)
 
@@ -358,12 +378,11 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
         }
     }
 
-     suspend fun listenChatFlow() {
+    suspend fun listenChatFlow() {
         Log.d("CHAT_FLOW", "3 - Conecto al evento  desde ListenChatFlow= " + currentEventKey)
         chatsRepository.getChatFlow(currentEventKey)?.collect { update ->
             Log.d("EVENT_FLOWS", "empiezo a recibir chats del evento " + currentEventKey)
-            var texto =
-                (update.data!! as ChatRepository.ChatDataEvent.OnChildAdded).data.text
+            var texto = (update.data!! as ChatRepository.ChatDataEvent.OnChildAdded).data.text
             Log.d("FLOW_VIEWMODEL", "emito el registo = ${texto}")
 
             val messagesArray = messages.value!!
@@ -371,12 +390,52 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
                 is ChatRepository.ChatDataEvent.OnChildAdded -> {
                     val message = update.data.data
                     if (!messagesArray.contains(message)) {
-                       if (message.action == null || (message.action!=null && message.user.id != UserViewModel.getInstance().getUser()?.user_key)) {
-                           // Si el mensaje es una accion y no es del usuario actual
-                           // lo agrego a la lista de mensajes
-                           messagesArray.add(message)
-                           _messages.postValue(messagesArray)
-                       }
+                        if (message.action == null || (message.action != null && message.user.id != UserViewModel.getInstance()
+                                .getUser()?.user_key)
+                        ) {
+                            // Si el mensaje es una accion y no es del usuario actual
+                            // lo agrego a la lista de mensajes
+                            messagesArray.add(message)
+                            _messages.postValue(messagesArray)
+                        }
+
+                        if (message.video != null || message.image != null || message.voice != null) {
+                            var url = if (message.video != null) message.video.url
+                            else if (message.image != null) message.image.url
+                            else message.voice.url
+
+                            if (AppClass.instance.getLocationInCache(
+                                    url.getJustFileName(), url.getJustPath()
+                                ) == null
+                            ) {
+                                downloadMedia(url, url.getJustFileName())
+                            } else {
+                                _mediaState.value = _mediaState.value.toMutableMap().apply {
+                                    put(
+                                        url.getJustFileName(),
+                                        AppClass.instance.getLocationInCache(
+                                            url.getJustFileName(),
+                                            url.getJustPath()
+                                        )!!
+                                    )
+                                }
+                            }
+                            /*
+                            viewModelScope.launch(Dispatchers.IO) {
+                                if (message.video != null) {
+                                    downloadMedia(
+                                        message.video.url,
+                                        message.video.url.getJustFileName()
+                                    )
+                                } else {
+                                    downloadMedia(
+                                        message.image.url,
+                                        message.image.url.getJustFileName()
+                                    )
+                                }
+                            }
+                            */
+                        }
                     }
                 }
 
@@ -384,6 +443,7 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
                 is ChatRepository.ChatDataEvent.OnChildMoved -> {}
                 is ChatRepository.ChatDataEvent.OnChildRemoved -> {}
                 is ChatRepository.ChatDataEvent.OnError -> {}
+                else -> {}
             }
 
             viewModelScope.launch(Dispatchers.Main) {
@@ -393,15 +453,30 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
 
     }
 
+
+    private val _mediaState = MutableStateFlow<Map<String, String>>(emptyMap())
+    val mediaState: StateFlow<Map<String, String>> get() = _mediaState
+
+    suspend fun downloadMedia(url: String, mediaId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val downloadedMediaPath =
+                AppClass.instance.getStoredFileSuspend(url.getJustFileName(), url.getJustPath())
+            _mediaState.value = _mediaState.value.toMutableMap().apply {
+                put(mediaId, downloadedMediaPath)
+            }
+        }
+    }
+
     private val _unreadMessages = MutableLiveData<Long>()
     val unreadMessages: LiveData<Long> = _unreadMessages
     private suspend fun listenUnreadMessagesFlow() {
-        Log.d("CHAT_FLOW_UNREADS", "3 - Conecto al evento  desde ListenChatFlow= " + currentEventKey)
+        Log.d(
+            "CHAT_FLOW_UNREADS", "3 - Conecto al evento  desde ListenChatFlow= " + currentEventKey
+        )
         val userKey = UserViewModel.getInstance().getUser()?.user_key ?: ""
         chatsRepository.unreadMessagesFlow(userKey, currentEventKey)?.collect { value ->
             Log.d("EVENT_FLOWS", "empiezo a recibir chats del evento " + currentEventKey)
-            _unreadMessages.postValue(value)
-            /*
+            _unreadMessages.postValue(value)/*
                 var texto =
                     (update.data!! as ChatRepository.ChatDataEvent.OnChildAdded).data.text
                 Log.d("FLOW_VIEWMODEL", "emito el registo = ${texto}")
@@ -428,7 +503,6 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
         }
 
     }
-
 
 
     /*
@@ -459,9 +533,6 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
     */
 
 
-
-
-
     // ---- desconexion de eventos
     private val _resetEvent = MutableLiveData<Boolean?>(false)
     val resetEvent: LiveData<Boolean?> = _resetEvent
@@ -474,7 +545,7 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
             _followers.postValue(ArrayList())
             //-- Chat
             messages?.value?.clear()
-       //     _conversation.postValue(ArrayList<Message>())
+            //     _conversation.postValue(ArrayList<Message>())
             _messageIncomming.postValue(null)
         }
     }
@@ -487,59 +558,58 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
             val timeInMillis =
                 eventRepository.postLastTimeSeen(userKey, eventKey).data ?: "0".toLong()
         }
-    }
-/*
-    fun startListenSubscribedEvents(userKey: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            eventsRepository.getEvents(userKey).collect { action ->
-                when (action) {
-                    is EventsRepository.DataEvent.OnChildAdded -> {
-                        var event = eventRepository.getEvent(action.data.event_key)
-                        if (event is Resource.Success) {
-                            var toReturn: Event = event.data!!
-                            _subscriptedEvents.postValue(
-                                EventRepository.EventDataEvent.OnChildAdded(
-                                    toReturn
+    }/*
+        fun startListenSubscribedEvents(userKey: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                eventsRepository.getEvents(userKey).collect { action ->
+                    when (action) {
+                        is EventsRepository.DataEvent.OnChildAdded -> {
+                            var event = eventRepository.getEvent(action.data.event_key)
+                            if (event is Resource.Success) {
+                                var toReturn: Event = event.data!!
+                                _subscriptedEvents.postValue(
+                                    EventRepository.EventDataEvent.OnChildAdded(
+                                        toReturn
+                                    )
                                 )
-                            )
-                        }
-                    }
-
-                    is EventsRepository.DataEvent.OnChildChanged -> {
-                        var event = eventRepository.getEvent(action.data.event_key)
-                        if (event is Resource.Success) {
-                            var toReturn: Event = event.data!!
-                            _subscriptedEvents.postValue(
-                                EventRepository.EventDataEvent.OnChildChanged(
-                                    toReturn
-                                )
-                            )
+                            }
                         }
 
-                    }
-
-                    is EventsRepository.DataEvent.OnChildRemoved -> {
-                        var event = eventRepository.getEvent(action.data.event_key)
-                        if (event is Resource.Success) {
-                            var toReturn: Event = event.data!!
-                            _subscriptedEvents.postValue(
-                                EventRepository.EventDataEvent.OnChildRemoved(
-                                    toReturn.event_key
+                        is EventsRepository.DataEvent.OnChildChanged -> {
+                            var event = eventRepository.getEvent(action.data.event_key)
+                            if (event is Resource.Success) {
+                                var toReturn: Event = event.data!!
+                                _subscriptedEvents.postValue(
+                                    EventRepository.EventDataEvent.OnChildChanged(
+                                        toReturn
+                                    )
                                 )
-                            )
+                            }
+
                         }
+
+                        is EventsRepository.DataEvent.OnChildRemoved -> {
+                            var event = eventRepository.getEvent(action.data.event_key)
+                            if (event is Resource.Success) {
+                                var toReturn: Event = event.data!!
+                                _subscriptedEvents.postValue(
+                                    EventRepository.EventDataEvent.OnChildRemoved(
+                                        toReturn.event_key
+                                    )
+                                )
+                            }
+                        }
+
+                        is EventsRepository.DataEvent.OnChildMoved -> TODO()
+                        is EventsRepository.DataEvent.OnError -> TODO()
                     }
 
-                    is EventsRepository.DataEvent.OnChildMoved -> TODO()
-                    is EventsRepository.DataEvent.OnError -> TODO()
                 }
-
             }
         }
-    }
-*/
+    */
 
- //   fun getMessages() = messages
+    //   fun getMessages() = messages
 
     suspend fun getEventObject(eventKey: String): Event? {
         return eventRepository.getEvent(eventKey).data
@@ -652,9 +722,6 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
         }
 
 
-
-
-
     /**
      * Este metodo se ejecuta cuando se notifica que un evento ha sido cerrado
      */
@@ -739,25 +806,27 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
                     display_name = followerInfo.display_name
                     profile_image_path = followerInfo.profile_image_path
                     l = followerInfo.l
-                    battery_percentage = followerInfo.battery_percentage
+                    battery_percentage = followerInfo.battery_percentage/*
+                                        val callUser = usersRepository.getUserRemote(userKey)
 
-                    val callUser = usersRepository.getUserRemote(userKey)
 
+                                        when (callUser) {
+                                            is Resource.Error -> telephoneNumber = "Error"
+                                            is Resource.Loading -> {}
+                                            is Resource.Success -> {
+                                                val userData = callUser.data
+                                                if (userData?.telephone_number != null) telephoneNumber =
+                                                    userData!!.telephone_number.toString()
+                                                else telephoneNumber = null
+                                            }
+                                        }
+                                           */
 
-                    when (callUser) {
-                        is Resource.Error -> telephoneNumber = "Error"
-                        is Resource.Loading -> {}
-                        is Resource.Success -> {
-                            val userData = callUser.data
-                            if (userData?.telephone_number != null) telephoneNumber =
-                                userData!!.telephone_number.toString()
-                            else telephoneNumber = null
-                        }
-                    }
                 }
-                withContext(Dispatchers.Main) {
-                    _infoWindowData.postValue(newData)
-                }
+                //               withContext(Dispatchers.Main) {
+
+                _infoWindowData.postValue(newData)
+                //              }
             }
         }
         eventFollowerLiveDataMerger.observeForever { resource ->
@@ -816,8 +885,8 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
                         is EventFollowersRepository.EventFollowerDataEvent.OnChildRemoved -> TODO()
                         is EventFollowersRepository.EventFollowerDataEvent.OnError -> TODO()
                         null -> TODO()
-                    }
-                    /*
+                        else -> {}
+                    }/*
                     when (val eventData = resource.data) {
                         is EventFollowersRepository.EventFollowerDataEvent.OnChildAdded -> { it: EventFollower ->
 
@@ -899,34 +968,44 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
         }
     }
 
+    private var infoWindowJob: Job? = null
     fun onMarkerClicked(markerKey: String) {
         infoWindowKey = markerKey
 
-        viewModelScope.launch(Dispatchers.IO) {
-            val followerInfo = followers.value?.find { it.user_key == markerKey }
-            if (followerInfo != null) {
-                val newData = InfoWindowData().apply {
-                    user_key = followerInfo.user_key
-                    display_name = followerInfo.display_name
-                    profile_image_path = followerInfo.profile_image_path
-                    l = followerInfo.l
-                    battery_percentage = followerInfo.battery_percentage
+        // Cancelo el Job anterior si existiera
+        //     infoWindowJob?.cancel()
 
-                    val callUser = usersRepository.getUserRemote(markerKey)
-                    when (callUser) {
-                        is Resource.Error -> telephoneNumber = "Error"
-                        is Resource.Loading -> {}
-                        is Resource.Success -> {
-                            val userData = callUser.data
-                            telephoneNumber = userData?.telephone_number?.toString()
+        //    infoWindowJob = viewModelScope.launch(Dispatchers.Default) {
+        val followerInfo = followers.value?.find { it.user_key == markerKey }
+        if (followerInfo != null) {
+            val newData = InfoWindowData().apply {
+                user_key = followerInfo.user_key
+                display_name = followerInfo.display_name
+                profile_image_path = followerInfo.profile_image_path
+                l = followerInfo.l
+                battery_percentage = followerInfo.battery_percentage
+
+                _infoWindowData.postValue(this@apply)
+
+                /*
+                val callUser = usersRepository.getUserRemote(markerKey)
+                when (callUser) {
+                    is Resource.Error -> telephoneNumber = "Error"
+                    is Resource.Loading -> {}
+                    is Resource.Success -> {
+                        val userData = callUser.data
+                        telephoneNumber = userData?.telephone_number?.toString()
+
+                        withContext(Dispatchers.Main) {
+                            _infoWindowData.postValue(this@apply)
                         }
                     }
                 }
-                withContext(Dispatchers.Main) {
-                    _infoWindowData.postValue(newData)
-                }
+                */
             }
+
         }
+        // }
     }
 
 
@@ -934,5 +1013,23 @@ class MapSituationFragmentViewModel private constructor() : ViewModel(), Lifecyc
         infoWindowKey = null
     }
 
+    /***
+     * emite el contenido de mensajes
+     */
+    fun updateMessagesList(messagesList: ArrayList<Message>) {
+        _messages.postValue(messagesList)
+    }
+
+    fun resetEventKey() {
+        _auxEventKey.postValue(null)
+    }
+
+    fun addToMediaState(fileName: String, absolutePath: String) {
+        MapSituationFragmentViewModel.getInstance().mediaState.value?.let {
+            (it as HashMap).put(fileName, absolutePath)
+        } ?: HashMap<String, String>().also {
+            it.put(fileName, absolutePath)
+        }
+    }
 
 }

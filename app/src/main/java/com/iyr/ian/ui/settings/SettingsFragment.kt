@@ -2,19 +2,16 @@ package com.iyr.ian.ui.settings
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.viewpager.widget.ViewPager
-import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.databinding.FragmentSettingsBinding
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.interfaces.MainActivityInterface
 import com.iyr.ian.ui.settings.pager_adapters.SettingsFragmentPagerAdapter
-import com.iyr.ian.utils.broadcastMessage
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.UserViewModel
 import kotlin.math.abs
@@ -29,29 +26,26 @@ enum class SettingsFragmentsEnum {
     LANDING, SOS_SETTINGS, PROFILE_SETTINGS, NOTIFICATION_GROUPS, NOTIFICATION_LIST, PUSH_BUTTONS_SETTINGS, PLAN_SETTINGS
 }
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
 /**
  * A simple [Fragment] subclass.
  * Use the [SettingsFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class SettingsFragment() : Fragment(){
+class SettingsFragment() : Fragment() {
 
 
-        private val mainActivityViewModel: MainActivityViewModel by lazy {  MainActivityViewModel.getInstance(requireContext(), UserViewModel.getInstance().getUser()?.user_key.toString() ) }
+    private val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(
+            requireContext(),
+            UserViewModel.getInstance().getUser()?.user_key.toString()
+        )
+    }
 
     private var viewModel: SettingsFragmentViewModel = SettingsFragmentViewModel()
+
     private fun setupObservers() {
-      /*
-        viewModel.fragmentVisible.observe(viewLifecycleOwner) { fragment ->
-            goToFragment(fragment.ordinal)
-        }
-*/
-        mainActivityViewModel.user.observe(this){ user ->
+        mainActivityViewModel.user.observe(this) { user ->
             viewModel.onUserChanged(user)
         }
     }
@@ -64,55 +58,11 @@ class SettingsFragment() : Fragment(){
     var currentFragment: SettingsFragmentsEnum = SettingsFragmentsEnum.LANDING
     private lateinit var binding: FragmentSettingsBinding
     private lateinit var pagerAdapter: SettingsFragmentPagerAdapter
-/*
-    private val mSettingsLandingFragment by lazy {
-        SettingsLandingFragment(
-            mainActivityViewModel,
-            viewModel,
-            this
-        )
-    }
-    private val mPressOrTapFragment by lazy { PressOrTapSetupFragment(mainActivityViewModel, viewModel, this) }
-    private val mProfileSettingsFragment by lazy { ProfileSettingsFragment(mainActivityViewModel,viewModel, this) }
-    private val mContactsGroupsFragment by lazy {
-        ContactsGroupsFragment(
-            mainActivityViewModel,
-            this
-        )
-    }
-    private val mNotificationListFragment by lazy {
-        NotificationListFragment(
-            mainActivityViewModel,
-            this
-        )
-    }
-    private val mPushButtonConfigFragment by lazy {
-        PushButtonSetupFragment(mainActivityViewModel,this) }
-    private val mSubscriptionsPlanFragment by lazy { PlanSubscriptionFragment() }
-*/
-
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        Log.d("EVENT_CREATION", this.javaClass.name)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        requireContext().broadcastMessage(
-            null,
-            AppConstants.ServiceCode.BROADCAST_ACTION_HIDE_FOOTER_TOOLBAR
-        )
-        // Inflate the layout for this fragment
         binding = FragmentSettingsBinding.inflate(layoutInflater, container, false)
         setupUI()
         return binding.root
@@ -121,51 +71,27 @@ class SettingsFragment() : Fragment(){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-      //  goToFragment(0)
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FriendsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-
-
         @JvmStatic
         fun newInstance(
             context: Context,
-            mainActivityViewModel: MainActivityViewModel,
-            param1: String,
-            param2: String
+            mainActivityViewModel: MainActivityViewModel
         ) =
-            SettingsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+            SettingsFragment()
     }
 
     override fun onResume() {
         super.onResume()
-        if (requireActivity() is MainActivityInterface)
-        {
+        if (requireActivity() is MainActivityInterface) {
             (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.action_settings))
         }
-
         val appToolbar = (requireActivity() as MainActivity).appToolbar
         appToolbar.enableBackBtn(true)
         appToolbar.updateTitle(getString(R.string.action_settings))
-
         val bottomToolBar = (requireActivity() as MainActivity).binding.bottomToolbar
         bottomToolBar.visibility = View.GONE
-
-
         setupObservers()
     }
 
@@ -186,9 +112,9 @@ class SettingsFragment() : Fragment(){
         //  binding.pager.setPageTransformer(false, FadePageTransformer())
         //   binding.pager.offscreenPageLimit = 3
 //    binding.pager.setCurrentItem(0, true)
-      //  goToFragment(0)
+        //  goToFragment(0)
 
-      //  val action  = SettingsFragmentDirections.
+        //  val action  = SettingsFragmentDirections.
 
     }
 

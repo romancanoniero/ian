@@ -13,6 +13,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.iyr.ian.BuildConfig;
+import com.iyr.ian.itag.ITag;
+import com.iyr.ian.itag.ITagDefault;
 import com.iyr.ian.utils.bluetooth.models.BLEScanResult;
 import com.iyr.ian.utils.bluetooth.views.RssiView;
 import java.util.ArrayList;
@@ -53,21 +55,26 @@ public class BLEDeviceAdapter extends RecyclerView.Adapter<ViewHolder> {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, "onRemember  thread=" + Thread.currentThread().getName());
             }
-this.inteface.OnItemClicked();
-            /*
-              Esto pasarlo al fragmento
-
-
             if (!ITag.store.remembered(scanResult.getId())) {
                 ITag.store.remember(new ITagDefault(scanResult));
                 ITag.ble.scanner().stop();
             }
-*/
+
         };
-        holder.textName.setText(scanResult.getName());
+        try
+        {
+            holder.textName.setText(ITag.store.everById(scanResult.getId()).name());
+        }
+        catch (Exception e)
+        {
+            holder.textName.setText(scanResult.getName());
+        }
+
         holder.textAddr.setText(scanResult.getId());
+   /*
         holder.btnRemember.setTag(scanResult);
         holder.btnRemember.setOnClickListener(onClickListener);
+   */
         holder.btnRemember2.setOnClickListener(onClickListener);
 
         if (position % 2 == 1) {
@@ -99,7 +106,7 @@ class ViewHolder extends RecyclerView.ViewHolder {
     final TextView textAddr;
     final TextView textRSSI;
     final RssiView rssiView;
-    final ImageView btnRemember;
+    //final ImageView btnRemember;
     final View btnRemember2;
 
     ViewHolder(@NonNull View rootView) {
@@ -108,7 +115,7 @@ class ViewHolder extends RecyclerView.ViewHolder {
         textAddr = rootView.findViewById(R.id.text_addr);
         textRSSI = rootView.findViewById(R.id.text_rssi);
         rssiView = rootView.findViewById(R.id.rssi);
-        btnRemember = rootView.findViewById(R.id.btn_connect);
+      //  btnRemember = rootView.findViewById(R.id.btn_connect);
         btnRemember2 = rootView.findViewById(R.id.btn_connect_2);
     }
 }

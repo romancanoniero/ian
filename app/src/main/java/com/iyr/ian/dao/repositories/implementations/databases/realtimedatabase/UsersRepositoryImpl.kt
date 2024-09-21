@@ -10,6 +10,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.gson.Gson
+import com.iyr.ian.Constants.Companion.HTTP_CALL_OK
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.dao.repositories.UsersRespository
 import com.iyr.ian.utils.coroutines.Resource
@@ -277,7 +278,7 @@ class UsersRepositoryImpl : UsersRespository() {
 
                     var mapResult = call.data as HashMap<String, Any?>
 
-                    if (mapResult["status"] == 0)
+                    if (mapResult["status"] == HTTP_CALL_OK)
                         Resource.Success<Boolean?>(true)
                     else
                         Resource.Error<Boolean?>(mapResult["message"].toString())

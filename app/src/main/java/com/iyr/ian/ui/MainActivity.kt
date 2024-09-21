@@ -89,12 +89,10 @@ import com.bumptech.glide.request.RequestOptions
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.storage.FirebaseStorage
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.iyr.fewtouchs.ui.views.home.fragments.friends.adapters.ContactListsAdapter
@@ -125,7 +123,6 @@ import com.iyr.ian.app_lifecycle_listener.AppLifecycleListener
 import com.iyr.ian.callbacks.MainActivityCommonDataInterface
 import com.iyr.ian.callbacks.MediaPickersInterface
 import com.iyr.ian.callbacks.OnCompleteCallback
-import com.iyr.ian.callbacks.ViewersActionsCallback
 import com.iyr.ian.dao.models.Contact
 import com.iyr.ian.dao.models.ContactGroup
 import com.iyr.ian.dao.models.Event
@@ -137,7 +134,6 @@ import com.iyr.ian.dao.models.EventNotificationModel
 import com.iyr.ian.dao.models.EventNotificationType
 import com.iyr.ian.dao.models.EventVisibilityTypes
 import com.iyr.ian.dao.models.GeoLocation
-import com.iyr.ian.dao.models.UnreadMessages
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.dao.models.UserMinimum
 import com.iyr.ian.dao.repositories.EventsFollowedRepository
@@ -149,7 +145,6 @@ import com.iyr.ian.enums.EventStatusEnum
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.enums.IANModulesEnum
 import com.iyr.ian.enums.RecordingStatusEnum
-import com.iyr.ian.glide.GlideApp
 import com.iyr.ian.itag.ITag
 import com.iyr.ian.itag.ITag.LT
 import com.iyr.ian.itag.ITag.ble
@@ -203,7 +198,6 @@ import com.iyr.ian.ui.main.HomeFragmentArgs
 import com.iyr.ian.ui.main.HomeFragmentDirections
 import com.iyr.ian.ui.map.MapSituationFragment
 import com.iyr.ian.ui.map.adapters.EventsTrackingCallback
-import com.iyr.ian.ui.map.enums.CameraModesEnum
 import com.iyr.ian.ui.map.models.CameraMode
 import com.iyr.ian.ui.notifications.NotificationsFragment
 import com.iyr.ian.ui.settings.SettingsFragmentsEnum
@@ -239,6 +233,7 @@ import com.iyr.ian.utils.clearPendingNotifications
 import com.iyr.ian.utils.connectivity.NetworkStatusHelper
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.countdownanimator.CountDownAnimation
+import com.iyr.ian.utils.efx.CircularRippleView
 import com.iyr.ian.utils.getJustFileName
 import com.iyr.ian.utils.getSharePreferencesMessages
 import com.iyr.ian.utils.hideStatusBar
@@ -324,9 +319,11 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     SpeedDialActionsCallback, MediaHandlingCallback, CountDownAnimation.CountDownListener,
     PulseValidationCallback, LeavingTrackingConfirmationDialogCallback,
     //  HomeFragmentInteractionCallback,
-    EventsNotificationCallback, Callback, ViewersActionsCallback, EventCloseToExpireDialogCallback,
+    EventsNotificationCallback, Callback, EventCloseToExpireDialogCallback,
     MainActivityInterface, MediaPickersInterface, MainActivityCommonDataInterface,
     KeyboardHeightObserver {
+
+    //, ViewersActionsCallback
 
     private var nonUI: NonUI? = null
 
@@ -1021,7 +1018,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                                 ) {
                                     super.onWrongCode(dialog, securityPIN)
 
-                                    if (!AppClass.instance.isFreeUser()) {
+                                    if (!viewModel.isFreeUser()) {
                                         showErrorDialog(
                                             getString(R.string.error_wrong_security_code),
                                             getString(R.string.error_wrong_security_code_message),
@@ -1042,7 +1039,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                                     dialog: PulseValidatorDialog, code: String
                                 ) {
 
-                                    if (AppClass.instance.isFreeUser() == false) {
+                                    if (viewModel.isFreeUser() == false) {
 
                                         showLoader(getString(R.string.closing_event_wait))
 
@@ -1605,20 +1602,20 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         return viewModel.eventExists(eventKey)
     }
 
-
-    private val unreadMessagesBroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {/* Toast.makeText(context, "Message is: "+ intent.getStringExtra("message"), Toast.LENGTH_LONG)
-                .show();*/
-            val action = intent.action
-            when (action) {
-                Constants.BROADCAST_UNREAD_MESSAGES_UPDATES -> {
-                    val map = intent.getSerializableExtra("data") as HashMap<String, UnreadMessages>
-                    updateUnreadMessagesIndicator(map)
+    /*
+        private val unreadMessagesBroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent) {/* Toast.makeText(context, "Message is: "+ intent.getStringExtra("message"), Toast.LENGTH_LONG)
+                    .show();*/
+                val action = intent.action
+                when (action) {
+                    Constants.BROADCAST_UNREAD_MESSAGES_UPDATES -> {
+                        val map = intent.getSerializableExtra("data") as HashMap<String, UnreadMessages>
+                        updateUnreadMessagesIndicator(map)
+                    }
                 }
             }
         }
-    }
-
+    */
 
     private var fragmentContainer: FragmentContainerView? = null
 
@@ -2518,7 +2515,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
 
             //   withContext(Dispatchers.Main) {
-            appToolbar.updateChatCount(unreadMessages)/*
+            // appToolbar.updateChatCount(unreadMessages)
+            //
+            /*
                 if (unreadMessages > 0) {
                     binding.chatIndicator.visibility = VISIBLE
                     binding.messagesPendingCounterText.text = unreadMessages.toString()
@@ -2822,6 +2821,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
                     //    appToolbar.updateTitle(user.display_name.capitalizeWords())
                     try {
+                    /*
                         Log.d("STORAGEREFERENCE", "va a cargar 1")
                         var storageReference: Any? = null
                         if (user.image.file_name != null) {
@@ -2849,7 +2849,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                             } catch (exception: Exception) {
                                 showErrorDialog(exception.localizedMessage.toString())
                             }
-                        } else {
+                        }
+                        else
+                        {
 
                             Log.d("GLIDEAPP", "3")
 
@@ -2861,6 +2863,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
                         }
                         Log.d("STORAGEREFERENCE", "--------------------va a cargar 1")
+                  */
                     } catch (exception: Exception) {
                         showErrorDialog(exception.localizedMessage.toString())
                     }
@@ -2877,16 +2880,41 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         AppClass.instance.postingPanicButtonStatus.observe(this) { status ->
             when (status) {
                 is Resource.Loading -> {
-                    showLoader(getString(R.string.message_posting_panic_event))
+                    //                  showLoader(R.raw.lottie_sos )
+
+                    val rippleLoader =
+                        binding.root.findViewById<CircularRippleView>(R.id.circularRippleView)
+                    if (rippleLoader != null) {
+                        rippleLoader.visibility = VISIBLE
+                    }
+
                 }
 
                 is Resource.Error -> {
+
+                    //                hideLoader()
+
+
+                    val rippleLoader =
+                        binding.root.findViewById<CircularRippleView>(R.id.circularRippleView)
+                    if (rippleLoader != null) {
+                        rippleLoader.visibility = GONE
+                    }
+
                     showErrorDialog(status.message.toString())
                 }
 
                 is Resource.Success -> {
-                    hideLoader()
-                    Toast.makeText(this, "y ahora que hacemos???", Toast.LENGTH_SHORT).show()
+                    // hideLoader()
+
+                    val rippleLoader =
+                        binding.root.findViewById<CircularRippleView>(R.id.circularRippleView)
+                    if (rippleLoader != null) {
+                        rippleLoader.visibility = GONE
+                    }
+
+
+                    //Toast.makeText(this, "y ahora que hacemos???", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -3791,6 +3819,14 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }
         })
 
+        appToolbar.setSettingsOnClickListener(object : OnClickListener {
+            override fun onClick(v: View?) {
+                handleTouch()
+                findNavController(R.id.nav_host_fragment).navigate(R.id.settingsFragment)
+            }
+        })
+
+
         /*
                 binding.bell.setOnClickListener {
                     if (mNotificationsFragment.getData().size > 0) {
@@ -3814,6 +3850,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             */
 
 
+
+
         binding.actionHome.setOnClickListener(View.OnClickListener {
             handleTouch()
             goHome()
@@ -3831,7 +3869,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
         binding.actionMap.setOnClickListener(View.OnClickListener {
 
-            if (!AppClass.instance.isFreeUser()) {
+            if (!viewModel.isFreeUser()) {
 
                 if (viewModel.getEventsCount() > 0) {
                     handleTouch()
@@ -3972,48 +4010,48 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
 
     override fun updateUI() {
-        val me = SessionForProfile.getInstance(this).getUserProfile()
+        //   val me = SessionForProfile.getInstance(this).getUserProfile()
         //binding.userName.text = me.display_name
-        appToolbar.updateTitle(me.display_name)
-
-        try {
-
-
-            Log.d("STORAGEREFERENCE", "va a cargar 2")
-
-            var storageReference: Any? = null
-            if (me.image.file_name != null) {
-
-                // TODO: Pasarlo a Coroutina
-
-                if (!me.image.file_name!!.startsWith("http")) {
-                    storageReference = FirebaseStorage.getInstance()
-                        .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                        .child(SessionForProfile.getInstance(this).getUserId())
-                        .child(me.image.file_name.toString())
-                } else {
-                    storageReference = me.image.file_name
-                }
+        // appToolbar.updateTitle(me.display_name)
+        /*
                 try {
-                    Log.d("GLIDEAPP", "4")
-                    GlideApp.with(this).asBitmap().load(storageReference)
-                        .placeholder(getDrawable(R.drawable.progress_animation))
-                        .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
 
+
+                    Log.d("STORAGEREFERENCE", "va a cargar 2")
+
+                    var storageReference: Any? = null
+                    if (me.image.file_name != null) {
+
+                        // TODO: Pasarlo a Coroutina
+
+                        if (!me.image.file_name!!.startsWith("http")) {
+                            storageReference = FirebaseStorage.getInstance()
+                                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
+                                .child(SessionForProfile.getInstance(this).getUserId())
+                                .child(me.image.file_name.toString())
+                        } else {
+                            storageReference = me.image.file_name
+                        }
+                        try {
+                            Log.d("GLIDEAPP", "4")
+                            GlideApp.with(this).asBitmap().load(storageReference)
+                                .placeholder(getDrawable(R.drawable.progress_animation))
+                                .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
+
+                        } catch (exception: Exception) {
+                            Log.d("GLIDEAPP", "5")
+                            showErrorDialog(exception.message.toString())
+                        }
+                    } else {
+                        GlideApp.with(this).asBitmap().load("null")
+                            .placeholder(getDrawable(R.drawable.progress_animation))
+                            .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
+
+                    }
                 } catch (exception: Exception) {
-                    Log.d("GLIDEAPP", "5")
-                    showErrorDialog(exception.message.toString())
+                    var pp = 33
                 }
-            } else {
-                GlideApp.with(this).asBitmap().load("null")
-                    .placeholder(getDrawable(R.drawable.progress_animation))
-                    .error(getDrawable(R.drawable.ic_error)).into(appToolbar.getUserAvatarRef())
-
-            }
-        } catch (exception: Exception) {
-            var pp = 33
-        }
-
+        */
 
         //   pagerAdapter.getFragmentAt(1).updateUI()
 //        binding.bell.isVisible = mNotificationsFragment.getData().size > 0
@@ -4083,71 +4121,71 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         requestCode: Int, resultCode: Int, data: Intent?
     ) {
 
-  //      runOnUiThread {
-/*
-            if (multiPickerWrapper!!.onActivityResult(requestCode, resultCode, data)) {
+        //      runOnUiThread {
+        /*
+                    if (multiPickerWrapper!!.onActivityResult(requestCode, resultCode, data)) {
 
-                when (requestCode) {
-                    MY_PERMISSION_REQUEST_SEND_SMS -> {
-                        if (resultCode == PackageManager.PERMISSION_GRANTED) {
-                            broadcastMessage(null, BROADCAST_PERMISSION_SEND_SMS_GRANTED)
-                        } else {
-                            broadcastMessage(null, BROADCAST_PERMISSION_SEND_SMS_DENIED)
+                        when (requestCode) {
+                            MY_PERMISSION_REQUEST_SEND_SMS -> {
+                                if (resultCode == PackageManager.PERMISSION_GRANTED) {
+                                    broadcastMessage(null, BROADCAST_PERMISSION_SEND_SMS_GRANTED)
+                                } else {
+                                    broadcastMessage(null, BROADCAST_PERMISSION_SEND_SMS_DENIED)
+                                }
+
+                            }
                         }
-
+                        return@runOnUiThread
                     }
-                }
-                return@runOnUiThread
-            }
-*/
-            super.onActivityResult(requestCode, resultCode, data)
+        */
+        super.onActivityResult(requestCode, resultCode, data)
 
-            this.pendingFromActivityResult = true
+        this.pendingFromActivityResult = true
 
-            if (resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK) {
 
-                when (currentModuleIndex) {
-                    IANModulesEnum.MAIN.ordinal -> {/*
+            when (currentModuleIndex) {
+                IANModulesEnum.MAIN.ordinal -> {/*
                               if (requestCode == com.kbeanie.multipicker.core.VideoPickerImpl.) {
                                   val mPaths: ArrayList<String>? =
                                       data?.getStringArrayListExtra(VideoPicker.EXTRA_VIDEO_PATH)
                               } else*/
 
-                        /*
-                           ARREGLAR ESTO
+                    /*
+                       ARREGLAR ESTO
 
-                        if (requestCode === Picker.PICK_VIDEO_DEVICE) {
+                    if (requestCode === Picker.PICK_VIDEO_DEVICE) {
 
-                        } else if (requestCode === Picker.PICK_IMAGE_CAMERA) {
-                            //if (requestCode === com.github.dhaval2404.imagepicker.ImagePicker.REQUEST_CODE) {
-                            val filePath = Uri.parse(data?.data?.encodedPath).toString()
-                            uploadMediaToPanicEvent(MediaTypesEnum.IMAGE, filePath)
-                        } else
-                            */
+                    } else if (requestCode === Picker.PICK_IMAGE_CAMERA) {
+                        //if (requestCode === com.github.dhaval2404.imagepicker.ImagePicker.REQUEST_CODE) {
+                        val filePath = Uri.parse(data?.data?.encodedPath).toString()
+                        uploadMediaToPanicEvent(MediaTypesEnum.IMAGE, filePath)
+                    } else
+                        */
+
+                    if (requestCode === REQUEST_CODE_RECOVER_PLAY_SERVICES) {
+
+
+                    } else if (resultCode === RESULT_CANCELED) {
 
                         if (requestCode === REQUEST_CODE_RECOVER_PLAY_SERVICES) {
 
-
-                        } else if (resultCode === RESULT_CANCELED) {
-
-                            if (requestCode === REQUEST_CODE_RECOVER_PLAY_SERVICES) {
-
-                                Toast.makeText(
-                                    this,
-                                    "Google Play Services must be installed.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                finish()
-                            }
+                            Toast.makeText(
+                                this,
+                                "Google Play Services must be installed.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            finish()
                         }
-
                     }
 
-                    IANModulesEnum.POST_EVENTS.ordinal -> {
-                        if (mEventsFragment.getMediaFragment().isVisible) {
-                            mEventsFragment.getMediaFragment()
-                                .onActivityResult(requestCode, resultCode, data)
-                        }/*
+                }
+
+                IANModulesEnum.POST_EVENTS.ordinal -> {
+                    if (mEventsFragment.getMediaFragment().isVisible) {
+                        mEventsFragment.getMediaFragment()
+                            .onActivityResult(requestCode, resultCode, data)
+                    }/*
                         else
                             if (mEventsFragment.getLocationManualInputFragment()?.isVisible == true) {
                                 mEventsFragment.getLocationManualInputFragment()
@@ -4155,17 +4193,16 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                             }
 
                          */
-                    }
-
-                    IANModulesEnum.EVENTS_TRACKING.ordinal -> {
-                        mMapFragment.onActivityResult(requestCode, resultCode, data)
-                    }
-
                 }
+
+                IANModulesEnum.EVENTS_TRACKING.ordinal -> {
+                    mMapFragment.onActivityResult(requestCode, resultCode, data)
+                }
+
             }
+        }
 
 //        }
-
 
 
     }
@@ -5369,10 +5406,10 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }, intentFilter
         )
         //---------------- CHATS UPDATES -----------------------------------------
-
-        val filter = IntentFilter(Constants.BROADCAST_UNREAD_MESSAGES_UPDATES)
-        registerReceiver(unreadMessagesBroadcastReceiver, filter)
-
+        /*
+                val filter = IntentFilter(Constants.BROADCAST_UNREAD_MESSAGES_UPDATES)
+                registerReceiver(unreadMessagesBroadcastReceiver, filter)
+        */
     }
 
 
@@ -5779,7 +5816,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
 
 
-                    if (!AppClass.instance.isFreeUser()) {
+                    if (!viewModel.isFreeUser()) {
                         showErrorDialog(
                             getString(R.string.error_wrong_security_code),
                             getString(R.string.error_wrong_security_code_message),
@@ -5800,7 +5837,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                     dialog: PulseValidatorDialog, code: String
                 ) {
 
-                    if (!AppClass.instance.isFreeUser()) {
+                    if (!viewModel.isFreeUser()) {
                         showLoader(getString(R.string.closing_event_wait))
 
                         viewModel.onCloseEventRequest(
@@ -6365,59 +6402,59 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
 //--------------------------- Contacts
 
+    /*
+        // MapSituationFragment Callbacks
+        override fun onGoingStateChanged(
+            eventKey: String, viewerKey: String, callback: OnCompleteCallback
+        ) {
 
-    // MapSituationFragment Callbacks
-    override fun onGoingStateChanged(
-        eventKey: String, viewerKey: String, callback: OnCompleteCallback
-    ) {
+            val callback = object : OnCompleteCallback {
+                override fun onComplete(success: Boolean, result: Any?) {
 
-        val callback = object : OnCompleteCallback {
-            override fun onComplete(success: Boolean, result: Any?) {
+                }
 
+                override fun onError(exception: java.lang.Exception) {
+                    super.onError(exception)
+                    callback.onError(exception)
+                }
             }
 
-            override fun onError(exception: java.lang.Exception) {
-                super.onError(exception)
-                callback.onError(exception)
-            }
+    //        mPresenter.onGoingStateChanged(eventKey, viewerKey, callback)
+
+            showSnackBar(binding.root, "Implementar en el view model onGoingStateChanged")
+
+
         }
+    */
+    /*
+        override fun onCallAuthorityStateChanged(
+            eventKey: String, viewerKey: String, callback: OnCompleteCallback
+        ) {
+            val callback = object : OnCompleteCallback {
+                override fun onComplete(success: Boolean, result: Any?) {
 
-//        mPresenter.onGoingStateChanged(eventKey, viewerKey, callback)
+                }
 
-        showSnackBar(binding.root, "Implementar en el view model onGoingStateChanged")
-
-
-    }
-
-
-    override fun onCallAuthorityStateChanged(
-        eventKey: String, viewerKey: String, callback: OnCompleteCallback
-    ) {
-        val callback = object : OnCompleteCallback {
-            override fun onComplete(success: Boolean, result: Any?) {
-
+                override fun onError(exception: java.lang.Exception) {
+                    super.onError(exception)
+                    callback.onError(exception)
+                }
             }
 
-            override fun onError(exception: java.lang.Exception) {
-                super.onError(exception)
-                callback.onError(exception)
-            }
+            //mPresenter.onCallAuthorityStateChanged(eventKey, viewerKey, callback)
+            showSnackBar(
+                binding.root, "Implementar en el viewmodel onCallAuthorityStateChanged"
+            )
+
+
         }
-
-        //mPresenter.onCallAuthorityStateChanged(eventKey, viewerKey, callback)
-        showSnackBar(
-            binding.root, "Implementar en el viewmodel onCallAuthorityStateChanged"
-        )
-
-
-    }
-
-
-    override fun selectUserToFollow(userKey: String) {
-        //     var pp = 33
-        mMapFragment.getBottomSheetLayout()?.state = BottomSheetBehavior.STATE_COLLAPSED
-        mMapFragment.setCameraMode(CameraModesEnum.FOLLOW_USER, userKey)
-    }
+    */
+    /*
+        override fun selectUserToFollow(userKey: String) {
+            //     var pp = 33
+            mMapFragment.getBottomSheetLayout()?.state = BottomSheetBehavior.STATE_COLLAPSED
+            mMapFragment.setCameraMode(CameraModesEnum.FOLLOW_USER, userKey)
+        }*/
 
     override fun getCameraMode(): CameraMode {
         return mMapFragment.currentCameraMode
@@ -6577,31 +6614,25 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }
         }
     }
+    /*
+        private fun updateUnreadMessagesIndicator(map: HashMap<String, UnreadMessages>) {/*
+                        if (map.size == 0) {
+                            binding.chatIndicator.visibility = GONE
+                        } else {
+                */
+            var unreadMessagesQty: Long = 0
+            map.forEach { room ->
+                /*
+                  if (!mMapFragment.isVisible || !mMapFragment.chatFragment?.isVisible!!) {
+                      unreadMessagesQty += room.value.qty
+                  }
 
-    private fun updateUnreadMessagesIndicator(map: HashMap<String, UnreadMessages>) {/*
-                    if (map.size == 0) {
-                        binding.chatIndicator.visibility = GONE
-                    } else {
-            */
-        var unreadMessagesQty: Long = 0
-        map.forEach { room ->
-            /*
-              if (!mMapFragment.isVisible || !mMapFragment.chatFragment?.isVisible!!) {
-                  unreadMessagesQty += room.value.qty
-              }
-
-             */
+                 */
+            }
+            appToolbar.updateChatCount(unreadMessagesQty.toInt())
         }
-        appToolbar.updateChatCount(unreadMessagesQty.toInt())/*
-                    if (unreadMessagesQty > 0) {
-                        binding.messagesPendingCounterText.text = unreadMessagesQty.toString()
-                        binding.chatIndicator.visibility = VISIBLE
-                    } else {
-                        binding.chatIndicator.visibility = GONE
-                    }
 
-             */
-    }
+    */
     //  }
 
     override fun recordVideo() {
@@ -6770,6 +6801,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         return binding.root.findViewById(id)
     }
 
+
+    /*
     fun removeUnreadMessagesByRoomKey(chatRoomKey: String) {
         var unreadsLiveData = AppClass.instance.getUnreadMessagesExcludingSomeRoomKey(chatRoomKey)
         var unreadsList = unreadsLiveData.value
@@ -6779,16 +6812,11 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         }
         //   withContext(Dispatchers.Main) {
 
-        appToolbar.updateChatCount(unreadMessages)/*
-             if (unreadMessages > 0) {
-                 binding.chatIndicator.visibility = VISIBLE
-                 binding.messagesPendingCounterText.text = unreadMessages.toString()
-             } else {
-                 binding.chatIndicator.visibility = GONE
-             }
-     */
-    }
+        appToolbar.updateChatCount(unreadMessages)
 
+
+    }
+*/
     fun adjustNavHostFragmentToLimits() {
         // binding.toolbar.height
     }
@@ -6847,21 +6875,22 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         val notificationType = messageInfo.getString("notification_type")!!
 
         val eventKey = messageInfo.getString("eventKey")
-        var isAMessageInCurrentEvent : Boolean = false
-        var iAMInNotificationsFragment : Boolean = false
+        var isAMessageInCurrentEvent: Boolean = false
+        var iAMInNotificationsFragment: Boolean = false
 
         eventKey?.let {
             // Si llega un mensaje de un evento, estoy en el mapa y el evento es el mismo que el mensaje, no muestro el popup
             isAMessageInCurrentEvent =
                 notificationType.equals(EventNotificationType.NOTIFICATION_TYPE_MESSAGE.toString()) &&
                         navController.currentDestination?.id == R.id.mapSituationFragment &&
-                        (MapSituationFragmentViewModel.getInstance().auxEventKey.value?:"").equals(eventKey)
+                        (MapSituationFragmentViewModel.getInstance().auxEventKey.value
+                            ?: "").equals(eventKey)
 
         }
         // Si estoy en el fragmento de notificaciones, no muestro el popup
-        iAMInNotificationsFragment = navController.currentDestination?.id == R.id.notificationsFragment
-        if (isAMessageInCurrentEvent || iAMInNotificationsFragment)
-        {
+        iAMInNotificationsFragment =
+            navController.currentDestination?.id == R.id.notificationsFragment
+        if (isAMessageInCurrentEvent || iAMInNotificationsFragment) {
             showPushPopup = false
         }
 

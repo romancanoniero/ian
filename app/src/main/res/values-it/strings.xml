@@ -193,4 +193,13 @@
     <string name="error_user_not_found">Utente non trovato</string>
     <string name="error_email_not_verified">Devi verificare tramite l\'email che ti abbiamo inviato</string>
 
+
+    <!--- BLUETOOTH -->
+    <string name="hello_no_ble_fragment">Il tuo dispositivo non ha un adattatore Bluetooth</string>
+    <string name="bluetooth_device_discovered_title">Dispositivo rilevato</string>
+    <string name="bluetooth_device_connected_title">Dispositivo connesso</string>
+    <string name="rssi">Intensità del segnale: %d</string>
+    <string name="try_enable_bt">Il Bluetooth si sta accendendo</string>
+    <string name="try_enable_bt_failed">Devi abilitare manualmente il Bluetooth nelle impostazioni del dispositivo.</string>
+    <string name="open_bt_settings">Accendi Bluetooth</string>
 </resources>

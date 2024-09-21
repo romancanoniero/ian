@@ -12,6 +12,10 @@ class Constants{
         const val REQUEST_CODE_RECOVER_PLAY_SERVICES = 11001
 
 
+        // CALL HTTP STATUS
+        const val HTTP_CALL_OK = 200
+        const val HTTP_CALL_ERROR = 400
+
         //-- REQUEST CODES
         const val LOCATION_REQUEST_CODE = 400
         const val LOCATION_BACKGROUND_REQUEST_CODE = 401

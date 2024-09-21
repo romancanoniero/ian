@@ -3,9 +3,10 @@ package com.iyr.ian.utils
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.iceteck.silicompressorr.SiliCompressor
 import com.iyr.ian.app.AppClass
-import com.iyr.ian.utils.multimedia.MultimediaUtils
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+
 
 class FileUtils {
 
@@ -151,7 +153,14 @@ class FileUtils {
 
     fun createDirectoriesStructure(fullPath: String) {
         var currentPath = ""
+
         var dirsToCreate = fullPath.substringBeforeLast("/").split("/")
+       /*
+        // agrego el ultimo directorio despues de la ultima barra
+        if (fullPath.substringAfterLast("/") != "") {
+           dirsToCreate += fullPath.substringAfterLast("/")
+        }
+     */
         dirsToCreate.forEach { dir ->
             try {
                 if (dir != "") {
@@ -187,6 +196,10 @@ fun String.getJustFileName(): String {
     return FileUtils().getJustFileName(this)
 }
 
+fun String.getJustPath(): String {
+    return this.substringBeforeLast("/")
+}
+
 fun String.getFileExtension(context: Context): String? {
     return FileUtils().getFileExtension(context, this)
 }
@@ -200,8 +213,8 @@ fun Context.deleteFile(deletePath: String) {
 }
 
 
-fun Context.copyFile(inputPath: String, inputFile: String, outputPath: String) {
-    FileUtils().copyFile(inputPath, inputFile, outputPath)
+fun Context.copyFile(inputPath: String, inputFile: String, outputPath: String) : String? {
+  return  FileUtils().copyFile(inputPath, inputFile, outputPath)
 }
 
 /***
@@ -306,13 +319,56 @@ suspend fun File.toMediaFile(context: Context, prefix: String? = null): MediaFil
     }
     var destinationFolder = destinationFolderBuilder.toString()
 
+    // si no esta en el cache, lo copio
     if (!this.absolutePath.startsWith(destinationFolder)) {
-        operationFile = copyTo(context, destinationFolder)
+        when (this.absolutePath.getFileExtension(context)) {
+            "jpg", "jpeg", "png" -> {
+                operationFile = File(
+                    SiliCompressor.with(context)
+                        .compress("file:" + this.absolutePath, File(destinationFolder))
+                )
+            }
+
+            "mp4", "3gp" -> {
+                operationFile = File(this.absolutePath).copyTo(context, destinationFolder)
+            }
+
+            else -> {
+                operationFile = copyTo(context, destinationFolder)
+            }
+        }
+
     } else {
         if (!this.absolutePath.startsWith(destinationFolder)) {
             // Si el archivo esta en cache , pero no en la carpeta de destino
-            operationFile =
-                moveTo(context, destinationFolder.replace(context.cacheDir.absolutePath, ""))
+            /*
+                      operationFile =
+                          moveTo(context, destinationFolder.replace(context.cacheDir.absolutePath, ""))
+          */
+            when (this.absolutePath.getFileExtension(context)) {
+                "jpg", "jpeg", "png" -> {
+                    operationFile = File(
+                        SiliCompressor.with(context)
+                            .compress(this.absolutePath, File(destinationFolder))
+                    )
+                }
+
+                "mp4", "3gp" -> {
+                    operationFile = File(
+                        SiliCompressor.with(context)
+                            .compressVideo(this.absolutePath, destinationFolder)
+                    )
+                }
+
+                else -> {
+                    operationFile = copyTo(context, destinationFolder)
+                }
+            }
+
+        }
+        else
+        {
+            operationFile = File(this.absolutePath)
         }
     }
 
@@ -335,27 +391,63 @@ suspend fun File.toMediaFile(context: Context, prefix: String? = null): MediaFil
             }
         }
 
-        val encodedFile: String = when (this.absolutePath.getFileExtension(context)) {
-            "jpg", "jpeg", "png", "mp4", "3gp" -> {
+        /*
+        when (this.absolutePath.getFileExtension(context)) {
+            "jpg", "jpeg", "png" -> {
+                // Comprimo el archivo antes de convertirlo.
 
+                val fileDest = File(operationFile?.absolutePath?.substringBeforeLast("/"))
+                val filePath =
+                    SiliCompressor.with(context)
+                        .compress("file:" + operationFile?.absolutePath?.toString(), fileDest)
 
-
-                 MultimediaUtils(context).convertFileToBase64(
+                val file = File(filePath)
+                val newFileName = operationFile?.absolutePath?.getJustFileName()
+                val newFile = File(file.parent, newFileName)
+                file.renameTo(newFile)
+/*
+                MultimediaUtils(context).convertFileToBase64(
                     Uri.parse(
-                        operationFile?.absolutePath
+                        operationFile?.absolutePath?.toString()
                     )
                 ).toString()
+*/
+            }
+
+            "mp4", "3gp" -> {
+
+                // Comprimo el archivo antes de convertirlo.
+                /*
+                                val fileDest = File(operationFile?.absolutePath?.substringBeforeLast("/"))
+                                val filePath =
+                                    SiliCompressor.with(context).compressVideo("file:"+operationFile?.absolutePath?.toString(), fileDest.absolutePath)
+
+                                val file = File(filePath)
+                                val newFileName = operationFile?.absolutePath?.getJustFileName()
+                                val newFile = File(file.parent, newFileName)
+                                file.renameTo(newFile)
+                */
+  /*
+                MultimediaUtils(context).convertFileToBase64(
+                    Uri.parse(
+                        operationFile?.absolutePath?.toString()
+                    )
+                ).toString()
+*/
 
             }
 
             else -> ({
             }).toString()
         }
-
+        */
         val media = MediaFile(mediaType, operationFile?.absolutePath?.getJustFileName())
+        media.localFullPath = operationFile?.absolutePath
+     /*
         if (encodedFile.isNotEmpty()) {
             media.bytesB64 = encodedFile
         }
+        */
         return media
     } catch (ex: Exception) {
         return throw ex
@@ -371,21 +463,26 @@ suspend fun File.toMediaFile(context: Context, prefix: String? = null): MediaFil
 fun Context.getStoredFile(
     fileName: String, folder: String
 ): String {
+    val filePath = when (fileName.substringAfterLast('.', "").lowercase()) {
+        "jpg", "jpeg", "png" -> "${cacheDir.absolutePath}/${folder}/$fileName"
+        "mp4", "3gp" -> "${cacheDir.absolutePath}/${folder}/$fileName"
+        else -> "${cacheDir.absolutePath}/${folder}/$fileName"
+    }
+    val file = File(filePath)
 
-    var cacheDir: File? = null
-    cacheDir = File(this.cacheDir, folder)
-    val file = File(cacheDir, fileName)
 
     if (file.exists()) {
         return file.absolutePath
     } else {
         return try {
             runBlocking {
-                val storageReference = FirebaseStorage.getInstance().getReference(folder).child(fileName)
+                val storageReference = ( StorageRepositoryImpl().generateStorageReference("${folder}/${fileName}") as StorageReference)
 
                 // Descarga el archivo desde Firebase Storage y almacénalo en el directorio de caché
                 withContext(Dispatchers.IO) {
-                    val localFile = File.createTempFile(fileName, null, cacheDir)
+                    FileUtils().createDirectoriesStructure(cacheDir.absolutePath + "/" + folder)
+                    //val localFile = File.createTempFile(fileName, null, File(cacheDir, folder))
+                    val localFile = File(cacheDir.absolutePath + "/" + folder, fileName)
                     storageReference.getFile(localFile).await()
                     localFile.absolutePath
                 }
@@ -393,22 +490,42 @@ fun Context.getStoredFile(
         } catch (e: Exception) {
             throw e
         }
-     /*   try {
-            val storageReference =
-                FirebaseStorage.getInstance().getReference(folder).child(fileName)
 
-            //descarga el archivo (que puede ser de cualquier tipo) desde storage de firebase y almacenalo en el directorio de cache
-            val file = try {
-                val localFile = File.createTempFile(fileName, null, cacheDir)
-                var call = storageReference.getFile(localFile).await()
-                localFile.absolutePath
-            } catch (e: Exception) {
-                null
-            }
+
+    }
+    return throw Exception("Error al obtener el archivo")
+}
+
+
+suspend fun Context.getStoredFileSuspend(
+    fileName: String, folder: String
+): String {
+    val filePath = when (fileName.substringAfterLast('.', "").lowercase()) {
+        "jpg", "jpeg", "png" -> "${cacheDir.absolutePath}/${folder}/$fileName"
+        "mp4", "3gp" -> "${cacheDir.absolutePath}/${folder}/$fileName"
+        else -> "${cacheDir.absolutePath}/${folder}/$fileName"
+    }
+    val file = File(filePath)
+
+
+    if (file.exists()) {
+        return file.absolutePath
+    } else {
+        return try {
+            val storageReference = ( StorageRepositoryImpl().generateStorageReference("${folder}/${fileName}") as StorageReference)
+            // Descarga el archivo desde Firebase Storage y almacénalo en el directorio de caché
+            FileUtils().createDirectoriesStructure(cacheDir.absolutePath + "/" + folder)
+            //val localFile = File.createTempFile(fileName, null, File(cacheDir, folder))
+            val localFile = File(cacheDir.absolutePath + "/" + folder, fileName)
+      //      storageReference.getFile(localFile).await()
+            StorageRepositoryImpl().downloadStoredItem("${folder}/${fileName}", localFile.absolutePath)
+            localFile.absolutePath
+
         } catch (e: Exception) {
-            return throw e
+           Log.d("STORAGE_ERROR", e.message.toString())
+            throw e
         }
-        */
+
 
     }
     return throw Exception("Error al obtener el archivo")

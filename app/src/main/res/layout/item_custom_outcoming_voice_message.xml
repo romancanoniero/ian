@@ -33,16 +33,6 @@
                 app:resize_mode="fit"
                 app:use_artwork="true" />
 
-            <ImageView
-                android:id="@+id/status"
-                android:layout_width="@dimen/box_normal"
-                android:layout_height="@dimen/box_normal"
-                android:src="@drawable/baseline_cloud_download_128"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="10dp"/>
-
 
             <TextView
                 android:id="@+id/duration"

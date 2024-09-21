@@ -58,6 +58,7 @@
         android:contentDescription="@string/rememebr"
         android:focusable="auto"
         android:src="@drawable/ic_add_attachment"
+        android:visibility="gone"
         app:tint="@color/red" />
 
 </LinearLayout>

@@ -2,10 +2,12 @@ package com.iyr.ian.dao.repositories
 
 
 import com.iyr.ian.dao.models.UnreadMessages
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.utils.chat.models.Message
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.support_models.MediaFile
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 interface ChatRepositoryInterface {
     fun getChatFlow(eventKey: String): Flow<Resource<ChatRepository.ChatDataEvent>>?
@@ -16,13 +18,14 @@ interface ChatRepositoryInterface {
         textMessage: String
     ): Resource<Boolean?>
 
+    /*
     suspend fun sendMediaMessage(
         eventKey: String,
         senderKey: String,
         messageKey: String,
         mediaFile: MediaFile
     ): Resource<String?>
-
+*/
 
     suspend fun sendSpeedMessage(
         eventKey: String,
@@ -38,6 +41,13 @@ interface ChatRepositoryInterface {
 
     suspend fun generateMessageKey(eventKey: String): Resource<String>
     fun unreadMessagesFlow(userKey: String, eventKey: String): Flow<Long>
+    suspend fun sendMediaMessage(
+        eventKey: String,
+        senderKey: String,
+        messageKey: String,
+        mediaFile: MediaFile,
+        file: File
+    ): Resource<String?>
 }
 
 
@@ -45,6 +55,8 @@ abstract class ChatRepository : ChatRepositoryInterface {
     private var authManager: Any? = null
     private val tableReference: Any? = null
     protected val tableName = "chats"
+
+    protected val storageRepository: StorageRepositoryImpl = StorageRepositoryImpl()
 
     sealed class ChatDataEvent {
         data class OnChildAdded(val data: Message, val previousChildName: String?) : ChatDataEvent()

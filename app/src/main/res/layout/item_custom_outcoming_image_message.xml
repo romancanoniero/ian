@@ -11,12 +11,26 @@
         android:id="@id/image"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="false"
+        android:layout_alignParentEnd="true"
         android:layout_marginStart="@dimen/message_outcoming_bubble_margin_left"
         android:layout_marginLeft="@dimen/message_outcoming_bubble_margin_left"
+
         android:adjustViewBounds="true"
         app:siShape="@drawable/shape_outcoming_message"
-
         app:siSquare="false" />
+
+    <ImageView
+        android:id="@+id/network_indicator"
+        android:layout_width="@dimen/box_small"
+        android:layout_height="@dimen/box_small"
+        android:layout_alignEnd="@id/image"
+        android:layout_alignBottom="@id/image"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="4dp"
+        app:srcCompat="@drawable/baseline_backup_24" />
+
+
 
     <TextView
         android:id="@id/messageTime"

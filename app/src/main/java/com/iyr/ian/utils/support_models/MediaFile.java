@@ -175,3 +175,4 @@ public class MediaFile implements Parcelable, Serializable  {
     }
 
 }
+

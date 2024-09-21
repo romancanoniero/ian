@@ -363,7 +363,7 @@ class MultimediaUtils(val context: Context) {
                     .toString()
 
         } catch (ex: Exception) {
-            var pp = 2
+            throw ex
         }
         return durationStr!!.toInt()
     }
@@ -612,7 +612,7 @@ fun Context.prepareMediaMessage(
                     )
                 ).toString()
 
-                if (!localFullPath.contains(this.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH + subPath.toString())) {
+                if (!localFullPath.contains(this.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH +"/"+ subPath.toString())) {
                     var destination =
                         this.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH + subPath.toString()
                     FileUtils().copyFile(

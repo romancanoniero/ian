@@ -20,6 +20,7 @@ import com.iyr.ian.app.AppClass
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.databinding.FragmentProfileSettingsBinding
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.interfaces.IProfileSettingsFragment
@@ -193,10 +194,10 @@ class ProfileSettingsFragment() : Fragment(),
         mainActivityViewModel.user.observe(this) { user ->
             viewModel.setUser(user)
             if (user.image.file_name != null) {
-                val storageReference = FirebaseStorage.getInstance()
-                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                    .child(FirebaseAuth.getInstance().uid.toString())
-                    .child(user.image.file_name.toString())
+
+
+
+                val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${FirebaseAuth.getInstance().uid.toString()}/${user.image.file_name.toString()}")
                 //  .getReference(me.image?.file_name.toString())
                 GlideApp.with(requireContext())
                     .asBitmap()
@@ -234,11 +235,12 @@ class ProfileSettingsFragment() : Fragment(),
         val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
 
         if (me.image.file_name != null) {
-            val storageReference = FirebaseStorage.getInstance()
-                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                .child(FirebaseAuth.getInstance().uid.toString())
-                .child(me.image.file_name.toString())
-            //  .getReference(me.image?.file_name.toString())
+
+
+
+            val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${FirebaseAuth.getInstance().uid.toString()}/${me.image.file_name.toString()}")
+
+
             GlideApp.with(requireContext())
                 .asBitmap()
                 .load(storageReference)

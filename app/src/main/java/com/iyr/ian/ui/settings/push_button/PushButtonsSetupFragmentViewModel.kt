@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.iyr.ian.utils.bluetooth.ble.BLEState
-import com.iyr.ian.utils.bluetooth.ble.BLEState.NOT_ENABLED
+import com.iyr.ian.utils.bluetooth.models.BLEScanResult
 
 class PushButtonsSetupFragmentViewModel : ViewModel() {
 
@@ -14,6 +14,10 @@ class PushButtonsSetupFragmentViewModel : ViewModel() {
     fun setBluetoothStatus(status: BLEState) {
         _bluetoothStatus.postValue(status)
     }
+
+    private val _tagsFound = MutableLiveData<ArrayList<BLEScanResult>?>()
+    val tagsFound: LiveData<ArrayList<BLEScanResult>?> = _tagsFound
+
 
 
 }

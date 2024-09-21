@@ -9,6 +9,13 @@ import java.util.Locale
 
 class StringExtensions
 
+
+fun Long.toFormattedDuration(): String {
+    val minutes = (this / 1000) / 60
+    val seconds = (this / 1000) % 60
+    return String.format("%02d:%02d", minutes, seconds)
+}
+
 fun Context.millisToTimeLocale(milliseconds: Long): String {
     val seconds = (milliseconds / 1000) % 60
     val minutes = (milliseconds / (1000 * 60) % 60)

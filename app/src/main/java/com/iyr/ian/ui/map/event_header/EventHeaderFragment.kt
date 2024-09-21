@@ -22,7 +22,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.Constants.Companion.LOCATION_PERMISSION_REQUEST_CODE
 import com.iyr.ian.R
@@ -35,6 +35,7 @@ import com.iyr.ian.dao.models.EventLocationType
 import com.iyr.ian.databinding.FragmentBottomSheetEventHeaderBinding
 import com.iyr.ian.enums.EventStatusEnum
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.ui.map.event_header.adapter.EventHeaderCallback
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.activity_contracts.MakePhoneCallActivityContract
@@ -49,7 +50,7 @@ import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Locale
 
 
 class EventHeaderFragment(
@@ -231,10 +232,11 @@ class EventHeaderFragment(
                         var fileName = eventData.author?.profile_image_path.toString()
                         if (binding.userImage.tag != fileName) {
                             lifecycleScope.launch {
-                                var storageReferenceCache = FirebaseStorage.getInstance()
-                                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                                    .child(eventData.author_key!!).child(fileName)
-                                    .downloadUrlWithCache(requireContext())
+
+
+                                var storageReferenceCache =
+                                    (StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${eventData.author_key}/${fileName}") as StorageReference)
+                                        .downloadUrlWithCache(requireContext())
 
                                 if (binding.userImage.tag != storageReferenceCache) {
                                     GlideApp.with(requireContext()).asBitmap()
@@ -298,17 +300,14 @@ class EventHeaderFragment(
         jobViewersFlowObserver = lifecycleScope.launch {
             mapSituationFragmentViewModel.viewersUpdatesFlow.collect { resource ->
                 viewersList.clear()
-                when(resource)
-                {
-                    is Resource.Error ->
-                    {
+                when (resource) {
+                    is Resource.Error -> {
                         Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show()
                     }
-                    is Resource.Loading ->
-                    {}
-                    is Resource.Success ->
-                    {
-                        var pp =3
+
+                    is Resource.Loading -> {}
+                    is Resource.Success -> {
+                        var pp = 3
                     }
                 }
             }

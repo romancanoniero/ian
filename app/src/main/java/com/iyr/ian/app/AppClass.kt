@@ -53,7 +53,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_CANCEL_PANIC
-import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REFRESH_PANIC_BUTTON
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REQUEST_PIN
 import com.iyr.ian.AppConstants.Companion.CHANNEL_ALARM_DESCRIPTION
 import com.iyr.ian.AppConstants.Companion.CHANNEL_ALARM_ID
@@ -2428,9 +2427,11 @@ class AppClass : Application(), LifecycleEventObserver, LifecycleObserver {
             _postingPanicButtonStatus.value = Resource.Loading<Event?>()
 
             SessionApp.getInstance(this).isInPanic(true)
-            if (isFreeUser()) {
 
-                broadcastMessage(null, BROADCAST_ACTION_REFRESH_PANIC_BUTTON)
+            if (MainActivityViewModel.getInstance(this).isFreeUser())
+            {
+
+      //          broadcastMessage(null, BROADCAST_ACTION_REFRESH_PANIC_BUTTON)
 
                 // como es usuario gratuito lo que va a hacer es adquirir la ubicacion y envia un SMS con la ubicacion
 
@@ -2466,7 +2467,9 @@ class AppClass : Application(), LifecycleEventObserver, LifecycleObserver {
                 )
 
 
-            } else {
+            }
+            else
+            {
 
                 Log.d("ITags", "Voy a llamar a preparePanicEvent")
                 GlobalScope.launch(Dispatchers.IO) {

@@ -144,10 +144,14 @@ class EventsFragmentViewModel private constructor(val context: Context) : ViewMo
         }
     }
 
-    fun onVideoAdded(filePath: String, duration: Int) {
+//    fun onVideoAdded(filePath: String, duration: Int) {
+    fun onVideoAdded(mediaFile: MediaFile) {
+        /*
         val mediaFile = MediaFile()
         mediaFile.media_type = MediaTypesEnum.VIDEO
         mediaFile.file_name = filePath
+        */
+
         mediaFile.status = MediaFile.MEDIA_FILE_STATUS_NEW
         mediaFile.time = Date().time
         if (!_mediaContents.contains(mediaFile)) {

@@ -12,93 +12,93 @@
         <androidx.cardview.widget.CardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:cardCornerRadius="@dimen/dialog_corner_radius"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintWidth_percent=".8">
 
-        <LinearLayout
-            android:id="@+id/constraintLayout10"
-            android:layout_width="wrap_content"
-
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="15dp"
-            android:layout_marginVertical="@dimen/dialogs_vertical_margin"
-
-            android:orientation="vertical"
-
->
-
-            <TextView
-                android:id="@+id/title"
+            <LinearLayout
+                android:id="@+id/constraintLayout10"
                 android:layout_width="wrap_content"
+
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="10dp"
-                android:text="@string/verification_dialog_close_event_title"
-                android:textSize="@dimen/text_size_heading"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginVertical="@dimen/dialogs_vertical_margin"
 
-            <TextView
-                android:id="@+id/message"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/verification_dialog_falling_event_message"
-                android:textSize="@dimen/text_size_subheading" />
+                android:orientation="vertical"
 
-            <TextView
+                >
 
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/introduce_your_four_digits_pin"
-                android:textSize="@dimen/text_size_subheading" />
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/verification_dialog_close_event_title"
+                    android:textSize="@dimen/text_size_heading"
+                    android:textStyle="bold" />
 
+                <TextView
+                    android:id="@+id/message"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/verification_dialog_falling_event_message"
+                    android:textSize="@dimen/text_size_subheading" />
 
-            <com.mukesh.OtpView
-                android:id="@+id/otp_view"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginHorizontal="10sp"
-                android:layout_marginTop="10dp"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:foregroundGravity="center_horizontal"
-                android:gravity="center_horizontal"
-                android:inputType="number"
-                android:textColor="@color/text_color"
+                <TextView
 
-                android:textSize="30sp"
-                app:OtpItemCount="4"
-                app:OtpItemRadius="4dp"
-                app:OtpItemSpacing="10dp"
-                app:OtpItemWidth="@dimen/otp_item_height"
-                app:OtpItemHeight="@dimen/otp_item_height"
-                app:OtpState_filled="true"
-                app:OtpViewType="rectangle"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/loginTitle2"
-                tools:ignore="SpeakableTextPresentCheck" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/introduce_your_four_digits_pin"
+                    android:textSize="@dimen/text_size_subheading" />
 
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/close_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/bg_button_primary"
-                android:fontFamily="@font/muli_bold"
-                android:gravity="center"
-                android:text="@string/cancel"
-                android:textColor="@color/primary_button_text_color"
-                />
+                <com.mukesh.OtpView
+                    android:id="@+id/otp_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginHorizontal="10sp"
+                    android:layout_marginTop="10dp"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:foregroundGravity="center_horizontal"
+                    android:gravity="center_horizontal"
+                    android:inputType="number"
+                    android:textColor="@color/text_color"
+
+                    android:textSize="30sp"
+                    app:OtpItemCount="4"
+                    app:OtpItemHeight="@dimen/otp_item_height"
+                    app:OtpItemRadius="4dp"
+                    app:OtpItemSpacing="10dp"
+                    app:OtpItemWidth="@dimen/otp_item_height"
+                    app:OtpState_filled="true"
+                    app:OtpViewType="rectangle"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/loginTitle2"
+                    tools:ignore="SpeakableTextPresentCheck" />
 
 
-        </LinearLayout>
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/close_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_button_primary"
+                    android:fontFamily="@font/muli_bold"
+                    android:gravity="center"
+                    android:text="@string/cancel"
+                    android:textColor="@color/primary_button_text_color" />
+
+
+            </LinearLayout>
 
         </androidx.cardview.widget.CardView>
     </androidx.constraintlayout.widget.ConstraintLayout>

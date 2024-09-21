@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
-import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -16,7 +15,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -24,7 +22,6 @@ import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.iyr.ian.AppConstants
 import com.iyr.ian.BuildConfig
 import com.iyr.ian.Constants
 import com.iyr.ian.R
@@ -299,8 +296,8 @@ class BTScannerDialog(context: Context, activity: Activity) :
             }
             holder.textName.text = scanResult.name
             holder.textAddr.text = scanResult.id
-            holder.btnRemember.tag = scanResult
-            holder.btnRemember.setOnClickListener(onClickListener)
+            holder.itemView.tag = scanResult
+            holder.itemView.setOnClickListener(onClickListener)
             holder.btnRemember2.setOnClickListener(onClickListener)
             if (position % 2 == 1) {
                 holder.itemView.setBackgroundColor(-0x1f1f20)
@@ -327,7 +324,7 @@ class BTScannerDialog(context: Context, activity: Activity) :
         val textAddr: TextView
         val textRSSI: TextView
         val rssiView: RssiView
-        val btnRemember: ImageView
+        //val btnRemember: ImageView
         val btnRemember2: View
 
 
@@ -337,7 +334,7 @@ class BTScannerDialog(context: Context, activity: Activity) :
             textRSSI = rootView.findViewById(R.id.text_rssi)
             rssiView = rootView.findViewById(R.id.rssi)
 
-            btnRemember = rootView.findViewById(R.id.btn_connect)
+          //  btnRemember = rootView.findViewById(R.id.btn_connect)
             btnRemember2 = rootView.findViewById(R.id.btn_connect_2)
         }
     }

@@ -1,6 +1,8 @@
 package com.iyr.ian.dao.repositories
 
 import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.support_models.MediaTypesEnum
+import java.io.File
 
 
 interface StorageInterface {
@@ -14,6 +16,17 @@ interface StorageInterface {
                            subFolder: String,
                            fileName: String): Resource<String?>
 
+
+    fun uploadFileWithRetry(file: File, folder: String, onComplete: (Boolean, String?) -> Unit)
+
+    fun retryUpload(file: File, folder: String, onComplete: (Boolean, String?) -> Unit)
+
+    /***
+     * Genera una referencia al archivo en el servidor
+     */
+    fun generateStorageReference(path: String): Any?
+
+
 }
 
 abstract class StorageRepository : StorageInterface {
@@ -23,4 +36,28 @@ abstract class StorageRepository : StorageInterface {
 //    protected val tableName = "phone_to_contacts"
 
 
+    fun uploadMediaFile(file: File, destinationFolder : String, mediaType: MediaTypesEnum, onComplete: (Boolean, String?) -> Unit) {
+
+        when (mediaType) {
+
+            MediaTypesEnum.IMAGE -> {
+                // Compress image if needed
+//                val compressedFile = compressImage(context, file)
+                uploadFileWithRetry(file, destinationFolder, onComplete)
+            }
+            MediaTypesEnum.VIDEO -> {
+                // Compress video if needed
+  //              val compressedFile = compressVideo(context, file)
+                uploadFileWithRetry(file, destinationFolder, onComplete)
+            }
+            MediaTypesEnum.AUDIO -> {
+                uploadFileWithRetry(file, destinationFolder, onComplete)
+            }
+            else -> {
+                onComplete(false, "Unsupported media type")
+            }
+        }
+    }
+
 }
+

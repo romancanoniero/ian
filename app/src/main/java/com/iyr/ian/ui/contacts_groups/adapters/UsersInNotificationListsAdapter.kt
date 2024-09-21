@@ -21,6 +21,7 @@ import com.iyr.ian.R
 import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.dao.models.UserInNotificationList
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.ui.contacts_groups.NotificationListFragment
 import com.iyr.ian.utils.UIUtils.handleTouch
 
@@ -62,11 +63,10 @@ class UsersInNotificationListsAdapter(
         val record = data[position]
 
 // TODO: Pasarlo a Coroutina
-        val storageReference = FirebaseStorage.getInstance()
-            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-            .child(record.user_key)
-            .child(record.profile_image_path)
 
+
+
+        val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${record.user_key}/${record.profile_image_path}")
         try {
 
             Log.d("GLIDEAPP","8")

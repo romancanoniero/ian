@@ -8,7 +8,6 @@ import android.bluetooth.BluetoothManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
-import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -22,8 +21,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
+import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.clj.fastble.BleManager
 import com.iyr.ian.BuildConfig
@@ -40,25 +42,22 @@ import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.interfaces.MainActivityInterface
 import com.iyr.ian.ui.settings.SettingsFragmentViewModel
 import com.iyr.ian.ui.settings.push_button.adapters.TagsAdapter
-import com.iyr.ian.ui.settings.push_button.dialogs.BTScannerDialog
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.bluetooth.adapters.BLEDeviceAdapter
+import com.iyr.ian.utils.bluetooth.adapters.IBLEDeviceAdapter
 import com.iyr.ian.utils.bluetooth.ble.BLEConnectionState
 import com.iyr.ian.utils.bluetooth.ble.BLEState
 import com.iyr.ian.utils.bluetooth.ble.rasat.java.DisposableBag
 import com.iyr.ian.utils.bluetooth.errors.ErrorsObservable
+import com.iyr.ian.utils.bluetooth.models.BLEScanResult
 import com.iyr.ian.utils.multimedia.MediaPlayerUtils
 import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.UserViewModel
-import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.UUID
-
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
 
 private enum class FragmentType {
@@ -66,29 +65,26 @@ private enum class FragmentType {
 }
 
 @SuppressLint("MissingPermission")
-class PushButtonSetupFragment() : Fragment() {
+class PushButtonSetupFragment() : Fragment(), IBLEDeviceAdapter {
     private var mEnableAttempts = 0
     private val disposableBag = DisposableBag()
+    private var scanningDisposableBag : DisposableBag? = null
+
     private var scanning = false
     private var mSelectedFragment: FragmentType? = null
     private var viewModel: PushButtonsSetupFragmentViewModel? = null
     private val handler = Handler(Looper.getMainLooper())
     private var pressedTimes = 0
 
-    private val mainActivityViewModel: MainActivityViewModel by lazy { MainActivityViewModel.getInstance(requireContext(), UserViewModel.getInstance().getUser()?.user_key.toString()) }
-    private val  settingsFragmentViewModel: SettingsFragmentViewModel by lazy { SettingsFragmentViewModel.getInstance() }
-
-
-    private val bluetoothAdapter: BluetoothAdapter by lazy {
-        val bluetoothManager =
-            requireActivity().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothManager.adapter
+    private val mainActivityViewModel: MainActivityViewModel by lazy {
+        MainActivityViewModel.getInstance(
+            requireContext(),
+            UserViewModel.getInstance().getUser()?.user_key.toString()
+        )
     }
+    private val settingsFragmentViewModel: SettingsFragmentViewModel by lazy { SettingsFragmentViewModel.getInstance() }
 
 
-
-
-    val tagsAdapter: TagsAdapter by lazy { TagsAdapter(requireActivity(), ITag.store) }
 
 
     // Stops scanning after 10 seconds.
@@ -110,18 +106,27 @@ class PushButtonSetupFragment() : Fragment() {
 
     private lateinit var binding: FragmentBluetoothConfigurationBinding
     private var adapter: BLEDeviceAdapter? = null
+
+    private val searchAdapter: BLEDeviceAdapter by lazy { BLEDeviceAdapter(requireContext(), this) }
+    private val bluetoothAdapter: BluetoothAdapter by lazy {
+        val bluetoothManager =
+            requireActivity().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothManager.adapter
+    }
+    val tagsAdapter: TagsAdapter by lazy { TagsAdapter(requireActivity(), ITag.store) }
+
+
     private val bluetoothManager by lazy { requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager }
     //  private val bluetoothAdapter: BluetoothAdapter? by lazy { bluetoothManager.adapter }
-
-
 
 
     internal class ITagServiceConnection : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             val itagService = service as ITagsService.ITagBinder
             itagService.removeFromForeground()
-        }
 
+
+        }
         override fun onServiceDisconnected(name: ComponentName) {}
     }
 
@@ -139,6 +144,24 @@ class PushButtonSetupFragment() : Fragment() {
 
     private var resumeCount = 0
 
+    override fun OnItemClicked() {
+        ITag.store.remember(ITag.store.byPos(0))
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState!!)
+        if (tagsAdapter != null) {
+            tagsAdapter.saveStates(outState)
+        }
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        if (tagsAdapter != null) {
+            tagsAdapter.restoreStates(savedInstanceState)
+        }
+    }
+
 
     @SuppressLint("MissingPermission")
     override fun onCreateView(
@@ -148,13 +171,40 @@ class PushButtonSetupFragment() : Fragment() {
         binding = FragmentBluetoothConfigurationBinding.inflate(layoutInflater, container, false)
         binding.recyclerDevices.adapter = adapter
         setupUI()
+
+        binding.switchEnabled.setOnCheckedChangeListener { compoundButton, isChecked ->
+            requireActivity().handleTouch()
+            if (isChecked) {
+                binding.scanButton.visibility = View.VISIBLE
+            } else {
+                binding.scanButton.visibility = View.INVISIBLE
+            }
+            mainActivityViewModel.setBluetoothState(isChecked)
+        }
+
+
+        binding.scanButton.setOnClickListener {
+            requireContext().handleTouch()
+            if (binding.switchEnabled.isChecked) {
+                onStartStopScan()
+            }
+        }
+
+        binding.storedTags.layoutManager = LinearLayoutManager(
+            context, LinearLayoutManager.VERTICAL, false
+        )
+        binding.storedTags.adapter = tagsAdapter
+
+
+        binding.detectedTags.layoutManager =
+            LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+        binding.detectedTags.adapter = searchAdapter
+
         return binding.root
     }
 
 
     private fun isFirstLaunch(): Boolean {
-
-
         val sharedPref: SharedPreferences = requireActivity().getPreferences(Context.MODE_PRIVATE)
         return sharedPref.getBoolean("first", true)
     }
@@ -167,70 +217,14 @@ class PushButtonSetupFragment() : Fragment() {
     }
 
 
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-
         viewModel = PushButtonsSetupFragmentViewModel()
     }
 
 
     @SuppressLint("MissingPermission")
     private fun setupUI() {
-
-
-        binding.switchEnabled.setOnCheckedChangeListener { compoundButton, isChecked ->
-            requireActivity().handleTouch()
-            /*
-                        if (bluetoothAdapter == null) {
-                            Toast.makeText(context, "No Adapter", Toast.LENGTH_SHORT).show()
-                            binding.scanButton.visibility = View.INVISIBLE
-                            // Device does not support Bluetooth
-                            viewModel?.setBluetoothStatus(BLEState.NO_ADAPTER)
-                        } else if (!bluetoothAdapter.isEnabled()) {
-                            // Bluetooth is not enabled :)
-                            viewModel?.setBluetoothStatus(BLEState.NOT_ENABLED)
-                        } else {
-                            // Bluetooth is enabled
-                            viewModel?.setBluetoothStatus(BLEState.OK)
-                        }
-            */
-            if (isChecked) {
-                binding.scanButton.visibility = View.VISIBLE
-                binding.scanButton.setOnClickListener {
-                    val scannerDialog = BTScannerDialog(requireContext(), requireActivity())
-                    scannerDialog.show()
-                    //                    onStartStopScan(it)
-                }
-            } else {
-                binding.scanButton.visibility = View.INVISIBLE
-            }
-
-            mainActivityViewModel.setBluetoothState(isChecked)
-
-
-        }/*
-                val recyclerView: RecyclerView = binding.recyclerDevices
-                recyclerView.setHasFixedSize(true)
-                val layoutManager = LinearLayoutManager(context)
-                recyclerView.setLayoutManager(layoutManager)
-                adapter = BLEDeviceAdapter()
-                recyclerView.setAdapter(adapter)
-        */
-
-
-        binding.recyclerTags.layoutManager = LinearLayoutManager(
-            context, LinearLayoutManager.HORIZONTAL, false
-        )
-        binding.recyclerTags.adapter = tagsAdapter
-
         updateUI()
     }
 
@@ -258,7 +252,7 @@ class PushButtonSetupFragment() : Fragment() {
 
 
     override fun onResume() {
-        setupObservers()
+        startObservers()
         super.onResume()
         if (requireActivity() is MainActivityInterface) {
             (requireActivity() as MainActivityInterface).setToolbarTitle(getString(R.string.push_button_config))
@@ -267,11 +261,15 @@ class PushButtonSetupFragment() : Fragment() {
 
         //----------------------------------------------------------------
         ErrorsObservable.addErrorListener(mErrorListener)
-        sIsShown = true/*
+        sIsShown = true
+
+
+        /*
           setupContent()
           // TODO:  Waytoday.gpsLocationUpdater.addOnPermissionListener(gpsPermissionListener)
           disposableBag.add(ITag.ble.observableState().subscribe { event -> setupContent() })
-      *//*
+      */
+        /*
         disposableBag.add(ITag.ble.scanner().observableActive().subscribe { event ->
             if (BuildConfig.DEBUG) {
                 Log.d(
@@ -289,50 +287,13 @@ class PushButtonSetupFragment() : Fragment() {
             ITag.ble.scanner().observableTimer().subscribe { event -> setupProgressBar() })
        */
 
-        disposableBag.add(ITag.store.observable().subscribe { event ->
-            when (event.op) {
-                StoreOpType.change -> {
-                    Toast.makeText(requireContext(), "sorete", Toast.LENGTH_LONG).show()
-                }//setupContent()
-                StoreOpType.forget -> {
 
-                    binding.recyclerTags.adapter?.notifyDataSetChanged()/*
-                                        var tag: ITagDefault = event.tag as ITagDefault
-                                        var index = -1
-
-                                        adapter?.scanResults?.forEach { existingTag ->
-                                            index++
-                                            if (existingTag.id == tag.id()) {
-                                                binding.recyclerTags.adapter?.notifyItemRemoved(index)
-                                                return@subscribe
-                                            }
-                                        }
-
-                     */
-                }
-
-                StoreOpType.remember -> {/*
-                    var tag: ITagDefault = event.tag as ITagDefault
-                    var exists = false
-                    adapter?.scanResults?.forEach { existingTag ->
-                        if (existingTag.id == tag.id()) {
-                            exists = true
-                            return@subscribe
-                        }
-                    }
-                    if (!exists) {
-                     //   adapter?.scanResults?.add(BLEScanResult())
-                        binding.recyclerTags.adapter?.notifyItemInserted(adapter?.scanResults?.count() ?: 0 - 1)
-                    }
-
-                     */
-                    binding.recyclerTags.adapter?.notifyDataSetChanged()
-                }
-            }
-        })
         requireContext().bindService(
             ITagsService.intentBind(requireContext()), mServiceConnection, 0
-        )/*
+        )
+
+
+        /*
                 TODO: Resolverlo
                 if (Waytoday.tracker.isOn(this) && PowerManagement.needRequestIgnoreOptimization(this)) {
                     if (resumeCount++ > 1) {
@@ -342,6 +303,8 @@ class PushButtonSetupFragment() : Fragment() {
 
          */
 
+
+/*
         for (i in 0 until ITag.store.count()) {
             val itag = ITag.store.byPos(i)
             if (itag != null) {
@@ -349,6 +312,23 @@ class PushButtonSetupFragment() : Fragment() {
 
                 disposableBag.add(
                     connection.observableState().subscribe { state: BLEConnectionState? ->
+
+                        when (state)
+                        {
+                            BLEConnectionState.disconnected -> {
+
+                            }
+                            BLEConnectionState.connecting -> {
+
+                            }
+                            BLEConnectionState.connected -> { }
+                            BLEConnectionState.disconnecting -> {}
+                            BLEConnectionState.writting -> {}
+
+                            BLEConnectionState.reading -> {}
+                            null -> {}
+                        }
+
                         requireActivity().runOnUiThread(Runnable {
                             if (BuildConfig.DEBUG) {
                                 Log.d(
@@ -364,16 +344,65 @@ class PushButtonSetupFragment() : Fragment() {
                         })
                     })
 
+/*
+                disposableBag.add(ITag.store.observable().subscribe { event ->
+                    when (event.op) {
+                        StoreOpType.change -> {
+                            Toast.makeText(requireContext(), "sorete", Toast.LENGTH_LONG).show()
+                        }//setupContent()
+                        StoreOpType.forget -> {
+
+                            binding.storedTags.adapter?.notifyDataSetChanged()
+
+
+                            /*
+                                                var tag: ITagDefault = event.tag as ITagDefault
+                                                var index = -1
+
+                                                adapter?.scanResults?.forEach { existingTag ->
+                                                    index++
+                                                    if (existingTag.id == tag.id()) {
+                                                        binding.currentTags.adapter?.notifyItemRemoved(index)
+                                                        return@subscribe
+                                                    }
+                                                }
+
+                             */
+                        }
+
+                        StoreOpType.remember -> {/*
+                    var tag: ITagDefault = event.tag as ITagDefault
+                    var exists = false
+                    adapter?.scanResults?.forEach { existingTag ->
+                        if (existingTag.id == tag.id()) {
+                            exists = true
+                            return@subscribe
+                        }
+                    }
+                    if (!exists) {
+                     //   adapter?.scanResults?.add(BLEScanResult())
+                        binding.currentTags.adapter?.notifyItemInserted(adapter?.scanResults?.count() ?: 0 - 1)
+                    }
+
+                     */
+                            binding.storedTags.adapter?.notifyDataSetChanged()
+                        }
+                    }
+                })
+*/
+
+
+
 
                 disposableBag.add(connection.observableClick().subscribe { event: Int? ->
                     pressedTimes++
                     var tagPosition = -1
-                    val adapterData = (binding.recyclerTags.adapter as TagsAdapter).dataSet
+                    val adapterData = (binding.storedTags.adapter as TagsAdapter).dataSet
 
                     for (k in 0 until adapterData.count()) {
                         tagPosition++
                         if (adapterData.byPos(tagPosition).id() == itag.id()) {
-                            binding.recyclerTags.scrollToPosition(tagPosition)
+                            binding.storedTags.scrollToPosition(tagPosition)
 
                             val connection = ITag.ble.connectionById(itag.id())
 
@@ -385,8 +414,8 @@ class PushButtonSetupFragment() : Fragment() {
                             } else {
                                 MediaPlayerUtils.getInstance(requireContext()).stopSound()
                                 connection.isFindingActive(false)
-                               // connection.writeImmediateAlert(AlertVolume.NO_ALERT)
-                        //        tagsAdapter.notifyItemChanged(tagsAdapter.currentPosition)
+                                // connection.writeImmediateAlert(AlertVolume.NO_ALERT)
+                                //        tagsAdapter.notifyItemChanged(tagsAdapter.currentPosition)
                             }
 
                             break
@@ -411,14 +440,14 @@ class PushButtonSetupFragment() : Fragment() {
 
         }
 
-
+*/
     }
 
 
     override fun onPause() {
         removeObservers()
         super.onPause()
-        unregisterReceivers()
+
         try {
             requireContext().unbindService(mServiceConnection)
         } catch (e: IllegalArgumentException) {
@@ -442,8 +471,16 @@ class PushButtonSetupFragment() : Fragment() {
         super.onPause()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        disposableBag.dispose()
+    }
 
-    fun setupObservers() {
+
+    private val scanResults: ArrayList<BLEScanResult> = ArrayList<BLEScanResult>()
+    private var lastUpdate: Long = 0
+
+    fun startObservers() {
 
         if (bluetoothAdapter == null) viewModel?.setBluetoothStatus(BLEState.NO_ADAPTER)
         else if (bluetoothAdapter.isEnabled) viewModel?.setBluetoothStatus(BLEState.OK)
@@ -467,14 +504,14 @@ class PushButtonSetupFragment() : Fragment() {
         viewModel?.bluetoothStatus?.observe(this) { status ->
             when (status) {
                 BLEState.OK -> {
-                    binding.recyclerTags.visibility = View.VISIBLE
+                    binding.storedTags.visibility = View.VISIBLE
                     binding.btStatusLayout.visibility = View.GONE
                     binding.switchEnabled.isEnabled = true
                 }
 
                 BLEState.NO_ADAPTER -> {
                     mainActivityViewModel.showError("Tu dispositivo no permite conectarse a dispositivos Bluetooth LE")
-                    binding.recyclerTags.visibility = View.GONE
+                    binding.storedTags.visibility = View.GONE
                     binding.btStatusDescrip.text = "Bluetooth no está disponible"
                     binding.btStatusLayout.visibility = View.VISIBLE
                     tagsAdapter.onBluetoothOff()
@@ -483,7 +520,7 @@ class PushButtonSetupFragment() : Fragment() {
                 BLEState.NOT_ENABLED -> {
                     binding.switchEnabled.isEnabled = false
                     binding.switchEnabled.isChecked = false
-                    binding.recyclerTags.visibility = View.GONE
+                    binding.storedTags.visibility = View.GONE
                     binding.btStatusDescrip.text = "Bluetooth está desactivado"
                     binding.btStatusLayout.visibility = View.VISIBLE
                 }
@@ -492,6 +529,180 @@ class PushButtonSetupFragment() : Fragment() {
         }
 
 
+
+/*
+        disposableBag.add(ITag.ble.scanner().observableScan().subscribe { result: BLEScanResult ->
+            if (ITag.store.remembered(result.id)) {
+                return@subscribe
+            }
+            if (searchAdapter == null) {
+                return@subscribe
+            }
+            var found = false
+            var modified = false
+            for (scanResult in scanResults) {
+                if (scanResult.id == result.id) {
+                    if (scanResult.rssi !== result.rssi) {
+                        modified = true
+                        scanResult.rssi = result.rssi
+                    }
+                    found = true
+                    break
+                }
+            }
+            if (!found) {
+                if (BuildConfig.DEBUG) {
+                    Log.d("ITag", "found=$found")
+                }
+                Log.d("ITag", "found=$result")
+                if (result.name?.lowercase(Locale.getDefault())!!.contains("itag")) {
+                   // busca en searchAdapter.scanResults por id = result.id y toma su indice
+                    val index = searchAdapter.scanResults.indexOfFirst { it.id == result.id }
+                    if (index != -1) {
+                        searchAdapter.scanResults[index] = result
+                        searchAdapter.notifyItemChanged(index)
+                    } else {
+                        searchAdapter.scanResults.add(result)
+                        searchAdapter.notifyItemInserted(scanResults.size - 1)
+                    }
+                }
+                //            searchAdapter?.notifyDataSetChanged()
+                lastUpdate = System.currentTimeMillis()
+            }
+            if (modified) {
+                if (System.currentTimeMillis() - lastUpdate > 1000) {
+                    if (BuildConfig.DEBUG) {
+                        Log.d("ITag", "modified=$modified")
+                    }
+                    adapter?.notifyDataSetChanged()
+                    lastUpdate = System.currentTimeMillis()
+                }
+            }
+        })
+
+        disposableBag.add(ITag.ble.scanner().observableTimer().subscribe { tick: Int? ->
+            binding.progress.progress = tick!!
+            if (tick==0) {
+                ITag.ble.scanner().stop()
+                updateProgressBar()
+            }
+        })
+
+        disposableBag.add(ITag.ble.scanner().observableActive().subscribe { active: Boolean? ->
+            if (!active!!) {
+                return@subscribe
+            }
+            if (searchAdapter == null) {
+                return@subscribe
+            }
+            scanResults.clear()
+            adapter?.notifyDataSetChanged()
+        })
+*/
+
+        // Controla la conexion y desconexion de los dispositivos
+        disposableBag.add(ITag.store.observable().subscribe { event ->
+            when (event.op) {
+                StoreOpType.change -> {
+                    //Toast.makeText(requireContext(), "sorete", Toast.LENGTH_LONG).show()
+                }
+                StoreOpType.forget -> {
+                    binding.storedTags.adapter?.notifyDataSetChanged()
+                }
+                StoreOpType.remember -> {
+                    connectToTag(event.tag.id())
+                    binding.storedTags.adapter?.notifyDataSetChanged()
+                    val index = searchAdapter.scanResults.indexOfFirst { it.id == event.tag.id() }
+                    if (index != -1) {
+                        searchAdapter.scanResults.removeAt(index)
+                        searchAdapter.notifyItemRemoved(index)
+                    }
+                }
+            }
+        })
+
+    }
+
+
+    /**
+     * Conecta el Itag y actualiza su estado.
+     */
+    private fun connectToTag(tagId: String) {
+        val connection = ITag.ble.connectionById(tagId)
+
+        disposableBag.add(
+            connection.observableState().subscribe { state: BLEConnectionState? ->
+
+                when (state)
+                {
+                    BLEConnectionState.disconnected -> {
+
+                    }
+                    BLEConnectionState.connecting -> {
+
+                    }
+                    BLEConnectionState.connected -> {
+                        var pp = 3
+                    }
+                    BLEConnectionState.disconnecting -> {}
+                    BLEConnectionState.writting -> {}
+
+                    BLEConnectionState.reading -> {}
+                    null -> {}
+                }
+
+                requireActivity().runOnUiThread(Runnable {
+                    if (BuildConfig.DEBUG) {
+                        Log.d(
+                            "Tags",
+                            "connection " + tagId + " state changed " + connection.state()
+                                .toString()
+                        )
+                    }
+                    //      updateState(itag.id(), state!!)
+
+tagsAdapter
+                    tagsAdapter.notifyDataSetChanged()
+                })
+            })
+
+
+        disposableBag.add(connection.observableClick().subscribe { event: Int? ->
+            pressedTimes++
+            var tagPosition = -1
+            val adapterData = (binding.storedTags.adapter as TagsAdapter).dataSet
+
+            for (k in 0 until adapterData.count()) {
+                tagPosition++
+                if (adapterData.byPos(tagPosition).id() == tagId) {
+                    binding.storedTags.scrollToPosition(tagPosition)
+
+                    val connection = ITag.ble.connectionById(tagId)
+
+                    if (!connection.isAlerting) {
+                        MediaPlayerUtils.getInstance(requireContext()).startFindPhone()
+
+                        connection.isFindingActive(true)
+                        tagsAdapter.notifyDataSetChanged()
+                    } else {
+                        MediaPlayerUtils.getInstance(requireContext()).stopSound()
+                        connection.isFindingActive(false)
+                        // connection.writeImmediateAlert(AlertVolume.NO_ALERT)
+                        //        tagsAdapter.notifyItemChanged(tagsAdapter.currentPosition)
+                    }
+
+                    break
+                }
+            }
+            Toast.makeText(
+                activity,
+                "El Boton de Pánico está funcional! ${pressedTimes}",
+                Toast.LENGTH_SHORT
+            ).show()
+
+
+            //      }
+        })
     }
 
 
@@ -500,6 +711,84 @@ class PushButtonSetupFragment() : Fragment() {
         viewModel?.bluetoothStatus?.removeObservers(this)
     }
 
+
+    private fun onStartStopScan() {
+        requireContext().handleTouch()
+        if (BuildConfig.DEBUG) {
+            Log.d(
+                "ITag",
+                "onStartStopScan isScanning=" + ITag.ble.scanner().isScanning + " thread=" + Thread.currentThread().name
+            )
+        }
+        if (ITag.ble.scanner().isScanning) {
+            // Detengo los observadores
+            unRegisterScanningObservers()
+            binding.scanButton.text = getString(R.string.start_scan)
+            lifecycleScope.launch(Dispatchers.IO) {
+                ITag.ble.scanner().stop()
+                updateProgressBar()
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (requireContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(
+                            requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION
+                        )
+                    ) {
+                        val builder = android.app.AlertDialog.Builder(context)
+                        builder.setMessage(R.string.request_location_permission)
+                            .setTitle(R.string.request_permission_title).setPositiveButton(
+                                android.R.string.ok
+                            ) { dialog: DialogInterface?, which: Int ->
+                                ActivityCompat.requestPermissions(
+                                    requireActivity(),
+                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                                    Constants.LOCATION_PERMISSION_REQUEST_CODE
+                                )
+                            }.setNegativeButton(
+                                android.R.string.cancel
+                            ) { dialog: DialogInterface, which: Int -> dialog.cancel() }.show()
+                        return
+                    } else {
+                        // isScanRequestAbortedBecauseOfPermission=true;
+                        ActivityCompat.requestPermissions(
+                            requireActivity(),
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                            Constants.LOCATION_PERMISSION_REQUEST_CODE
+                        )
+                        return
+                    }
+                }
+            }
+            binding.scanButton.text = getString(R.string.stop_scan)
+            searchAdapter.scanResults.clear()
+            searchAdapter.notifyDataSetChanged()
+
+            registerScanningObservers()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                ITag.ble.scanner().start(ITag.SCAN_TIMEOUT, arrayOf())
+                updateProgressBar()
+            }
+        }
+
+    }
+
+    private fun updateProgressBar() {
+        val pb: ProgressBar = binding.progress
+        if (ITag.ble.scanner().isScanning) {
+            lifecycleScope.launch(Dispatchers.Main) {
+                pb.visibility = View.VISIBLE
+                pb.isIndeterminate = false
+                pb.max = ITag.SCAN_TIMEOUT
+                pb.progress = ITag.ble.scanner().observableTimer().value()
+            }
+        } else {
+            lifecycleScope.launch(Dispatchers.Main) {
+                pb.visibility = View.GONE
+            }
+        }
+    }
 
     fun startService() {
         Toast.makeText(context, "Start Service", Toast.LENGTH_SHORT).show()/*
@@ -511,19 +800,85 @@ class PushButtonSetupFragment() : Fragment() {
     }
 
 
-    private fun registerReceivers() {
-        val intentFilter = IntentFilter()/*
-                intentFilter.addAction(BROADCAST_MESSAGE_SCAN_RESULT_UPDATED)
-                intentFilter.addAction(BROADCAST_MESSAGE_BLE_REFRESH_DEVICES_LIST)
-                intentFilter.addAction(BROADCAST_MESSAGE_BLE_SERVICE_CONNECTED)
-                intentFilter.addAction(BROADCAST_MESSAGE_BLE_SCAN_DISCOVERING)
-                intentFilter.addAction(BROADCAST_MESSAGE_BLE_DEVICE_CONNECTED)
-                intentFilter.addAction(BROADCAST_MESSAGE_PANIC_BUTTON_TEST)
-          *//*
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
-            broadcastReceiver,
-            intentFilter
-        )*/
+    fun registerScanningObservers()
+    {
+        if (scanningDisposableBag != null) {
+            return
+        }
+        scanningDisposableBag = DisposableBag()
+
+        scanningDisposableBag?.add(ITag.ble.scanner().observableScan().subscribe { result: BLEScanResult ->
+            if (ITag.store.remembered(result.id)) {
+                return@subscribe
+            }
+            if (searchAdapter == null) {
+                return@subscribe
+            }
+            var found = false
+            var modified = false
+            for (scanResult in scanResults) {
+                if (scanResult.id == result.id) {
+                    if (scanResult.rssi !== result.rssi) {
+                        modified = true
+                        scanResult.rssi = result.rssi
+                    }
+                    found = true
+                    break
+                }
+            }
+            if (!found) {
+                if (BuildConfig.DEBUG) {
+                    Log.d("ITag", "found=$found")
+                }
+                Log.d("ITag", "found=$result")
+                if (result.name?.lowercase(Locale.getDefault())!!.contains("itag")) {
+                    // busca en searchAdapter.scanResults por id = result.id y toma su indice
+                    val index = searchAdapter.scanResults.indexOfFirst { it.id == result.id }
+                    if (index != -1) {
+                        searchAdapter.scanResults[index] = result
+                        searchAdapter.notifyItemChanged(index)
+                    } else {
+                        searchAdapter.scanResults.add(result)
+                        searchAdapter.notifyItemInserted(scanResults.size - 1)
+                    }
+                }
+                //            searchAdapter?.notifyDataSetChanged()
+                lastUpdate = System.currentTimeMillis()
+            }
+            if (modified) {
+                if (System.currentTimeMillis() - lastUpdate > 1000) {
+                    if (BuildConfig.DEBUG) {
+                        Log.d("ITag", "modified=$modified")
+                    }
+                    adapter?.notifyDataSetChanged()
+                    lastUpdate = System.currentTimeMillis()
+                }
+            }
+        })
+
+        scanningDisposableBag?.add(ITag.ble.scanner().observableTimer().subscribe { tick: Int? ->
+            binding.progress.progress = tick!!
+            if (tick==0) {
+                ITag.ble.scanner().stop()
+                updateProgressBar()
+            }
+        })
+
+        scanningDisposableBag?.add(ITag.ble.scanner().observableActive().subscribe { active: Boolean? ->
+            if (!active!!) {
+                return@subscribe
+            }
+            if (searchAdapter == null) {
+                return@subscribe
+            }
+            scanResults.clear()
+            adapter?.notifyDataSetChanged()
+        })
+    }
+
+    fun unRegisterScanningObservers()
+    {
+        scanningDisposableBag?.dispose()
     }
 
     private fun unregisterReceivers() {

@@ -69,6 +69,16 @@
             android:layout_height="wrap_content"
             android:text="Buscar Dispositivos" />
 
+        <ProgressBar
+            android:id="@+id/progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginVertical="10dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -78,27 +88,26 @@
                 android:id="@+id/bt_status_layout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
                 android:gravity="center_horizontal|center_vertical"
                 android:orientation="vertical"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentTop="true"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center_horizontal"
-                    android:orientation="vertical"
-                    >
+                    android:orientation="vertical">
 
                     <ImageView
                         android:id="@+id/bt_logo"
                         android:layout_width="@dimen/box_xsuperbig"
                         android:layout_height="@dimen/box_xsuperbig"
-                        app:tint="@color/gray_400"
-                        android:src="@drawable/bt_disabled" />
+                        android:src="@drawable/bt_disabled"
+                        app:tint="@color/gray_400" />
 
                     <TextView
                         android:id="@+id/bt_status_descrip"
@@ -112,12 +121,56 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_tags"
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="end"
-                android:layout_marginTop="10dp" />
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/registered"
+                        android:textSize="@dimen/text_size_subheading"
+                        android:textStyle="bold"/>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/stored_tags"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="10dp"
+                        app:layoutManager="LinearLayoutManager"
+                        android:orientation="vertical"
+                        tools:listitem="@layout/row_scan_result" />
+
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/detected"
+                        android:textSize="@dimen/text_size_subheading"
+                        android:textStyle="bold"/>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/detected_tags"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="10dp"
+                        android:orientation="vertical"
+                        app:layoutManager="LinearLayoutManager"
+                        tools:listitem="@layout/row_scan_result" />
+
+
+
+                </LinearLayout>
+            </ScrollView>
+
         </RelativeLayout>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

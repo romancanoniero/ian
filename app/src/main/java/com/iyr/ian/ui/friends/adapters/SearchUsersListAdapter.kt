@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.USERNAME_MINIMUM_LENGTH
 import com.iyr.ian.R
@@ -107,18 +108,12 @@ class SearchUsersListAdapter(
                                   contact.image?.file_name.toString()
                               )
               */
-                var storageReference = FirebaseStorage.getInstance()
-                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                    .child(contact.user_key.toString())
-                    .child(contact.image?.file_name.toString())
+
+
+                var storageReference = (
+                        StorageRepositoryImpl().
+                        generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${contact.user_key.toString()}/${contact.image?.file_name.toString()}") as StorageReference)
                     .downloadUrlWithCache(context)
-                /*
-                //--------------
-                var storageReferenceCache = FirebaseStorage.getInstance()
-                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                    .child(event.author_key!!).child(event.author?.profile_image_path.toString())
-                    .downloadUrlWithCache(context)
-                */
                 //-----------------
                 GlideApp.with(context).asBitmap().load(storageReference).placeholder(
                     AppCompatResources.getDrawable(

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.os.Build
+import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,11 +16,13 @@ import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.FacebookSdk
+import com.chauthai.swipereveallayout.SwipeRevealLayout
+import com.chauthai.swipereveallayout.ViewBinderHelper
 import com.iyr.ian.BuildConfig
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
@@ -40,15 +43,14 @@ class TagsAdapter(
     val activity: Activity, val dataSet: ITagsStoreInterface
 ) : RecyclerView.Adapter<TagsAdapter.ViewHolder>() {
 
-
+    private val viewBinderHelper = ViewBinderHelper()
     var currentPosition: Int = -1
     val disposableBag = DisposableBag()
     private var mainView: View? = null
     private var isEnabled: Boolean = false
 
-
     init {
-
+        viewBinderHelper.setOpenOnlyOne(true);
     }
 
     /**
@@ -62,18 +64,24 @@ class TagsAdapter(
         //  private var buttonPressed: Boolean = false
         private var mITagAnimation: Animation? = null
         val tagName: TextView = view.findViewById<TextView>(R.id.text_tag_name)
-        val tagNumber: TextView = view.findViewById<TextView>(R.id.tag_number)
-        val tagsCount: TextView = view.findViewById<TextView>(R.id.tags_count)
-        val tagsCounterSection: View = view.findViewById<View>(R.id.tags_counter_section)
+        val swipeContainer: SwipeRevealLayout =
+            view.findViewById<SwipeRevealLayout>(R.id.swipe_container)
+
+        //   val tagNumber: TextView = view.findViewById<TextView>(R.id.tag_number)
+        //   val tagsCount: TextView = view.findViewById<TextView>(R.id.tags_count)
+        //   val tagsCounterSection: View = view.findViewById<View>(R.id.tags_counter_section)
+        val btnForget: LinearLayout = view.findViewById<LinearLayout>(R.id.btn_forget)
         val btnAlert: ImageView = view.findViewById<ImageView>(R.id.btn_alert)
         val imageITag: ImageView = view.findViewById<ImageView>(R.id.image_itag)
-        val btnForget: View = view.findViewById<View>(R.id.btn_forget)
+
+        //        val btnForget: View = view.findViewById<View>(R.id.btn_forget)
         val btnColor: View = view.findViewById<View>(R.id.btn_color)
         val textTagName: EditText = view.findViewById<EditText>(R.id.text_tag_name)
-        val btnEditTagName: View = view.findViewById<View>(R.id.edit_button)
+
+        //  val btnEditTagName: View = view.findViewById<View>(R.id.edit_button)
         val rssiView: RssiView = view.findViewById<RssiView>(R.id.rssi)
         val imgStatus = view.findViewById<ImageView>(R.id.bt_status)
-        val txtDeactivatedMark = view.findViewById<TextView>(R.id.deactivated_mark)
+        //     val txtDeactivatedMark = view.findViewById<TextView>(R.id.deactivated_mark)
 
         val textStatus = view.findViewById<TextView>(R.id.text_status)
         val activity = _activity
@@ -90,31 +98,24 @@ class TagsAdapter(
             //
             bleAdapterIsEnabled = isEnabled
             if (bleAdapterIsEnabled) {
-                btnForget.tag = itag
+                // btnForget.tag = itag
                 btnColor.tag = itag
                 btnColor.setOnClickListener { v -> onChangeColor(v) }
                 textTagName.tag = itag
                 textTagName.setOnEditorActionListener { textView, i, keyEvent ->
                     if (i == EditorInfo.IME_ACTION_DONE) {
-                        Toast.makeText(
-                            FacebookSdk.getApplicationContext(), "Done pressed", Toast.LENGTH_SHORT
-                        ).show()
                         ITag.store.setName(itag.id(), textTagName.text.toString())
-                        btnEditTagName.isEnabled = true
-                        btnEditTagName.alpha = 1f
                         textTagName.isEnabled = false
                     }
                     false
                 }
 
-                btnEditTagName.setOnClickListener {
+                textTagName.setOnClickListener {
                     if (!textTagName.isEnabled) {
-                        btnEditTagName.isEnabled = false
-                        btnEditTagName.alpha = .5f
                         textTagName.isEnabled = true
                     } else {
-                        btnEditTagName.isEnabled = true
-                        btnEditTagName.alpha = 1f
+                        //  btnEditTagName.isEnabled = true
+                        //   btnEditTagName.alpha = 1f
                         textTagName.isEnabled = false
                     }
                 }
@@ -122,19 +123,26 @@ class TagsAdapter(
                 btnAlert.tag = itag
                 btnAlert.setOnClickListener { v -> onDisconnectAlert(v) }
 
+
                 btnForget.tag = itag
                 btnForget.setOnClickListener { v -> onForget(v) }
+
+                /*
+                                btnForget.tag = itag
+                                btnForget.setOnClickListener { v -> onForget(v) }
+                  */
             } else {
                 btnColor.setOnClickListener { v -> null }
-                btnEditTagName.setOnClickListener { v -> null }
+                //btnEditTagName.setOnClickListener { v -> null }
                 btnAlert.setOnClickListener { v -> null }
-                btnForget.setOnClickListener { v -> null }
+                //            btnForget.setOnClickListener { v -> null }
 
             }
 
         }
 
         fun onForget(sender: View) {
+            swipeContainer.close(true)
             val itag = sender.tag as ITagInterface
             if (itag != null) {
                 val builder = AlertDialog.Builder(activity)
@@ -355,6 +363,16 @@ class TagsAdapter(
         }
 
         private fun updateState(id: String, state: BLEConnectionState) {
+            Log.d("Tags", "updateState $id $state")
+
+            if (id != ITag.ble.connectionById(id).id()) {
+                Log.d("Tags", "Rechazo porque no es para este Tag")
+                return
+            } else {
+                Log.d("Tags", "Es para este Tag")
+            }
+            rssiView.visibility = View.INVISIBLE
+
 
             val statusDrawableId: Int
             val statusTextId: Int
@@ -362,7 +380,8 @@ class TagsAdapter(
                 when (state) {
                     BLEConnectionState.connected -> {
                         statusDrawableId = R.drawable.bt
-                        statusTextId = R.string.bt
+                        statusTextId = R.string.bt_connected
+                        rssiView.visibility = View.VISIBLE
                     }
 
                     BLEConnectionState.connecting, BLEConnectionState.disconnecting -> {
@@ -383,28 +402,36 @@ class TagsAdapter(
                     }
 
                     BLEConnectionState.disconnected -> {
+                        rssiView.visibility = View.INVISIBLE
                         statusDrawableId = R.drawable.bt_disabled
                         statusTextId = R.string.bt_disabled
+                        imgStatus.setColorFilter(activity.resources.getColor(R.color.gray_400))
                     }
+
 
                     else -> {
                         statusDrawableId = R.drawable.bt_disabled
                         statusTextId = R.string.bt_disabled
                     }
+
                 }
             } else {
                 statusDrawableId = R.drawable.bt_disabled
                 statusTextId = R.string.bt_disabled
             }
+            /*
+                        GlideApp.with(AppClass.instance)
+                            .load(statusDrawableId)
+                            .into(imgStatus)
+            */
             imgStatus.setImageResource(statusDrawableId)
             textStatus.setText(statusTextId)
         }
 
 
         fun setupRSSI(itag: ITagInterface) {
-            //     for (i in 0 until ITag.store.count()) {
-            //       val itag = ITag.store.byPos(i) ?: continue
-            val disposableBag = DisposableBag()
+
+            // val disposableBag = DisposableBag()
 
             val id = itag.id()
             if (BuildConfig.DEBUG) {
@@ -422,28 +449,52 @@ class TagsAdapter(
                         itag, connection
                     )
                 })
-  /*
+            // Comienzo a escuchar
             disposableBag.add(connection.observableState().subscribe { state: BLEConnectionState? ->
-                activity.runOnUiThread(Runnable {
-                    if (BuildConfig.DEBUG) {
-                        Log.d(
-                            "Tags",
-                            "connection " + id + " state changed " + connection.state().toString()
-                        )
-                    }
-
-                    updateAlertButton(ITag.store.byId(id)!!.isAlertDisconnected, true)
-                    updateState(id, state!!)
-                    updateITagImageAnimation(itag, connection)
-                    if (connection.state() == BLEConnectionState.connected) { //isConnected()) {
-                        connection.enableRSSI()
-                    } else {
-                        connection.disableRSSI()
-                        updateRSSI(id, -999)
-                    }
-                })
+                updateState(id, state!!)
+                updateITagImageAnimation(itag, connection)
+                if (connection.state() == BLEConnectionState.connected) { //isConnected()) {
+                    connection.enableRSSI()
+                } else {
+                    connection.disableRSSI()
+                    updateRSSI(id, -999)
+                }
             })
-*/
+
+
+            // Tomo el valor inicial para que este actualizado al comenzar
+            updateState(id, connection.observableState().value())
+            updateITagImageAnimation(itag, connection)
+            if (connection.state() == BLEConnectionState.connected) { //isConnected()) {
+                connection.enableRSSI()
+            } else {
+                connection.disableRSSI()
+                updateRSSI(id, -999)
+            }
+
+
+            /*
+                      disposableBag.add(connection.observableState().subscribe { state: BLEConnectionState? ->
+                          activity.runOnUiThread(Runnable {
+                              if (BuildConfig.DEBUG) {
+                                  Log.d(
+                                      "Tags",
+                                      "connection " + id + " state changed " + connection.state().toString()
+                                  )
+                              }
+
+                              updateAlertButton(ITag.store.byId(id)!!.isAlertDisconnected, true)
+                              updateState(id, state!!)
+                              updateITagImageAnimation(itag, connection)
+                              if (connection.state() == BLEConnectionState.connected) { //isConnected()) {
+                                  connection.enableRSSI()
+                              } else {
+                                  connection.disableRSSI()
+                                  updateRSSI(id, -999)
+                              }
+                          })
+                      })
+          */
             /*
                   disposableBag.add(connection.observableClick().subscribe { event: Int? ->
 
@@ -466,19 +517,36 @@ class TagsAdapter(
 
         private fun updateRSSI(rssi: Int) {
             rssiView.setRssi(rssi)
+ /*
+            Log.d("RSSI_", "RSSI: $rssi")
+            Log.d("RSSI_", "Distance: "+calculateItagDistance(rssi))
+            Log.d("RSSI_", "otrafunc: "+calcDistbyRSSI(rssi))
+*/
+        }
+/*
+        fun calcDistbyRSSI(rssi: Int, measurePower: Int = -69): String? {
+            val iRssi = Math.abs(rssi)
+            val iMeasurePower = Math.abs(measurePower)
+            val power:Double = (iRssi - iMeasurePower)/(10*2.0)
+            // ft = m * 3.2808
+            if (Math.pow(10.0,power) * 3.2808 < 1.0){
+                return String.format("%.2f ft(Immediate)", Math.pow(10.0,power) * 3.2808)
+            }else if (Math.pow(10.0,power) * 3.2808 > 1.0 && Math.pow(10.0,power) * 3.2808 < 10.0){
+                return String.format("%.2f ft(Near)", Math.pow(10.0,power) * 3.2808)
+            }else{
+                return String.format("%.2f ft(Far)", Math.pow(10.0,power) * 3.2808)
+            }
         }
 
+        fun calculateItagDistance(rssi: Int, measuredPower: Int = -70, n: Double = 1.0): Double {
+            return 10.0.pow((measuredPower - rssi) / (10 * n))
+        }
+*/
         private fun updateRSSI(id: String, rssi: Int) {
-            updateRSSI(rssi)
-        }
-
-        fun updateTagsNumberIndicator(position: Int, count: Int) {
-            if (count > 0) {
-                tagNumber.text = (position + 1).toString()
-                tagsCount.text = count.toString()
-                tagsCounterSection.visibility = View.VISIBLE
+            if (id == tagName.tag) {
+                updateRSSI(rssi)
             } else {
-                tagsCounterSection.visibility = View.INVISIBLE
+                Log.d("Tags", "Rechazo porque no es para este Tag")
             }
         }
 
@@ -486,45 +554,66 @@ class TagsAdapter(
 
     // Create new views (invoked by the layout manager)
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
-        // Create a new view, which defines the UI of the list item
         val view =
-            LayoutInflater.from(viewGroup.context).inflate(R.layout.itag_item, viewGroup, false)
+            LayoutInflater.from(viewGroup.context)
+                .inflate(R.layout.itag_item_horizontal, viewGroup, false)
 
         mainView = view
 
         return ViewHolder(activity, disposableBag, view)
     }
 
+    fun saveStates(outState: Bundle?) {
+        viewBinderHelper.saveStates(outState)
+    }
+
+    fun restoreStates(inState: Bundle?) {
+        viewBinderHelper.restoreStates(inState)
+    }
+
 
     // Replace the contents of a view (invoked by the layout manager)
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
 
+
+        // get your data object first.
+        val dataObject = dataSet.byPos(position)
+
+
+        // Save/restore the open/close state.
+        // You need to provide a String id which uniquely defines the data object.
+        viewBinderHelper.bind(viewHolder.swipeContainer, dataObject.id())
+
+
         this.currentPosition = position
         val itag = dataSet.byPos(position)
         val connection = ITag.ble.connectionById(itag.id())
-
         viewHolder.tagName.text = itag.name()
+        viewHolder.tagName.tag = itag.id()
         viewHolder.setupButtons(itag, isEnabled)
-        viewHolder.updateTagsNumberIndicator(position, dataSet.count())
+        //  viewHolder.updateTagsNumberIndicator(position, dataSet.count())
         viewHolder.updateAlertButton(itag.isAlertDisconnected, connection.isConnected)
         viewHolder.updateITagImage(itag)
         viewHolder.updateITagImageAnimation(itag, connection)
         viewHolder.setupRSSI(itag)
 
-        if (!isEnabled) {
-            viewHolder.txtDeactivatedMark.visibility = View.VISIBLE
-            viewHolder.txtDeactivatedMark.text = "No Habilitado "
-            viewHolder.itemView.alpha = .5f
-        } else {
-            if (connection.isConnected) {
-                viewHolder.txtDeactivatedMark.visibility = View.GONE
-                viewHolder.itemView.alpha = 1.0f
-            } else {
-                viewHolder.txtDeactivatedMark.text = "Desconectado"
-                viewHolder.txtDeactivatedMark.visibility = View.VISIBLE
-                viewHolder.itemView.alpha = 0.5f
-            }
-        }
+
+        /*
+                if (!isEnabled) {
+                    viewHolder.txtDeactivatedMark.visibility = View.VISIBLE
+                    viewHolder.txtDeactivatedMark.text = "No Habilitado "
+                    viewHolder.itemView.alpha = .5f
+                } else {
+                    if (connection.isConnected) {
+        //                viewHolder.txtDeactivatedMark.visibility = View.GONE
+                        viewHolder.itemView.alpha = 1.0f
+                    } else {
+                        viewHolder.txtDeactivatedMark.text = "Desconectado"
+                        viewHolder.txtDeactivatedMark.visibility = View.VISIBLE
+                        viewHolder.itemView.alpha = 0.5f
+                    }
+                }
+                */
     }
 
     // Return the size of your dataset (invoked by the layout manager)
@@ -548,7 +637,8 @@ class TagsAdapter(
 
     }
 
-// Funciones de los TAGS
+
+    // Funciones de los TAGS
 
 
 }

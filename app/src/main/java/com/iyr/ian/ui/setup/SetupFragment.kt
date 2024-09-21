@@ -26,6 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.google.gson.Gson
 import com.iyr.fewtouchs.ui.views.setup.SetupActivityViewModel
 import com.iyr.ian.AppConstants
@@ -34,6 +35,7 @@ import com.iyr.ian.app.AppClass
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.databinding.ActivitySetupBinding
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.UIUtils.handleTouch
@@ -315,8 +317,7 @@ class SetupFragment : Fragment(), SetupActivityCallback {
                             var subFolder =
                                 AppConstants.PROFILE_IMAGES_STORAGE_PATH + FirebaseAuth.getInstance().uid.toString()
 
-                            var finalPath =
-                                FirebaseStorage.getInstance().getReference(mediaFile.file_name)
+                            var finalPath = ( StorageRepositoryImpl().generateStorageReference("${mediaFile.file_name}") as StorageReference)
                                     .downloadUrlWithCache(
                                         AppClass.instance, subFolder
                                     )
@@ -620,25 +621,7 @@ class SetupFragment : Fragment(), SetupActivityCallback {
         //      updateSaveButton()
     }
 
-    /*
-        private fun updateuserImage() {
-            var storageReference: Any? = null
-            storageReference = if (!currentObject.image.file_name.startsWith("http")) {
-                if (currentObject.image.file_name.startsWith("file:")) {
-                    currentObject.image.file_name
-                } else {
-                    FirebaseStorage.getInstance().getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                        .child(FirebaseAuth.getInstance().uid.toString())
-                        .child(currentObject.image.file_name)
-                }
-            } else {
-                currentObject.image.file_name
-            }
-            GlideApp.with(this).asBitmap().load(storageReference)
-                .placeholder(getDrawable(R.drawable.progress_animation))
-                .error(getDrawable(R.drawable.ic_error)).into(binding.userImage)
-        }
-    *//*
+  /*
     private fun updateSaveButton() {
         val displayName: String = binding.displayName.text.toString()
         val telephoneNumber = binding.phoneNumber.text.toString()

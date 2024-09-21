@@ -4,8 +4,8 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -27,87 +27,33 @@ object FirebaseExtensions {
         context: Context, internalSubPath: String? = null
     ): String {
         return withContext(Dispatchers.IO) {
-            // Obtener el nombre del archivo
+            path
+            Log.d("DOWNLOADURLWITHCACHE", "entre a obtener = ${path}")
+            val fileName =  name.getJustFileName()
+            val subPath = this@downloadUrlWithCache.path.substringBeforeLast("/")
+            val fileFinalPath = "$subPath/$fileName"
+            val cacheFile = File(context.cacheDir, fileFinalPath)
 
-            var _name = ""
-
-            if (internalSubPath == null) _name = name
-            else _name = internalSubPath
-            // Verificar si el archivo existe en el caché
-            var subPath: String = this@downloadUrlWithCache.path.substringBeforeLast("/")
-            //if (!internalSubPath.isNullOrEmpty()) subPath = "${internalSubPath}"
-
-
-            var fileFinalPath = "${subPath}/${name}"
-            var cacheFile = File(context.cacheDir, fileFinalPath)
-
-
-
-            Log.d("DOWNLOADURLWITHCHACHE", "cacheFile = $cacheFile")
-            //   cacheFile = "file:$cacheFile"
+            Log.d("DOWNLOADURLWITHCACHE", "cacheFile = $cacheFile")
 
             if (cacheFile.exists()) {
-                // Si el archivo existe en el caché, retornar su ubicación local
-                return@withContext "file:" + cacheFile.absolutePath
+                return@withContext "file:${cacheFile.absolutePath}"
             } else {
-                // Si no existe en el caché, descargarlo y guardarlo
-
-                val storage = FirebaseStorage.getInstance()
-                var storageRef = storage.reference
-
-
-                var dirsToCreate = this@downloadUrlWithCache.path.substringBeforeLast("/").split("/")
-                var path = context.cacheDir.toString()
-                dirsToCreate.forEach { dir ->
-                    if (dir.isNotEmpty()) {
-
-                        try {
-
-                            storageRef = storageRef.child(dir)
-                        } catch (e: Exception) {
-                            var pp = 2
-                        }
-
-                    }
-                }
-                storageRef = storageRef.child(name)
-
-                var downloadedFile: File? = null
-                // Descargar el archivo
                 try {
-                    val url = storageRef.downloadUrl.await().toString()
-                    downloadedFile = File(context.cacheDir, fileFinalPath)
-
-                    if (!File(cacheFile.path.substringBeforeLast("/")).exists()) {
-                        var dirsToCreate = fileFinalPath.substringBeforeLast("/").split("/")
-                        var path = context.cacheDir.toString()
-                        dirsToCreate.forEach { dir ->
-                            try {
-                                path = path + "/" + dir
-                                File(path).mkdir()
-                            } catch (e: Exception) {
-                                var pp = 2
-                            }
-                        }
+                    val url = this@downloadUrlWithCache.downloadUrl.await().toString()
+                    val downloadedFile = File(context.cacheDir, fileFinalPath).apply {
+                        parentFile?.mkdirs()
                     }
-
-                    FirebaseStorage.getInstance().getReferenceFromUrl(url).getFile(downloadedFile)
-                        .await()
-                    // Guardar el archivo en el caché
-                    // Retornar la ubicación local del archivo
+                      StorageRepositoryImpl().downloadStoredItem(url, downloadedFile.absolutePath)
+//                    FirebaseStorage.getInstance().getReferenceFromUrl(url).getFile(downloadedFile).await()
+                    return@withContext "file:${downloadedFile.absolutePath}"
                 } catch (exception: Exception) {
-                    var pp = 3
+                    Log.e("DOWNLOADURLWITHCACHE", "Error downloading file", exception)
+                    throw exception
                 }
-//                withContext(Dispatchers.IO) {
-                    "file:" + downloadedFile?.absolutePath
-  //              }
-
-
-                //         return@withContext null.toString()
             }
         }
     }
-
 
     fun Context.getCurrentAuthenticationMethod(): String {
         var choosenProvider = FirebaseAuth.getInstance().getAccessToken(false).result.toString()

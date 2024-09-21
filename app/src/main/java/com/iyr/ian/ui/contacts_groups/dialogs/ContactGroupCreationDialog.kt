@@ -32,6 +32,24 @@ class ContactsGroupsCreationDialog :
         )
     }
 
+
+
+    init {
+        val dialog = dialog
+        if (dialog != null) {
+            val lp = WindowManager.LayoutParams()
+            lp.copyFrom(dialog.window!!.attributes)
+            lp.gravity = Gravity.CENTER
+            dialog.window!!.attributes = lp
+            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.window!!.setGravity(Gravity.CENTER)
+            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+            val width = ViewGroup.LayoutParams.MATCH_PARENT
+            val height = ViewGroup.LayoutParams.WRAP_CONTENT
+            dialog.window?.setLayout(width, height)
+        }
+    }
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
         dialog.context.setTheme(R.style.DialogStyle)
@@ -84,20 +102,7 @@ class ContactsGroupsCreationDialog :
 
     override fun onStart() {
         super.onStart()
-        val dialog = dialog
-        if (dialog != null) {
-            val lp = WindowManager.LayoutParams()
-            lp.copyFrom(dialog.window!!.attributes)
-            lp.gravity = Gravity.CENTER
-            dialog.window!!.attributes = lp
-            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            dialog.window!!.setGravity(Gravity.CENTER)
-            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-            val width = ViewGroup.LayoutParams.MATCH_PARENT
-            val height = ViewGroup.LayoutParams.WRAP_CONTENT
-            dialog.window?.setLayout(width, height)
-        }
 
         startObservers()
     }

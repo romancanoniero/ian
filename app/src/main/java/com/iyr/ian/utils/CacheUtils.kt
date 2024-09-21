@@ -61,6 +61,21 @@ fun Context.loadImageFromCache( imageName: String, folderName: String? = null): 
 }
 
 
+fun Context.getLocationInCache( fileName: String, folderName: String? = null): String? {
+    var cacheDir: File? = null
+    if (folderName == null) {
+        cacheDir = File(this.cacheDir.toString())
+    } else {
+        cacheDir = File(this.cacheDir, folderName)
+    }
+    val file = File(cacheDir, fileName)
+            return if (file.exists()) {
+            file.absolutePath
+    } else {
+        null
+    }
+}
+
 suspend fun Context.getImageFromUrl(url: String): Bitmap? {
     // Construye la URL de la imagen estática del mapa con un marcador
 

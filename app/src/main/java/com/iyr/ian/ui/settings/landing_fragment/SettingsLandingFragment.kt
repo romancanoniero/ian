@@ -7,7 +7,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
@@ -23,7 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageException
+import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.PROFILE_IMAGES_STORAGE_PATH
 import com.iyr.ian.R
@@ -31,6 +30,7 @@ import com.iyr.ian.app.AppClass
 import com.iyr.ian.callbacks.IAcceptDenyDialog
 import com.iyr.ian.databinding.FragmentSettingsLandingBinding
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.services.falling_detection.FallDetectionServiceMethod
 import com.iyr.ian.services.location.isServiceRunning
 import com.iyr.ian.sharedpreferences.SessionForProfile
@@ -39,6 +39,7 @@ import com.iyr.ian.ui.login.LoginActivity
 import com.iyr.ian.ui.settings.SettingsFragmentViewModel
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.UIUtils.handleTouch
+import com.iyr.ian.utils.assignFileImageTo
 import com.iyr.ian.utils.coroutines.Resource
 import com.iyr.ian.utils.getCacheLocation
 import com.iyr.ian.utils.getJustFileName
@@ -65,25 +66,12 @@ import com.lassi.presentation.builder.Lassi
 import com.lassi.presentation.cropper.CropImageView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Date
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [SettingsLandingFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SettingsLandingFragment() : Fragment() {
     private lateinit var binding: FragmentSettingsLandingBinding
 
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
     private val mainActivityViewModel: MainActivityViewModel by lazy {
         MainActivityViewModel.getInstance(
@@ -97,7 +85,6 @@ class SettingsLandingFragment() : Fragment() {
     private var toPickImagePermissionsRequest: ActivityResultLauncher<Array<String>>? =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
             if (!permissionsStatusMap.containsValue(false)) {
-
                 val imagePickerIntent =
                     Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
                         .setMaxCount(1).setGridSize(3)
@@ -106,7 +93,7 @@ class SettingsLandingFragment() : Fragment() {
                         .setSupportedFileTypes(
                             "jpg", "jpeg", "png", "webp", "gif"
                         ).setMinFileSize(100) // Restrict by minimum file size
-                        .setMaxFileSize(640) //  Restrict by maximum file size
+                        .setMaxFileSize(1024) //  Restrict by maximum file size
                         .setStatusBarColor(R.color.white).setToolbarResourceColor(R.color.white)
                         .setProgressBarColor(R.color.colorAccent)
                         .setPlaceHolder(R.drawable.ic_image_placeholder)
@@ -116,7 +103,6 @@ class SettingsLandingFragment() : Fragment() {
                         .setAlertDialogPositiveButtonColor(R.color.darkGray)
                         .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
                         .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .enableActualCircleCrop()
                         .setCropAspectRatio(
                             1, 1
                         ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
@@ -205,16 +191,10 @@ class SettingsLandingFragment() : Fragment() {
 
 
     private lateinit var viewModel: SettingsLandingFragmentViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("EVENT_CREATION", this.javaClass.name)
-
         viewModel = SettingsLandingFragmentViewModel()
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-
         setupPicker()
     }
 
@@ -242,7 +222,6 @@ class SettingsLandingFragment() : Fragment() {
                 is Resource.Success -> {
                     var mediaFile = resource.data
 
-
                     if (mediaFile != null && !mediaFile.file_name.isNullOrEmpty()) {
                         var imageBitmap = requireContext().loadImageFromCache(
                             mediaFile.file_name.toString(),
@@ -257,10 +236,12 @@ class SettingsLandingFragment() : Fragment() {
                                 var subFolder =
                                     AppConstants.PROFILE_IMAGES_STORAGE_PATH + FirebaseAuth.getInstance().uid.toString()
 
-                                var finalPath = FirebaseStorage.getInstance()
-                                    .getReference(mediaFile.file_name).downloadUrlWithCache(
-                                        AppClass.instance, subFolder
-                                    )
+
+
+                                var finalPath = (StorageRepositoryImpl().generateStorageReference("${mediaFile.file_name}") as StorageReference)
+                                    .downloadUrlWithCache( AppClass.instance, subFolder )
+
+
 
                                 var bitmap = GlideApp.with(requireContext())
                                     .asBitmap()
@@ -343,33 +324,11 @@ class SettingsLandingFragment() : Fragment() {
         bottomToolBar.visibility = View.GONE
 
     }
-    /*
-        companion object {
-            /**
-             * Use this factory method to create a new instance of
-             * this fragment using the provided parameters.
-             *
-             * @param context Parameter 1.
-             * @param _interface Parameter 2.
-             * @return A new instance of fragment FriendsFragment.
-             */
-            // TODO: Rename and change types and number of parameters
-
-
-            @JvmStatic
-            fun newInstance(
-                context: Context,
-                mainActivityViewModel: MainActivityViewModel,
-                settingsFragmentViewModel: SettingsFragmentViewModel,
-                _interface: ISettingsFragment
-            ) =
-                SettingsLandingFragment(mainActivityViewModel, settingsFragmentViewModel, _interface)
-        }
-    */
 
     private fun setupUI() {
 
         binding.userImage.setOnClickListener {
+            requireContext().handleTouch()
             toPickImagePermissionsRequest?.launch(arrayOf(android.Manifest.permission.CAMERA))
         }
 
@@ -377,15 +336,12 @@ class SettingsLandingFragment() : Fragment() {
             .getProfileProperty("vibrations_on", false) as Boolean
 
         binding.profileSettingsButton.setOnClickListener {
-            //_interface.goToFragment(SettingsFragmentsEnum.PROFILE_SETTINGS.ordinal)
-            //  settingsFragmentViewModel.onProfileSettingsClick()
+            requireContext().handleTouch()
             findNavController().navigate(R.id.profileSettingsFragment)
-
         }
 
         binding.sosSettingsButton.setOnClickListener {
-            //_interface.goToFragment(SettingsFragmentsEnum.SOS_SETTINGS.ordinal)
-            //      settingsFragmentViewModel.onSOSSettingsClick()
+            requireContext().handleTouch()
             findNavController().navigate(R.id.pressOrTapSetupFragment)
         }
 
@@ -394,6 +350,7 @@ class SettingsLandingFragment() : Fragment() {
             binding.myPlanLay.visibility = VISIBLE
             binding.myPlanLay.setOnClickListener {
 //                _interface.goToFragment(SettingsFragmentsEnum.PLAN_SETTINGS.ordinal)
+                requireContext().handleTouch()
                 mainActivityViewModel.onSubscriptionSettingsClick()
             }
         } else {
@@ -416,9 +373,11 @@ class SettingsLandingFragment() : Fragment() {
         binding.pushButtonSetupLay.setOnClickListener {
 //            _interface.goToFragment(SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS.ordinal)
 //            mainActivityViewModel.onPushButtonSettingsClick()
-    //        settingsFragmentViewModel.goToFragment(SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS.ordinal)
+            //        settingsFragmentViewModel.goToFragment(SettingsFragmentsEnum.PUSH_BUTTONS_SETTINGS.ordinal)
 
-            val bluetoothManager: BluetoothManager? = getSystemService(requireContext(),BluetoothManager::class.java)
+            requireContext().handleTouch()
+            val bluetoothManager: BluetoothManager? =
+                getSystemService(requireContext(), BluetoothManager::class.java)
             val bluetoothAdapter: BluetoothAdapter? = bluetoothManager?.getAdapter()
             if (bluetoothAdapter == null) {
                 requireActivity().showErrorDialog(getString(R.string.bluetooth_not_supported))
@@ -430,7 +389,6 @@ class SettingsLandingFragment() : Fragment() {
                 findNavController().navigate(R.id.pushButtonSetupFragment)
                 // Bluetooth is enabled
             }
-
 
 
         }
@@ -582,10 +540,17 @@ class SettingsLandingFragment() : Fragment() {
 
 
     fun updateUI() {
-        val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
+        val me = UserViewModel.getInstance().getUser()!!
 
         if (me.image.file_name != null) {
-
+            lifecycleScope.launch(Dispatchers.IO) {
+                requireContext().assignFileImageTo(
+                    me.image.file_name.toString(),
+                    AppConstants.PROFILE_IMAGES_STORAGE_PATH,
+                    binding.userImage
+                )
+            }
+            /*
             var imageBitmap = requireContext().loadImageFromCache(
                 me.image.file_name.toString(),
                 AppConstants.PROFILE_IMAGES_STORAGE_PATH
@@ -597,11 +562,7 @@ class SettingsLandingFragment() : Fragment() {
             } else {
 
                 try {
-                    val storageReference = FirebaseStorage.getInstance()
-                        .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                        .child(FirebaseAuth.getInstance().uid.toString())
-                        .child(me.image.file_name.toString())
-                    //  .getReference(me.image?.file_name.toString())
+
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
                             imageBitmap = GlideApp.with(requireContext())
@@ -643,7 +604,7 @@ class SettingsLandingFragment() : Fragment() {
                     binding.userImage.setImageDrawable(requireContext().getDrawable(R.drawable.ic_error))
                 }
             }
-
+*/
         } else {
             binding.userImage.setImageDrawable(requireContext().getDrawable(R.drawable.ic_error))
         }
@@ -660,7 +621,7 @@ class SettingsLandingFragment() : Fragment() {
 
         binding.switchUpdateMyLocation.isChecked = isRTLocationEnabled
 
-        if (AppClass.instance.isFreeUser())
+        if (MainActivityViewModel.getInstance().isFreeUser())
             binding.fallingDetectionLay.visibility = GONE
         else
             binding.fallingDetectionLay.visibility = VISIBLE

@@ -593,7 +593,7 @@
     <string name="mode_alertdisconnect">Modo de alarma perdido</string>
     <string name="manage_alert">Enable/disable Alert on disconnect</string>
     <string name="start_scan">Scan for new iTags</string>
-    <string name="push_button_config">BT Config</string>
+    <string name="push_button_config">Panic Button</string>
     <string name="push_button_config_introduction">Here you can configure your button to be able to trigger your alert even when you do not have your phone in hand</string>
     <string name="change_name">iTags settings</string>
     <string name="color">Change iTag color</string>
@@ -730,6 +730,12 @@
     <string name="no_phone_number">No Disponible</string>
     <string name="action_delete_all_notifications">Eliminar</string>
     <string name="action_delete_all_notifications_message">Deseas eliminar todas las notificaciones recibidas?</string>
+    <string name="registered">Registrados</string>
+    <string name="detected">Detected</string>
+    <string name="bt_connected">Connected</string>
+    <string name="bt_disconnect">Diconnect</string>
+    <string name="bt_forget">Forget</string>
+    <string name="stop_scan">Stop Scanning</string>
 
 
 </resources>

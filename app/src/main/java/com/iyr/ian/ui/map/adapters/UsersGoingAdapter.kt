@@ -10,12 +10,11 @@ import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.recyclerview.widget.RecyclerView
 import com.github.marlonlom.utilities.timeago.TimeAgo
 import com.github.marlonlom.utilities.timeago.TimeAgoMessages
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.EventFollower
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import java.util.Locale
 
 
@@ -31,7 +30,7 @@ class UsersGoingAdapter(val activity: Activity) :
 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
 
-        val storageReference: StorageReference?
+        val storageReference: Any?
         val record = list[position]
 
         holder.userName.text = record.display_name.toString()
@@ -39,10 +38,8 @@ class UsersGoingAdapter(val activity: Activity) :
 
         try {
 
-            storageReference = FirebaseStorage.getInstance()
-                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                .child(record.user_key)
-                .child(record.profile_image_path)
+            storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${record.user_key}/${record.profile_image_path}")
+
             GlideApp.with(activity)
                 .asBitmap()
                 .load(storageReference)

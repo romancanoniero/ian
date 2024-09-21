@@ -366,11 +366,7 @@ class MarkerUpdatesManager(val activity: Activity, val map: GoogleMap) {
 
         }
 /*
-        val storageReference = FirebaseStorage.getInstance()
-            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-            .child(userKey)
-            .child(fileName)
-        //  .getReference(fileName)
+
 
         GlideApp.with(activity)
             .asBitmap()

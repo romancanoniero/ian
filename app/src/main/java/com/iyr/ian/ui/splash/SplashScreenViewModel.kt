@@ -78,18 +78,13 @@ class SplashScreenViewModel(val messagingToken: String? = null) : ViewModel() {
                                 data.sos_invocation_method != null
 
 
-                    _userRegistrationStatus.postValue(Resource.Success(userDataRemote))
+              //      _userRegistrationStatus.postValue(Resource.Success(userDataRemote))
 
                     if (isUserCompleted) {
-                        //                      mCallback.onOkToMainScreen(user)
                         _screenToShow.postValue(ScreensEnum.Main)
                     } else {
-//                        mCallback.onProfileIncomplete(user)
-                        //_screenToShow.value = ScreensEnum.setupActivity
 
-                        //--------------
-
-                        if (data.display_name.isNullOrBlank() || (data.telephone_number.isNullOrEmpty() && data.email_address.isEmpty())) {
+                        if (data.image.file_name.isNullOrBlank() || data.display_name.isNullOrBlank() || (data.telephone_number.isNullOrEmpty() && data.email_address.isEmpty())) {
                             _screenToShow.value = ScreensEnum.setupActivity
                         } else if (data.sos_invocation_count == 0 || data.sos_invocation_method.isNullOrEmpty()) {
                             _screenToShow.value = ScreensEnum.Press_or_Tap_Setup_Activity
@@ -102,14 +97,7 @@ class SplashScreenViewModel(val messagingToken: String? = null) : ViewModel() {
                         } else {
                             _screenToShow.value = ScreensEnum.Check_Permissions
                         }
-                        /*
-                        else {
-                                Intent(this@SplashActivity, AddContactsFromPhoneActivity::class.java)
-                            }
-*/
-                        //-------------------
                     }
-
                 }
 
 

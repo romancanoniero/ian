@@ -24,6 +24,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polygon
 import com.google.android.gms.maps.model.PolygonOptions
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.google.maps.DirectionsApi
 import com.google.maps.GeoApiContext
 import com.google.maps.model.DirectionsLeg
@@ -508,10 +509,7 @@ fun GoogleMap.getUserMarkerOptions(
                 profileImagePath
             )
 
-            /*
-                        FirebaseStorage.getInstance().getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                            .child(userKey).child(profileImagePath)
-            */
+
             GlideApp.with(AppClass.instance).asBitmap().load(storageReference)
                 .into(object : CustomTarget<Bitmap?>() {
                     override fun onResourceReady(
@@ -627,27 +625,7 @@ suspend fun GoogleMap.getUserMarkerOptions(
 
             continuation.resume(responseMap)
 
-            /*
-                        var localStorageFolder = AppConstants.PROFILE_IMAGES_STORAGE_PATH + userKey+"/"
-                        var fileLocation = FirebaseStorage.getInstance()
-                            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                            .child(userKey)
-                            .child(profileImagePath)
-                            .downloadUrlWithCache(AppClass.instance,localStorageFolder)
 
-                        GlideApp.with(AppClass.instance)
-                            .asBitmap()
-                            .load(fileLocation)
-                            .into(object : CustomTarget<Bitmap?>() {
-                                override fun onResourceReady(
-                                    resource: Bitmap, transition: Transition<in Bitmap?>?
-                                ) {
-
-                                }
-
-                                override fun onLoadCleared(placeholder: Drawable?) {}
-                            })
-            */
         }
 
     }
@@ -673,10 +651,10 @@ suspend fun GoogleMap.getUserMarkerOptions(
         GlobalScope.launch(Dispatchers.IO) {
 
             var localStorageFolder = AppConstants.PROFILE_IMAGES_STORAGE_PATH + userKey + "/"
-            var fileLocation = FirebaseStorage.getInstance()
-                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                .child(userKey)
-                .child(profileImagePath)
+
+
+
+            var fileLocation = ( StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${userKey}/${profileImagePath}") as StorageReference)
                 .downloadUrlWithCache(AppClass.instance, localStorageFolder)
 
             GlideApp.with(AppClass.instance)

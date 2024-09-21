@@ -13,6 +13,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDialogFragment
@@ -137,7 +138,13 @@ class ValidatorDialog() :
                 binding.message.setText(R.string.verification_dialog_falling_event_message)
             }
         }
-
+        binding.otpView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                binding.otpView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                binding.otpView.requestFocus()
+                binding.otpView.performClick()
+            }
+        })
     }
 
     private fun checkPasswordInput(inputText: String) {

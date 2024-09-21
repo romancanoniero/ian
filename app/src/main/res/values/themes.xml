@@ -140,6 +140,7 @@
         <item name="android:background">@drawable/primary_button_border</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">@dimen/text_size_subparagraph</item>
+
         <item name="android:minHeight">@dimen/thumb_size</item>
         <item name="android:minWidth">80dp</item>
         <item name="layout_gravity">center_vertical</item>
@@ -290,7 +291,7 @@
         <item name="civ_circle_background_color">@color/white</item>
     </style>
 
-    <dimen name="thumb_size">64dp</dimen>
+
     <color name="stroke_color">#C1C1C1</color>
 
 

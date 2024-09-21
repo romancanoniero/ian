@@ -111,18 +111,16 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsStatusMap ->
             if (!permissionsStatusMap.containsValue(false)) {
 
-
                 val imagePickerIntent =
                     Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
                         .setMaxCount(1).setGridSize(3)
                         .setMediaType(MediaType.IMAGE) // MediaType : VIDEO IMAGE, AUDIO OR DOC
-                        .setCompressionRatio(filesCompressionData).setSupportedFileTypes(
+                        .setCompressionRatio(50) // compress image for single item selection (can be 0 to 100)
+                        .setSupportedFileTypes(
                             "jpg", "jpeg", "png", "webp", "gif"
-                        ).setMinFileSize(filesMinimumSizeInKB) // Restrict by minimum file size
-                        .setMaxFileSize(filesMaximumSizeInKB) //  Restrict by maximum file size
-                        /*
-                     * Configuration for  UI
-                     */.setStatusBarColor(R.color.white).setToolbarResourceColor(R.color.white)
+                        ).setMinFileSize(100) // Restrict by minimum file size
+                        .setMaxFileSize(1024) //  Restrict by maximum file size
+                        .setStatusBarColor(R.color.white).setToolbarResourceColor(R.color.white)
                         .setProgressBarColor(R.color.colorAccent)
                         .setPlaceHolder(R.drawable.ic_image_placeholder)
                         .setErrorDrawable(R.drawable.ic_image_placeholder)
@@ -131,13 +129,13 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                         .setAlertDialogPositiveButtonColor(R.color.darkGray)
                         .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
                         .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .setCompressionRatio(50) // compress image for single item selection (can be 0 to 100)
                         .setCropAspectRatio(
                             1, 1
                         ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
                         .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
                         .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
                         .build()
+
 
                 pickImageContract?.launch(imagePickerIntent)
             } else {
@@ -164,9 +162,9 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
 
                 val videoPickerIntent =
                     Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
-                        .setMaxCount(5).setGridSize(3)
-                        .setMediaType(MediaType.VIDEO) // MediaType : VIDEO IMAGE, AUDIO OR DOC
-                        .setCompressionRatio(10) // compress image for single item selection (can be 0 to 100)
+                        .setMaxCount(5).setGridSize(3).setMediaType(MediaType.VIDEO)
+                        .setMaxFileSize(1024)
+                        .setCompressionRatio(60) // compress image for single item selection (can be 0 to 100)
                         .setMinTime(5) // for MediaType.VIDEO only
                         .setMaxTime(60) // for MediaType.VIDEO only
                         .setSupportedFileTypes(
@@ -186,10 +184,6 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                         .setAlertDialogNegativeButtonColor(R.color.white)
                         .setAlertDialogPositiveButtonColor(R.color.colorPrimary)
                         .setGalleryBackgroundColor(R.color.gray)//Customize background color of gallery (default color is white)
-                        .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .setCropAspectRatio(
-                            1, 1
-                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
                         .enableFlip() // Enable flip image option while image cropping (for MediaType.IMAGE only)
                         .enableRotate() // Enable rotate image option while image cropping (for MediaType.IMAGE only)
                         .enableActualCircleCrop() // Enable actual circular crop (only for MediaType.Image and CropImageView.CropShape.OVAL)
@@ -214,7 +208,8 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                     val dimensionsMap = requireContext().getDimentions(Uri.parse("file:$filePath"))
                     media.width = dimensionsMap["width"]!!
                     media.height = dimensionsMap["height"]!!
-                    viewModel.onVideoAdded(media.file_name, media.duration)
+                 //   viewModel.onVideoAdded(media.file_name, media.duration)
+                    viewModel.onVideoAdded(media)
                 }
             }
         }
@@ -546,7 +541,7 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                     }
 
                     MediaTypesEnum.VIDEO -> {
-                        viewModel.onVideoAdded(media.file_name, media.duration)
+                        viewModel.onVideoAdded(media)
                     }
 
                     MediaTypesEnum.AUDIO -> {

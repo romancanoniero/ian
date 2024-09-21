@@ -24,6 +24,7 @@ import com.iyr.ian.callbacks.IAcceptDenyDialog
 import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.dao.models.Contact
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.base.ConfirmationDialog
 import com.iyr.ian.ui.friends.FriendsFragmentCallback
@@ -87,11 +88,8 @@ class FriendsAdapter(
 
             // TODO: Pasarlo a Coroutina
 
-            val storageReference = FirebaseStorage.getInstance()
-                .getReference(PROFILE_IMAGES_STORAGE_PATH)
-                .child(contact.user_key.toString())
-                .child(contact.image?.file_name.toString())
 
+            val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${contact.user_key.toString()}/${contact.image?.file_name.toString()}")
             Log.d("GLIDEAPP","9")
 
 

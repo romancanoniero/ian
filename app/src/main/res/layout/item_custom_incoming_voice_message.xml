@@ -1,7 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_marginLeft="16dp"
     android:layout_marginTop="8dp"
     android:layout_marginRight="16dp"
@@ -29,9 +29,7 @@
         android:layout_alignEnd="@id/messageUserAvatar"
         android:layout_alignRight="@id/messageUserAvatar"
         android:layout_marginEnd="5dp"
-        android:layout_marginRight="5dp"
-/>
-
+        android:layout_marginRight="5dp" />
 
 
     <com.google.android.material.card.MaterialCardView
@@ -41,14 +39,13 @@
         android:layout_alignParentTop="true"
         android:layout_marginLeft="@dimen/message_incoming_bubble_margin_left"
         android:layout_toEndOf="@+id/messageUserAvatar"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="15dp"
-        app:cardUseCompatPadding="true">
+        app:optRoundCardUseCompatPadding="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
-
 
 
             <androidx.media3.ui.PlayerView
@@ -57,26 +54,16 @@
                 android:layout_height="match_parent"
                 android:background="@color/gray_400"
                 android:minWidth="@dimen/box_xxxbig"
-                app:resize_mode="fit"
                 app:default_artwork="@drawable/voice_artwork_png"
-                app:use_artwork="true"/>
-
-            <ImageView
-                android:id="@+id/status"
-                android:layout_width="@dimen/box_normal"
-                android:layout_height="@dimen/box_normal"
-                android:src="@drawable/baseline_cloud_download_128"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="10dp"/>
+                app:resize_mode="fit"
+                app:use_artwork="true" />
 
 
             <TextView
                 android:id="@+id/duration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
                 android:layout_marginBottom="4dp"
                 android:shadowColor="@color/black"
                 android:shadowDx="2"
@@ -86,37 +73,64 @@
                 android:textColor="@color/white"
                 android:textSize="@dimen/text_size_subparagraph"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintStart_toStartOf="parent" />
+
+
+            <ImageView
+                android:id="@+id/preview"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:padding="10dp"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_placeholder_voice_by_adi_icons" />
+
+            <ImageView
+                android:id="@+id/network_indicator"
+                android:layout_width="@dimen/box_small"
+                android:layout_height="@dimen/box_small"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:srcCompat="@drawable/baseline_cloud_download_128" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
 
     </com.google.android.material.card.MaterialCardView>
 
-<!--
-    <LinearLayout
-        android:id="@id/bubble"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="30dp"
-        android:layout_marginRight="30dp"
-        android:layout_toEndOf="@id/messageUserAvatar"
-        android:layout_toRightOf="@id/messageUserAvatar"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+
+    <!--
+        <LinearLayout
+            android:id="@id/bubble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="30dp"
+            android:layout_marginRight="30dp"
+            android:layout_toEndOf="@id/messageUserAvatar"
+            android:layout_toRightOf="@id/messageUserAvatar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
 
-        <ImageButton
-            android:id="@+id/play_stop_button"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="@null"
-            android:src="@drawable/ic_audio_play"
-            android:visibility="gone"/>
+            <ImageButton
+                android:id="@+id/play_stop_button"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@null"
+                android:src="@drawable/ic_audio_play"
+                android:visibility="gone"/>
 
 
 
-    </LinearLayout>
--->
+        </LinearLayout>
+    -->
     <TextView
         android:id="@+id/messageTime"
         android:layout_width="wrap_content"
@@ -127,8 +141,8 @@
         android:layout_marginStart="16dp"
         android:layout_marginLeft="16dp"
         android:layout_marginTop="4dp"
+        android:text="12:00:00"
         android:textColor="@color/gray_dark"
-        android:textSize="@dimen/text_size_subparagraph"
-        android:text="12:00:00"/>
+        android:textSize="@dimen/text_size_subparagraph" />
 
 </RelativeLayout>

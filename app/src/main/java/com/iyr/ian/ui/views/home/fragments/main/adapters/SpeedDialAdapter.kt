@@ -11,10 +11,12 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.chauthai.swipereveallayout.ViewBinderHelper
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.SpeedDialContact
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.ui.main.dialogs.NewUserInvitationDialog
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.versionPrefix
@@ -56,10 +58,7 @@ class SpeedDialAdapter(val activity: Activity, val callback: ISpeedDialAdapter) 
             try {
 
                 if (record.image!=null) {
-                    val storageReference = FirebaseStorage.getInstance()
-                        .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                        .child(record.user_key.toString())
-                        .child(record.image!!.file_name)
+                    val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${record.user_key.toString()}/${record.image!!.file_name}")
 
                     Glide.with(activity)
                         .asBitmap()

@@ -62,10 +62,6 @@ class SubscriptionPlansAdapter(
 
         /*
           val record = data[position]
-                val storageReference = FirebaseStorage.getInstance()
-                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                    .child(record.user_key)
-                    .child(record.profile_image_path)
 
                 GlideApp.with(context)
                     .asBitmap()

@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
@@ -55,7 +56,11 @@ import com.iyr.ian.utils.permissions.PermissionsRationaleDialog
 import com.iyr.ian.utils.permissions.RationaleDialogCallback
 import com.iyr.ian.utils.playSound
 import com.iyr.ian.utils.showErrorDialog
+import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.UserViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /*
 interface OnLoginCallback {
@@ -86,7 +91,7 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
     private lateinit var mContext: Context
     private lateinit var analytics: FirebaseAnalytics
 
-    private  val  viewModel: SplashScreenViewModel by lazy {  SplashScreenViewModel() }
+    private val viewModel: SplashScreenViewModel by lazy { SplashScreenViewModel() }
 
     // var loader = LoadingDialogFragment()
 
@@ -96,79 +101,6 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
         //   setupSystemConfigs()
 
         Log.d("SCREEN_DENSITY", requireActivity().getDensityName(requireContext()).toString())
-
-
-/*
-//TODO: mover al lugar cuando tenga un usuario registrado.
-
-        Log.d("PUSH_MESSAGE_SPLASH", "entro por SplashActivity")
-        requireActivity().intent.extras?.let { extras ->
-            Log.d("PUSH_MESSAGE_SPLASH", "entro por SplashActivity con extras")
-
-            for (key in extras.keySet()) {
-                val value = extras.get(key)
-                Log.d(
-                    "PUSH_MESSAGE_SPLASH",
-                    "informacion recibida =" + String.format(
-                        "%s %s (%s)",
-                        key,
-                        value?.toString(),
-                        value?.javaClass?.name
-                    )
-                )
-            }
-
-            var pushNotificationInfo = NotificationsUtils.PushNotification()
-            pushNotificationInfo.action = extras.getString("action") ?: "????"
-            pushNotificationInfo.notificationType = extras.getString("notification_type") ?: "????"
-            pushNotificationInfo.linkKey = extras.getString("eventKey") ?: "????"
-
-            requireActivity().storeInSharedPreferencesMessages(
-                "notifications",
-                pushNotificationInfo
-            )
-        }
-
-
-
-        var messagingToken: String? = SessionApp.getInstance(requireContext()).messagingToken
-        viewModel = SplashScreenViewModel(messagingToken)
-
-        analytics = Firebase.analytics
-
-        requireActivity().hideStatusBar()
-
-        if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
-            Log.d("NAVIGATION_HOST_MODE", "true")
-            val newIntent = Intent(requireContext(), MainActivity::class.java)
-            if (requireActivity().intent.extras != null) {
-                newIntent.putExtras(requireActivity().intent.extras!!)
-            }
-            startActivity(newIntent)
-        } else {
-            Log.d("NAVIGATION_HOST_MODE", "false")
-        }
-
-
-        mContext = requireContext()
-        var senderId: String
-        var linkKey: String
-        var action: String
-*/
-        //  mPresenter = SplashPresenter(this as AppCompatActivity, this)
-/*
-        if (requireActivity().isAndroidTV()) {
-            val nextIntent = Intent(requireContext(), LoginActivity::class.java)
-            nextIntent.action = requireActivity().intent.action
-            requireActivity().intent.extras?.let { info ->
-
-                nextIntent.putExtras(info)
-            }
-            nextIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            startActivity(nextIntent)
-        }
-*/
-
 
         FirebaseDynamicLinks.getInstance()
             .getDynamicLink(requireActivity().intent)
@@ -202,9 +134,21 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
     ): View? {
         binding = ActivitySplashBinding.inflate(inflater, container, false)
 
-      //  setupObservers()
+        val animation = binding.animation
+        animation.addAnimatorListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator) {
+                requireActivity().playSound(R.raw.intro_bell, null, null)
+            }
 
-        setupUI()
+            override fun onAnimationEnd(p0: Animator) {
+                viewModel.onAppStart()
+            }
+
+            override fun onAnimationCancel(p0: Animator) {}
+
+            override fun onAnimationRepeat(p0: Animator) {}
+        })
+
         return binding.root
     }
 
@@ -246,26 +190,6 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
                     // reestablecer
                     viewModel.user.value?.let { user -> onOkToMainScreen(user) }
-
-                    /*
-                                        var user = viewModel.user.value!!
-                                        val bundle = Bundle()
-                                        bundle.putString("data_object", Gson().toJson(user))
-                                        bundle.putBoolean(
-                                            "first_setup",
-                                            true
-                                        )
-                                        var intent: Intent? = null
-
-
-                                        intent = Intent(requireContext(), AddContactsFromPhoneActivity::class.java)
-
-
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-
-                                        startActivity(intent)
-                    */
-
                 }
 
                 ScreensEnum.Login -> {
@@ -405,7 +329,8 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
                 if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
                     var navController = findNavController()
-                    val action = SplashFragmentDirections.actionSplashFragmentToHomeFragment(it,true)
+                    val action =
+                        SplashFragmentDirections.actionSplashFragmentToHomeFragment(it, true)
                     navController.navigate(action)
                     navController.popBackStack(R.id.splashFragment, true)
                 } else {
@@ -442,7 +367,7 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
         }
         */
-            startObservers()
+        startObservers()
     }
 
     override fun onPause() {
@@ -496,7 +421,7 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
     override fun Activity.goToMainScreen(user: User) {
         // aqui se implementa la carga de las tablas necesarias para el funcionamiento de la aplicacion
         // y se llama a la pantalla principal
-       UserViewModel.getInstance().setUser(user)
+        UserViewModel.getInstance().setUser(user)
         viewModel.prepareForMainScreen(user)
 
 
@@ -663,20 +588,6 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
 
     private fun setupUI() {
-        val animation = binding.animation
-        animation.addAnimatorListener(object : Animator.AnimatorListener {
-            override fun onAnimationStart(p0: Animator) {
-                requireActivity().playSound(R.raw.intro_bell, null, null)
-            }
-
-            override fun onAnimationEnd(p0: Animator) {
-                viewModel.onAppStart()
-            }
-
-            override fun onAnimationCancel(p0: Animator) {}
-
-            override fun onAnimationRepeat(p0: Animator) {}
-        })
 
 
         //     setupSystemConfigs()
@@ -706,23 +617,26 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
     }
 
 
+    /***
+     * Si el usuario ya esta logueado y tiene el perfil completo
+     */
     override fun onOkToMainScreen(user: User) {
         SessionForProfile.getInstance(requireContext()).storeUserProfile(user)
-        AppClass.instance.core?.onOkToMainScreen(user, requireActivity().intent.extras)
+        //    AppClass.instance.core?.onOkToMainScreen(user, requireActivity().intent.extras)
 
-/*
-       val bundle : Bundle
-        if (requireActivity().intent.extras != null) {
-            bundle = requireActivity().intent.extras!!
-        } else {
-            bundle = Bundle()
+        UserViewModel.getInstance().setUser(user)
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            MainActivityViewModel.getInstance().loadMainScreenPrerequisites()
+
+            withContext(Dispatchers.Main) {
+                val action = SplashFragmentDirections.actionSplashFragmentToHomeFragment(user, true)
+                findNavController().navigate(action)
+            }
+            UserViewModel.getInstance().onLine()
+
+
         }
-      bundle.putBoolean("firstRun", true)
-
- */
-        val action = SplashFragmentDirections.actionSplashFragmentToHomeFragment(user, true)
-        findNavController().navigate(action)
-        UserViewModel.getInstance().onLine()
 //
         /*
                 Log.d("INGRESO", "onOkToMainScreen - 1")
@@ -753,6 +667,7 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
 
     }
+
 
     private fun goToMainScreen() {
         Log.d("INGRESO", "goToMainScreen - 1")

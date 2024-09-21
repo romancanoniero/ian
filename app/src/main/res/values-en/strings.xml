@@ -240,6 +240,10 @@
     <string name="i_invite_you_to_try_this_app">I Invite you to IAN</string>
     <string name="invite_a_friend">Invite a Friend</string>
     <string name="delete_group">Delete Group</string>
+    <string name="bt_connected">Connected</string>
+    <string name="bt_disconnect">Diconnect</string>
+    <string name="bt_forget">Forget</string>
+    <string name="stop_scan">Stop Scanning</string>
 
 
 </resources>

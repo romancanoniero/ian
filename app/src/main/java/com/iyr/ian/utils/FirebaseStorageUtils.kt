@@ -2,8 +2,6 @@ package com.iyr.ian.utils
 
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toUri
-import com.facebook.FacebookSdk.getApplicationContext
 import com.google.firebase.storage.FirebaseStorage
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
@@ -34,51 +32,6 @@ interface DownloadFileListener {
 class FirebaseStorageUtils {
 
     private var storageRepository = StorageRepositoryImpl()
-
-    fun getStorageObject(filePath: String, referenceTag: String?, callback: DownloadFileListener) {
-        val appsInternalStorageFolder: File = getApplicationContext().getDir(
-            "cache",
-            Context.MODE_PRIVATE
-        )
-
-        val fileName = filePath.getJustFileName()
-        if (appsInternalStorageFolder.list().contains(fileName)) {
-
-            val localFile = Uri.parse(
-                "file:" + getApplicationContext().getDir(
-                    "cache",
-                    Context.MODE_PRIVATE
-                ).toString() + "/" + fileName
-            )
-
-            callback.onDownloadStatusChange(referenceTag, MediaFileDownloadStatus.READY, localFile)
-        } else {
-            callback.onDownloadStatusChange(referenceTag, MediaFileDownloadStatus.DOWNLOADING)
-            val fileRef = FirebaseStorage.getInstance().reference.child(filePath)
-            val localFile = File(
-                getApplicationContext().getDir(
-                    "cache",
-                    Context.MODE_PRIVATE
-                ).toString() + "/" + fileName
-            )
-
-
-            fileRef.getFile(localFile).addOnSuccessListener {
-                // Local temp file has been created
-                val localUri: Uri = localFile.toUri()
-                callback.onDownloadStatusChange(
-                    referenceTag,
-                    MediaFileDownloadStatus.READY,
-                    localUri
-                )
-            }.addOnFailureListener {
-                // Handle any errors
-                callback.onError(it)
-
-            }
-
-        }
-    }
 
 
     /***
@@ -120,19 +73,7 @@ class FirebaseStorageUtils {
             )
 //
             return call.data
-            /*
-                      val fileRef = FirebaseStorage.getInstance().reference.child(filePath)
-                      val localFile = File(
-                          getApplicationContext().getDir(
-                              "cache",
-                              Context.MODE_PRIVATE
-                          ).toString() + "/" + fileName
-                      )
 
-                      var call = fileRef.getFile(localFile).await()
-
-                      return call.toString())
-          */
             TODO("Hacer que descargue pero desde los repositorios")
             /*
                         fileRef.getFile(localFile).addOnSuccessListener {
@@ -172,3 +113,22 @@ suspend fun Context.uploadFileToFirebaseStorage(filePath: Uri, destinationFolder
         null
     }
 }
+
+
+/*
+fun uploadFileToFirestore(file: File, folder: String, onComplete: (Boolean, String?) -> Unit) {
+    val storageReference: StorageReference = FirebaseStorage.getInstance().reference.child("$folder/${file.name}")
+    val uploadTask: UploadTask = storageReference.putFile(Uri.fromFile(file))
+
+    uploadTask.addOnSuccessListener {
+        storageReference.downloadUrl.addOnSuccessListener { uri ->
+            onComplete(true, uri.toString())
+        }.addOnFailureListener { exception ->
+            onComplete(false, exception.message)
+        }
+    }.addOnFailureListener { exception ->
+        onComplete(false, exception.message)
+    }
+}
+
+ */

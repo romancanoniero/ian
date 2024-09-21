@@ -168,17 +168,19 @@
                         android:id="@+id/primary_button"
                         style="@style/SmallPrimaryButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="@dimen/button_4"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="4dp"
                         android:text="@string/accept"
                         android:textSize="@dimen/text_size_subparagraph"
-                        android:textStyle="normal" />
+                        android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/secondary_button"
                         style="@style/SmallSecondaryButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="@dimen/button_4"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
+                        android:paddingVertical="4dp"
                         android:text="@string/cancel"
                         android:textSize="@dimen/text_size_subparagraph"
                         android:textStyle="normal" />

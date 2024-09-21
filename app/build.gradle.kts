@@ -140,9 +140,16 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("androidx.browser:browser:1.3.0")
     implementation("com.google.firebase:firebase-appcheck-safetynet:16.0.0")
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
 
     // SOCIAL NETWORKS / AUTHENTICATION
     implementation("com.facebook.android:facebook-android-sdk:[4,5)")
+
+    // Compresores de imagen y video
+    implementation("de.peilicke.sascha:kase64:1.2.0")
 
     // HTTP
     implementation("com.squareup.okhttp3:okhttp:4.7.2")
@@ -197,9 +204,9 @@ dependencies {
     kapt("com.github.bumptech.glide:compiler:4.11.0")
 
     // VIDEO
-    implementation("androidx.media3:media3-exoplayer:1.2.0-rc01")
-    implementation("androidx.media3:media3-exoplayer-dash:1.2.0-rc01")
-    implementation("androidx.media3:media3-ui:1.2.0-rc01")
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
 
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.25")
@@ -217,7 +224,8 @@ dependencies {
     implementation("com.github.Armen101:AudioRecordView:1.0.5")
     implementation("com.github.3llomi:RecordView:3.1.3")
 
-
+    implementation("com.iceteck.silicompressorr:silicompressor:2.2.4")
+    implementation ("com.googlecode.mp4parser:isoparser:1.1.22")
     // BLUETOOTH
     implementation("com.github.Jasonchenlijian:FastBle:2.4.0")
     // LOCATION

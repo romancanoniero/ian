@@ -26,6 +26,7 @@ import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 
 class HomeFragmentViewModel : ViewModel() {
     private var eventObservedKey: String? = null
@@ -203,52 +204,38 @@ class HomeFragmentViewModel : ViewModel() {
     */
 
 
-    suspend fun onNewMediaMessage(eventKey: String, sender: User, mediaFile: MediaFile) {
+    suspend fun onNewMediaMessage(eventKey: String, sender: User, mediaFile: MediaFile, file : File) {
+        val call = chatRepository.generateMessageKey(eventKey)
+        call.data?.let { messageKey ->
+            val previewMessage = createLocalMessage(eventKey, messageKey, sender, mediaFile)
 
-        var call = chatRepository.generateMessageKey(eventKey)
-        if (call.data != null) {
-            var messageKey = call.data.toString()
-            var previewMessage = createLocalMessage(eventKey, messageKey, sender, mediaFile)
+            val filePath = when {
+                previewMessage.image != null -> previewMessage.image.url
+                previewMessage.video != null -> previewMessage.video.url
+                previewMessage.voice != null -> previewMessage.voice.url
+                else -> null
+            }?.let {
+                if (it.startsWith("/")) "file:$it" else it
+                }
 
-            if (previewMessage.image != null) {
-                val _messageEvent = ChatRepository.ChatDataEvent.OnChildAdded(previewMessage, null)
-                var filePath = previewMessage.image.url
-                if (filePath.startsWith("/")) {
-                    filePath = "file:$filePath"
-                    previewMessage.image.url = filePath
-                }
-            } else if (previewMessage.video != null) {
-                val _messageEvent = ChatRepository.ChatDataEvent.OnChildAdded(previewMessage, null)
-                var filePath = previewMessage.video.url
-                if (filePath.startsWith("/")) {
-                    filePath = "file:$filePath"
-                    previewMessage.video.url = filePath
-                }
-            } else if (previewMessage.voice != null) {
-                val _messageEvent = ChatRepository.ChatDataEvent.OnChildAdded(previewMessage, null)
-                var filePath = previewMessage.voice.url
-                if (filePath.startsWith("/")) {
-                    filePath = "file:$filePath"
-                    previewMessage.voice.url = filePath
+            filePath?.let {
+                when {
+                    previewMessage.image != null -> previewMessage.image.url = it
+                    previewMessage.video != null -> previewMessage.video.url = it
+                    previewMessage.voice != null -> previewMessage.voice.url = it
                 }
             }
 
-//            previewMessage.status = MessagesStatus.UPLOADING
-
             _sendingContent.postValue(Resource.Loading())
 
-            var definitiveFileName =
-                mediaFile.file_name.replace(AppClass.instance.cacheDir.toString() + "/", "")
+            val definitiveFileName = mediaFile.file_name.replace(AppClass.instance.cacheDir.toString() + "/", "")
 
             // Envio el mensaje al servidor.
-            val result = chatRepository.sendMediaMessage(
-                eventKey, sender.user_key, messageKey, mediaFile
-            )
-            if (result is Resource.Error<*> == false) {
+            val result = chatRepository.sendMediaMessage(eventKey, sender.user_key, messageKey, mediaFile, file)
+            if (result !is Resource.Error<*>) {
                 _sendingContent.postValue(Resource.Success<Boolean?>(true))
             } else {
                 _sendingContent.postValue(Resource.Error<Boolean?>(result.message.toString()))
-
             }
         }
     }

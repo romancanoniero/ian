@@ -33,6 +33,10 @@ class ITagsService : Service() {
         fun removeFromForeground() {
             this@ITagsService.removeFromForeground()
         }
+
+        fun getDisposableBag(): DisposableBag {
+            return disposableBag
+        }
     }
 
     private val connectedDevicesIDs: ArrayList<String> = ArrayList<String>()
@@ -206,7 +210,10 @@ class ITagsService : Service() {
     }
 
 
-    private val disposableBag: DisposableBag = DisposableBag()
+    public val disposableBag: DisposableBag = DisposableBag()
+        get() {
+            return field
+        }
     private val mErrorListener: ErrorsObservable.IErrorListener =
         ErrorsObservable.IErrorListener { errorNotification ->
 /*

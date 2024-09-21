@@ -178,10 +178,10 @@
             app:nullable="true" />
     </fragment>
 
-    <activity
+    <fragment
         android:id="@+id/bluetoothConfigurationActivity"
-        android:name="com.iyr.ian.ui.setup.bluetooth.BluetoothConfigurationActivity"
-        android:label="BluetoothConfigurationActivity"
+        android:name="com.iyr.ian.ui.setup.bluetooth.BluetoothConfigurationFragment"
+        android:label="BluetoothConfigurationFragment"
         tools:layout="@layout/activity_bluetooth_configuration" />
     <fragment
         android:id="@+id/splashFragment"
@@ -620,6 +620,7 @@
         android:name="com.iyr.ian.ui.chat.MessagesInEventFragment"
         android:label="MessagesInEventFragment"
         tools:layout="@layout/fragment_bottom_sheet_messages"
+        android:launchMode="singleTop"
         >
         <argument
             android:name="config"

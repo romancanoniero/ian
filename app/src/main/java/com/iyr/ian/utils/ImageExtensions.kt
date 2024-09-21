@@ -18,12 +18,12 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.iyr.ian.R
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.io.File
+import kotlin.coroutines.coroutineContext
 
 class ImageExtensions
 
@@ -114,15 +114,18 @@ suspend fun Context.assignFileImageTo(
         fileName, folder
     )
     if (imageBitmap != null) {
-        withContext(Dispatchers.Main) {
+
+        if (coroutineContext.isMainContext()) {
             destination.setImageBitmap(imageBitmap)
+        } else {
+            withContext(Dispatchers.Main) {
+                destination.setImageBitmap(imageBitmap)
+            }
         }
         return
     } else {
-
         try {
-            val storageReference =
-                FirebaseStorage.getInstance().getReference(folder).child(fileName)
+            val storageReference =   StorageRepositoryImpl().generateStorageReference("$folder/${fileName}")
 
             //   GlobalScope.launch(Dispatchers.IO) {
             try {
@@ -156,8 +159,6 @@ suspend fun Context.assignFileImageTo(
                     destination.visibility = View.VISIBLE
                 }
             }
-
-            //     }
         } catch (e: Exception) {
             destination.setImageDrawable(this@assignFileImageTo.getDrawable(R.drawable.ic_error))
             destination.visibility = View.VISIBLE
@@ -167,6 +168,9 @@ suspend fun Context.assignFileImageTo(
         }
     }
 }
+
+
+
 ///--------------------------------
 
 //-------------------------
@@ -183,7 +187,7 @@ suspend fun Context.getFileImage(
     } else {
 
         try {
-            val storageReference =
+            val storageReference =  StorageRepositoryImpl().generateStorageReference("$folder/${fileName}")
                 FirebaseStorage.getInstance().getReference(folder).child(fileName)
 
             val imageBitmap = GlobalScope.launch(Dispatchers.IO) {

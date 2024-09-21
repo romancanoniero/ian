@@ -11,6 +11,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.gson.Gson
 import com.iyr.ian.AppConstants.Companion.CHAT_FILES_STORAGE_PATH
+import com.iyr.ian.Constants.Companion.HTTP_CALL_OK
 import com.iyr.ian.dao.models.UnreadMessages
 import com.iyr.ian.dao.repositories.ChatRepository
 import com.iyr.ian.utils.chat.models.Message
@@ -20,12 +21,16 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
+import java.io.File
 
 class ChatRepositoryImpl : ChatRepository() {
 
+
     private var chatRoomListener: ChildEventListener? = null
     private var chatRoomReference: DatabaseReference? = null
+
 
     private val firebaseAuth = FirebaseAuth.getInstance()
     private val databaseReference =
@@ -33,7 +38,7 @@ class ChatRepositoryImpl : ChatRepository() {
 
     override fun getChatFlow(eventKey: String): Flow<Resource<ChatDataEvent>> =
         callbackFlow {
-            var chatFilestPath= CHAT_FILES_STORAGE_PATH + eventKey +"/"
+            var chatFilestPath = CHAT_FILES_STORAGE_PATH +"/"+ eventKey + "/"
 
 
             chatRoomReference = databaseReference.child(eventKey)
@@ -43,18 +48,19 @@ class ChatRepositoryImpl : ChatRepository() {
                     message.id = snapshot.key!!
 
                     // actualizo la ruta de los archivos multimedia.
-                    when
-                    {
+                    when {
                         message.image != null -> {
                             if (!message.image.url.startsWith(chatFilestPath)) {
                                 message.image!!.url = chatFilestPath + message.image!!.url
                             }
                         }
+
                         message.video != null -> {
                             if (!message.video.url.startsWith(chatFilestPath)) {
                                 message.video!!.url = chatFilestPath + message.video!!.url
                             }
                         }
+
                         message.voice != null -> {
                             if (!message.voice.url.startsWith(chatFilestPath)) {
                                 message.voice!!.url = chatFilestPath + message.voice!!.url
@@ -177,12 +183,90 @@ class ChatRepositoryImpl : ChatRepository() {
         }
     }
 
-
     override suspend fun sendMediaMessage(
-        eventKey: String, senderKey: String, messageKey: String, mediaFile: MediaFile
+        eventKey: String, senderKey: String, messageKey: String, mediaFile: MediaFile, file: File
     ): Resource<String?> {
         return try {
+            val tokenResult = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
+
+            if (tokenResult != null) {
+
+                val data: MutableMap<String, Any> = HashMap()
+                data["auth_token"] = tokenResult.token.toString()
+                data["event_key"] = eventKey
+                data["user_key"] = senderKey
+                data["message_key"] = messageKey
+                data["media_file"] = Gson().toJson(mediaFile)
+
+                try {
+                    val onComplete: (Boolean, String?) -> Unit = { success, url ->
+                        if (success) {
+                            runBlocking {
+                                val call = FirebaseFunctions.getInstance()
+                                    .getHttpsCallable("messageFileSend")
+                                    .call(data)
+                                    .await()
+
+                                Log.d("RESULT", Gson().toJson(call.data))
+
+                                val result = (call.data as HashMap<String, Any>)
+                                when (result["status"]) {
+                                    HTTP_CALL_OK -> {
+                                        Resource.Success<String?>(messageKey.toString())
+                                    }
+
+                                    else -> {
+                                        Resource.Error<String?>(
+                                            result["message"].toString(),
+                                            messageKey.toString()
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Resource.Error<String?>(
+                                "error_uploading_file",
+                                messageKey.toString()
+                            )
+                        }
+                    }
+
+                    val callUpload = storageRepository.uploadFileWithRetry(
+                        file,
+                        CHAT_FILES_STORAGE_PATH +"/"+ eventKey + "/",
+                        onComplete
+                    )
+
+                    Resource.Success<String?>(messageKey.toString())
+                } catch (exception: Exception) {
+                    Resource.Error<String?>(
+                        exception.message.toString(),
+                        messageKey.toString()
+                    )
+
+                } catch (exception: Exception) {
+                    Resource.Error<String?>(
+                        exception.message.toString(),
+                        messageKey.toString()
+                    )
+                }
+
+            } else {
+                Resource.Error<String?>("error_getting_token", messageKey.toString())
+            }
+        } catch (exception: Exception) {
+            Resource.Error<String?>(exception.message.toString(), messageKey.toString())
+        }
+    }
+
+    /*
+    override suspend fun sendMediaMessage(
+        eventKey: String, senderKey: String, messageKey: String, mediaFile: MediaFile, file: File
+    ): Resource<String?> {
+        return try {
+
             var tokenResult = FirebaseAuth.getInstance().currentUser!!.getIdToken(false).await()
+
             if (tokenResult != null) {
                 val data: MutableMap<String, Any> = HashMap()
                 data["auth_token"] = tokenResult.token.toString()
@@ -190,43 +274,65 @@ class ChatRepositoryImpl : ChatRepository() {
                 data["user_key"] = senderKey
                 data["message_key"] = messageKey
                 data["media_file"] = Gson().toJson(mediaFile)
+
                 try {
-                    var call =
-                        FirebaseFunctions.getInstance().getHttpsCallable("messageFileSend")
-                            .call(data)
-                            .await()
-                    Log.d("RESULT", Gson().toJson(call.data))
 
-                    var result = (call.data as HashMap<String, Any>)
-                    when (result["status"]) {
-                        200 -> {
-                            return Resource.Success<String?>(messageKey.toString())
-                        }
+                    val onComplete: (Boolean, String?) -> Unit = { success, url ->
 
-                        else -> {
+                        if (success) {
+                            runBlocking {
+                                var call =
+                                    FirebaseFunctions.getInstance()
+                                        .getHttpsCallable("messageFileSend")
+                                        .call(data)
+                                        .await()
+
+                                Log.d("RESULT", Gson().toJson(call.data))
+
+                                var result = (call.data as HashMap<String, Any>)
+                                when (result["status"]) {
+                                    HTTP_CALL_OK -> {
+                                        Resource.Success<String?>(messageKey.toString())
+                                    }
+
+                                    else -> {
+                                        Resource.Error<String?>(
+                                            result["message"].toString(),
+                                            messageKey.toString()
+                                        )
+                                    }
+
+                                }
+                            }
+                        } else {
                             return Resource.Error<String?>(
-                                result["message"].toString(),
+                                "error_uploading_file",
                                 messageKey.toString()
                             )
                         }
-
                     }
 
+                    storageRepository.uploadFileWithRetry(
+                        file,
+                        CHAT_FILES_STORAGE_PATH + eventKey + "/",
+                        onComplete
+                    )
 
                 } catch (exception: Exception) {
-                    return Resource.Error<String?>(
+                    Resource.Error<String?>(
                         exception.message.toString(),
                         messageKey.toString()
                     )
                 }
+
             } else {
-                return Resource.Error<String?>("error_getting_token", messageKey.toString())
+                Resource.Error<String?>("error_getting_token", messageKey.toString())
             }
         } catch (exception: Exception) {
-            return Resource.Error<String?>(exception.message.toString(), messageKey.toString())
+            Resource.Error<String?>(exception.message.toString(), messageKey.toString())
         }
     }
-
+*/
     override suspend fun sendSpeedMessage(
         eventKey: String,
         userKey: String,
@@ -287,7 +393,7 @@ class ChatRepositoryImpl : ChatRepository() {
 
                     var result = (call.data as HashMap<String, Any>)
                     when (result["status"]) {
-                        0 -> {
+                        HTTP_CALL_OK -> {
                             return Resource.Success<Boolean?>(true)
                         }
 
@@ -340,14 +446,14 @@ class ChatRepositoryImpl : ChatRepository() {
     }.conflate()
 
 
-
     override fun unreadMessagesFlow(userKey: String, eventKey: String): Flow<Long> = callbackFlow {
         val unreadMessagesReference =
-            FirebaseDatabase.getInstance().getReference("chats_unreads_by_user").child(userKey).child(eventKey)
+            FirebaseDatabase.getInstance().getReference("chats_unreads_by_user").child(userKey)
+                .child(eventKey)
 
         val chatListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                var unreads : Long = 0
+                var unreads: Long = 0
 
                 if (snapshot.exists()) {
 

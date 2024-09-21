@@ -99,7 +99,7 @@
                             android:id="@+id/going_icon"
                             android:layout_width="@dimen/circle_10"
                             android:layout_height="@dimen/circle_10"
-                            android:src="@drawable/ic_going_small"
+
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 

@@ -19,6 +19,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
+import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.NOTIFICATION_TYPE_NEW_MESSAGE
 import com.iyr.ian.R
@@ -66,10 +67,14 @@ import com.iyr.ian.utils.multimedia.MultimediaUtils
 import com.iyr.ian.utils.saveImageToCache
 import com.iyr.ian.utils.support_models.MediaFile
 import com.iyr.ian.utils.support_models.MediaTypesEnum
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -94,6 +99,7 @@ class MainActivityViewModel private constructor(
     private var chatRepository: ChatRepositoryImpl = ChatRepositoryImpl()
     private var contactsRepository: ContactsRepositoryImpl = ContactsRepositoryImpl()
     private val contactsGroupsRepository = NotificationListRepositoryImpl()
+    private val subscriptionTypesRepository = SubscriptionTypeRepositoryImpl()
 
 
     private val storageRepositoryImpl: StorageRepositoryImpl = StorageRepositoryImpl()
@@ -154,7 +160,7 @@ class MainActivityViewModel private constructor(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    var currentFragment : Int? = null
+    var currentFragment: Int? = null
 
     private val _unreadMessagesFlow = MutableLiveData<List<UnreadMessages>>(emptyList())
     val unreadMessagesFlow: LiveData<List<UnreadMessages>> get() = _unreadMessagesFlow
@@ -309,9 +315,9 @@ class MainActivityViewModel private constructor(
             emit(event)
             when (event) {
                 is NotificationsRepository.DataEvent.ChildAdded -> {
-                    if (currentFragment!= null && (currentFragment == R.id.messagesInEventFragment ||  MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment) &&
-                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key)
-                    {
+                    if (currentFragment != null && (currentFragment == R.id.messagesInEventFragment || MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment) &&
+                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key
+                    ) {
                         return@collect
                     }
 
@@ -321,9 +327,9 @@ class MainActivityViewModel private constructor(
                 }
 
                 is NotificationsRepository.DataEvent.ChildChanged -> {
-                    if (currentFragment!= null && ( currentFragment == R.id.messagesInEventFragment  ||  MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment)&&
-                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key)
-                    {
+                    if (currentFragment != null && (currentFragment == R.id.messagesInEventFragment || MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment) &&
+                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key
+                    ) {
                         return@collect
                     }
                     val index = notificationsList.indexOf(event.data)
@@ -358,6 +364,11 @@ class MainActivityViewModel private constructor(
 
     private val _subscriptionType = MutableLiveData<SubscriptionTypes>()
     val subscriptionType: LiveData<SubscriptionTypes> = _subscriptionType
+    fun isFreeUser(): Boolean {
+        return _subscriptionType.value?.access_level == AccessLevelsEnum.FREE.ordinal
+    }
+
+
     val userSubscriptionTypeAsFlow = liveData<Resource<SubscriptionTypes?>>(Dispatchers.IO) {
         usersSubscriptionsRespository.getUserSubscriptionTypeAsFlow(userKey!!).collect { resource ->
             _subscriptionType.postValue(resource.data!!)
@@ -958,13 +969,8 @@ class MainActivityViewModel private constructor(
                                 )
 
                                 if (imageBitmap == null) { // No esta en el cache, lo busco en el servidor local
-                                    val storageReference =
-                                        FirebaseStorage.getInstance().reference.child(
-                                            "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${user.user_key}/${
-                                                fileName.substringAfterLast("/")
-                                                    .substringBefore(".")
-                                            }.jpg"
-                                        )
+                                    val storageReference = ( StorageRepositoryImpl()
+                                        .generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${user.user_key}/${fileName.substringAfterLast('/').substringBefore('.')}.jpg}") as StorageReference)
                                     try {
                                         // Comprueba si la imagen existe en Firebase Storage
                                         storageReference.metadata.await()
@@ -1083,5 +1089,48 @@ class MainActivityViewModel private constructor(
 
     fun onError(errorMessage: String) {
         _error.postValue(errorMessage)
+    }
+
+
+    private val _userCurrentPlan = MutableLiveData<SubscriptionTypes>()
+    val userCurrentPlan: LiveData<SubscriptionTypes> = _userCurrentPlan
+
+    suspend fun loadMainScreenPrerequisites() {
+        return runBlocking {
+
+            // Crear un CoroutineScope
+            val scope = CoroutineScope(Dispatchers.Default)
+
+
+            // Lanzar varias corrutinas en paralelo
+            val deferreds = listOf(
+                scope.async { getSubscriptionType() }
+
+            )
+
+            // Esperar a que todas las corrutinas terminen
+            deferreds.awaitAll()
+
+
+            // Continuar con la ejecución
+            println("Todas las tareas han terminado")
+
+        }
+    }
+
+
+    suspend fun getSubscriptionType() {
+        val subscriptionTypeKey: String =
+            UserViewModel.getInstance().getUser()?.subscription_type_key!!
+        try {
+            var resource =
+                subscriptionTypesRepository.getSubscriptionType(subscriptionTypeKey)
+
+            _userCurrentPlan.postValue(resource.data!!)
+            _subscriptionType.postValue(resource.data!!)
+        } catch (ex: Exception) {
+            throw ex
+        }
+
     }
 }

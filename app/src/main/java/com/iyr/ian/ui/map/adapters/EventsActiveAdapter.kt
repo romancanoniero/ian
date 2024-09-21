@@ -19,6 +19,7 @@ import com.iyr.ian.dao.models.EventFollowed
 import com.iyr.ian.dao.models.EventVisibilityTypes
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.utils.px
 import de.hdodenhof.circleimageview.CircleImageView
 
@@ -56,10 +57,10 @@ class EventsActiveAdapter(val con: Context) :
 
 
         // TODO: Pasarlo a corutina
-        val storageReference = FirebaseStorage.getInstance()
-            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-            .child(record.author.author_key)
-        //     .getReference(record.user!!.image.file_name)
+
+
+
+        val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${record.author.author_key}/${record.author.profile_image_path}")
 
         try {
 

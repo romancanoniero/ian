@@ -370,35 +370,8 @@ class EventsRepositoryImpl : EventsRepository() {
                         ServerResponse::class.java
                     )
 
-                    Resource.Success<Boolean?>(result.status == 0)
-                    /*
-                    /*
-                    .continueWith(Continuation<HttpsCallableResult, String?> { task -> // This continuation runs on either success or failure, but if the task
+                    Resource.Success<Boolean?>(result.status == 200)
 
-                        (if (task.isSuccessful) {
-                            val result: ServerResponse = Gson().fromJson<ServerResponse>(
-                                task.result!!.data.toString(),
-                                ServerResponse::class.java
-                            )
-
-                            val resultCode: Int = result.status
-                            when (resultCode) {
-                                0 -> {
-                                    callback.onComplete(true, null).toString()
-
-                                }
-                                else -> {
-
-                                }
-                            } as String?
-
-                        } else {
-                            callback.onError(task.exception!!)
-                        }).toString()
-
-                    })
-*/
-               */
                 } catch (exception: Exception) {
                     return Resource.Error<Boolean?>(exception.message.toString())
                 }

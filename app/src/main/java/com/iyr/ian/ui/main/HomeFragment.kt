@@ -27,6 +27,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
@@ -60,6 +61,7 @@ import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorShapes
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REFRESH_PANIC_BUTTON
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_SHOW_FOOTER_TOOLBAR
@@ -77,12 +79,12 @@ import com.iyr.ian.enums.EventStatusEnum
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.enums.SOSActivationMethodsEnum
 import com.iyr.ian.nonui.NonUI
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.services.eventservice.EventService
 import com.iyr.ian.sharedpreferences.SessionApp
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.MainActivity
 import com.iyr.ian.ui.base.PulseRequestTarget
-import com.iyr.ian.ui.base.PulseValidationRequest
 import com.iyr.ian.ui.interfaces.EventsPublishingCallback
 import com.iyr.ian.ui.views.home.fragments.main.adapters.ISpeedDialAdapter
 import com.iyr.ian.ui.views.home.fragments.main.adapters.SpeedDialAdapter
@@ -103,6 +105,7 @@ import com.iyr.ian.utils.dp
 import com.iyr.ian.utils.getBitmapFromVectorDrawable
 import com.iyr.ian.utils.getJustFileName
 import com.iyr.ian.utils.hasOpenedDialogs
+import com.iyr.ian.utils.isGPSEnabled
 import com.iyr.ian.utils.loadImageFromCache
 import com.iyr.ian.utils.loaders.hideLoader
 import com.iyr.ian.utils.loaders.showLoader
@@ -110,6 +113,7 @@ import com.iyr.ian.utils.makeAPhoneCall
 import com.iyr.ian.utils.multimedia.MultimediaUtils
 import com.iyr.ian.utils.multimedia.getDimentions
 import com.iyr.ian.utils.multimedia.prepareMediaMessage
+import com.iyr.ian.utils.navToValidatorDialog
 import com.iyr.ian.utils.permissionsForImages
 import com.iyr.ian.utils.permissionsForVideo
 import com.iyr.ian.utils.permissionsReadWrite
@@ -125,6 +129,7 @@ import com.iyr.ian.utils.telephony.makePhoneCall
 import com.iyr.ian.utils.toGrayscale
 import com.iyr.ian.viewmodels.HomeFragmentViewModel
 import com.iyr.ian.viewmodels.MainActivityViewModel
+import com.iyr.ian.viewmodels.UserViewModel
 import com.lassi.common.utils.KeyUtils
 import com.lassi.data.media.MiMedia
 import com.lassi.domain.media.LassiOption
@@ -139,6 +144,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.Date
 import java.util.Timer
 import java.util.TimerTask
@@ -209,7 +215,7 @@ class HomeFragment(
 
     var isPanicButtonBusy: Boolean = false
 
-    private val args : HomeFragmentArgs by navArgs()
+    private val args: HomeFragmentArgs by navArgs()
 
     private lateinit var binding: FragmentMainBinding
     private var recordSession: MediaRecorder? = null
@@ -246,6 +252,7 @@ class HomeFragment(
                         .build()
 
 
+
                 pickImageContract?.launch(imagePickerIntent)
             } else {
                 requireActivity().permissionsForImages()
@@ -267,7 +274,7 @@ class HomeFragment(
                         */
                         var fileName = localPath.getJustFileName()
 
-
+                        var imageFile = File(localPath)
                         try {
 
 
@@ -281,7 +288,7 @@ class HomeFragment(
                                 var panicEventKey = AppClass.instance.getPanicEventKey().toString()
 
                                 viewModel.onNewMediaMessage(
-                                    panicEventKey, mainActivityViewModel?.user?.value!!, mediaFile
+                                    panicEventKey, mainActivityViewModel?.user?.value!!, mediaFile, imageFile
                                 )
 
                             }
@@ -312,7 +319,7 @@ class HomeFragment(
                     Lassi(requireContext()).with(LassiOption.CAMERA_AND_GALLERY) // choose Option CAMERA, GALLERY or CAMERA_AND_GALLERY
                         .setMaxCount(5).setGridSize(3).setMediaType(MediaType.VIDEO)
                         .setMaxFileSize(1024)
-                        .setCompressionRatio(10) // compress image for single item selection (can be 0 to 100)
+                        .setCompressionRatio(60) // compress image for single item selection (can be 0 to 100)
                         .setMinTime(5) // for MediaType.VIDEO only
                         .setMaxTime(60) // for MediaType.VIDEO only
                         .setSupportedFileTypes(
@@ -337,13 +344,7 @@ class HomeFragment(
                         .enableActualCircleCrop() // Enable actual circular crop (only for MediaType.Image and CropImageView.CropShape.OVAL)
                         .build()
 
-                /*
-             .setCropType(CropImageView.CropShape.RECTANGLE) // choose shape for cropping after capturing an image from camera (for MediaType.IMAGE only)
-                        .setCropAspectRatio(
-                            1, 1
-                        ) // define crop aspect ratio for cropping after capturing an image from camera (for MediaType.IMAGE only)
 
- */
                 pickVideoContract?.launch(videoPickerIntent)
             } else {
                 requireActivity().permissionsForVideo()
@@ -361,6 +362,8 @@ class HomeFragment(
                         Log.d("VIDEO_FILE", selectedMedia[0].path.toString())
                         val localPath = selectedMedia[0].path.toString()
                         //   val media = MediaFile(MediaTypesEnum.VIDEO, filePath)
+
+                        val videoFile = File(localPath)
 
                         var fileName = localPath.getJustFileName()
                         try {
@@ -411,7 +414,8 @@ class HomeFragment(
                                     viewModel.onNewMediaMessage(
                                         panicEventKey,
                                         mainActivityViewModel?.user?.value!!,
-                                        mediaFile
+                                        mediaFile,
+                                        videoFile
                                     )
                                 }
 
@@ -482,7 +486,7 @@ class HomeFragment(
         speedDialAdapter = SpeedDialAdapter(requireActivity(), this)
 
         val eventService = AppClass.instance.serviceLocationPointer?.ServiceLocationBinder()
-     //   (requireActivity() as MainActivity).setListnerToRootView()
+        //   (requireActivity() as MainActivity).setListnerToRootView()
     }
 
     override fun onCreateView(
@@ -494,6 +498,23 @@ class HomeFragment(
         setupUI()
         requireContext().broadcastMessage(null, BROADCAST_ACTION_SHOW_FOOTER_TOOLBAR)
         // setupObservers()
+
+        binding.redButton.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                // Remove the listener to prevent multiple calls
+                binding.redButton.viewTreeObserver.removeOnGlobalLayoutListener(this)
+
+                // Get the width and height of the view
+                val width = binding.redButton.width
+                val height = binding.redButton.height
+                binding.circularRippleView.initialDiameter = width.coerceAtMost(height).toFloat()
+
+                // Use the width and height as needed
+                Log.d("RoundButtonSize", "Width: $width, Height: $height")
+            }
+        })
+
         return binding.root
     }
 
@@ -582,15 +603,11 @@ class HomeFragment(
                         userKey = extras.get("userKey")
                         try {
 
-                            /*
-                                                        var storageReference = FirebaseStorage.getInstance()
-                                                            .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                                                            .child(userKey!!)
-                                                            .child(viewer.getImageSrc().toString()).downloadUrl.await()
-                            */
-                            var storageReferenceCache = FirebaseStorage.getInstance()
-                                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                                .child(userKey!!).child(viewer.getImageSrc().toString())
+
+
+
+                            var storageReferenceCache = ( StorageRepositoryImpl().
+                            generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${userKey}/${viewer.getImageSrc().toString()}") as StorageReference)
                                 .downloadUrlWithCache(requireContext())
 
                             viewer.setImageSrc(storageReferenceCache.toString())
@@ -613,36 +630,11 @@ class HomeFragment(
                     binding.activationInstructions.visibility = View.VISIBLE
                 }
 
-
                 requireActivity().runOnUiThread {
                     binding.panicEventViewersSection.forceLayout()
                     binding.panicEventViewersSection.invalidate()
                     view?.invalidate()
                 }
-
-            }
-
-
-        }
-
-        /*
-              mainActivityViewModel.isInPanic.observe(viewLifecycleOwner) { isInPanic ->
-                  if (!isInPanic)
-                      switchToPanicOn()
-                  else
-                      switchToPanicOff()
-              }
-      */
-        mainActivityViewModel?.isLocationAvailable?.observe(viewLifecycleOwner) { available ->
-            if (available) {
-                if (mainActivityViewModel?.isInPanic?.value == true) {
-                    switchPanicButtonToPanic()
-                } else {
-                    switchPanicButtonToReady()
-                    setupPanicButtonModality()
-                }
-            } else {
-                disablePanicButton()
             }
         }
 
@@ -652,14 +644,7 @@ class HomeFragment(
                 is Resource.Error -> binding.seekCounter.progress = 0
                 else -> {}
             }
-        }/*
-                AppClass.instance.eventsFollowed.observe(viewLifecycleOwner) { events ->
-
-        //            viewModel.processEventsList(events)
-                }
-        */
-
-        //      viewModel.listenSpeedDialContacts(userKey)
+        }
 
         viewModel.sendingContent.observe(viewLifecycleOwner) { resource ->
             when (resource) {
@@ -696,17 +681,7 @@ class HomeFragment(
 
         AppClass.instance.panic.removeObservers(viewLifecycleOwner)
 
-
-        /*
-              mainActivityViewModel.isInPanic.observe(viewLifecycleOwner) { isInPanic ->
-                  if (!isInPanic)
-                      switchToPanicOn()
-                  else
-                      switchToPanicOff()
-              }
-      */
         mainActivityViewModel?.isLocationAvailable?.removeObservers(viewLifecycleOwner)
-
         eventService?.getResult()?.removeObservers(viewLifecycleOwner)
 
         //  AppClass.instance.eventsFollowed.removeObservers(viewLifecycleOwner)
@@ -769,20 +744,18 @@ class HomeFragment(
             } else {
                 var panicEventKey = AppClass.instance.getPanicEventKey()
 
-
-                val validatorRequestType = PulseValidationRequest(
-                    PulseRequestTarget.VALIDATION_BEFORE_CLOSE_EVENT, panicEventKey
+                findNavController().navToValidatorDialog(
+                    PulseRequestTarget.VALIDATION_BEFORE_CLOSE_EVENT,
+                    UserViewModel.getInstance().user.value!!.user_key,
+                    panicEventKey.toString()
                 )
-                mainActivityViewModel?.requestValidationDialog(validatorRequestType)/*
-                                var data = HashMap<String, String>()
-                                data.put("panicEventKey", panicEventKey ?: "")
 
-                                requireContext().broadcastMessage(
-                                    data,
-                                    BROADCAST_ACTION_CANCEL_PANIC
-                                )
-                                binding.panicMultiButton.visibility = View.VISIBLE
-                */
+                /*
+                 val validatorRequestType = PulseValidationRequest(
+                     PulseRequestTarget.VALIDATION_BEFORE_CLOSE_EVENT, panicEventKey
+                 )
+                 mainActivityViewModel?.requestValidationDialog(validatorRequestType)
+ */
             }
         }
 
@@ -916,7 +889,7 @@ class HomeFragment(
                 var panicEventKey = AppClass.instance.getPanicEventKey().toString()
 
                 recordingFilename =
-                    AppClass.instance.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH + panicEventKey + "/" + UUID.randomUUID()
+                    AppClass.instance.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH+"/" + panicEventKey + "/" + UUID.randomUUID()
                         .toString() + ".3gp"
 
                 requireContext().createDirectoryStructure(recordingFilename!!)
@@ -960,6 +933,7 @@ class HomeFragment(
 
                     stopMonitoringWave()
 
+                    val voiceFile = File(recordingFilename!!)
 
                     val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
 
@@ -993,7 +967,8 @@ class HomeFragment(
                                     viewModel.onNewMediaMessage(
                                         panicEventKey,
                                         mainActivityViewModel?.user?.value!!,
-                                        mediaFile
+                                        mediaFile,
+                                        voiceFile
                                     )
                                 }
                                 recordSession = null
@@ -1400,17 +1375,25 @@ class HomeFragment(
         (requireActivity() as MainActivity).restoreNavigationFragment()
 
         try {
-            if (args.firstRun)
-            {
+            if (args.firstRun) {
                 (requireActivity() as MainActivity).setListnerToRootView()
             }
-        }
-        catch (ex: Exception)
-        {
+        } catch (ex: Exception) {
 
         }
 
 
+
+        if (context?.isGPSEnabled() ?: false && context?.areLocationPermissionsGranted() ?: false) {
+            if (mainActivityViewModel?.isInPanic?.value == true) {
+                switchPanicButtonToPanic()
+            } else {
+                switchPanicButtonToReady()
+                setupPanicButtonModality()
+            }
+        } else {
+            disablePanicButton()
+        }
     }
 
 

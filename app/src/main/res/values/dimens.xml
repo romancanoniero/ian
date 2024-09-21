@@ -18,4 +18,5 @@
     <dimen name="dialogs_vertical_margin">10dp</dimen>
     <dimen name="dialog_corner_radius">32dp</dimen>
     <dimen name="dialog_corner_radius_small">20dp</dimen>
+
 </resources>

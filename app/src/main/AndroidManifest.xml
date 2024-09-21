@@ -93,6 +93,10 @@
             </intent-filter>
         </receiver>
 
+
+        <service android:name=".services.app_status.AppStatusService" android:enabled="true"
+            android:exported="false" />
+
         <receiver
             android:name=".services.receivers.AppStatusReceiver"
             android:enabled="true"

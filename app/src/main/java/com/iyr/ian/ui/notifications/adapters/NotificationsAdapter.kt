@@ -22,6 +22,7 @@ import com.iyr.ian.dao.models.EventNotificationModel
 import com.iyr.ian.dao.models.EventNotificationType
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.ui.callback.MainActivityCallback
 import com.iyr.ian.ui.dialogs.NotificationAdapterCallback
 import com.iyr.ian.ui.interfaces.FriendsMainActivityInterface
@@ -803,10 +804,9 @@ class NotificationsAdapter(val activity: Activity, val callback: INotifications)
 
             // TODO: Pasarlo a Coroutinas
 
-            val storageReference = FirebaseStorage.getInstance()
-                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                .child(userKey)
-                .child(profileImageName)
+
+
+            val storageReference = StorageRepositoryImpl().generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${userKey}/${profileImageName}")
 
 
             Log.d("GLIDEAPP", "13")

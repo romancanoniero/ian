@@ -14,6 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.R
 import com.iyr.ian.callbacks.OnCompleteCallback
@@ -21,6 +22,7 @@ import com.iyr.ian.dao.models.Event
 import com.iyr.ian.databinding.FragmentNewEventNotificationPopupBinding
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.glide.GlideApp
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.UIUtils.handleTouch
 import com.iyr.ian.utils.getEventTypeDrawable
@@ -91,9 +93,11 @@ class NewEventNotificationDialog(mContext: Context, mActivity: Activity,val even
         binding.eventIcon.setImageDrawable(context.getEventTypeDrawable(event.event_type))
 
         lifecycleScope.launch {
-            var storageReferenceCache = FirebaseStorage.getInstance()
-                .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                .child(event.author_key!!).child(event.author?.profile_image_path.toString())
+
+
+
+            var storageReferenceCache = (StorageRepositoryImpl()
+                .generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${event.author_key}/${event.author?.profile_image_path.toString()}") as StorageReference)
                 .downloadUrlWithCache(context)
 
             GlideApp.with(context)

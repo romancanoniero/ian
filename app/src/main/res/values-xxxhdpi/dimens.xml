@@ -28,8 +28,8 @@
 	<dimen name="dimen_75dp">75dp</dimen>
 	<dimen name="dimen_100dp">100dp</dimen>
 
-	<dimen name="text_size_heading">24sp</dimen>
-	<dimen name="text_size_subheading">18sp</dimen>
+	<dimen name="text_size_heading">22sp</dimen>
+	<dimen name="text_size_subheading">14sp</dimen>
 	<dimen name="text_size_paragraph">14sp</dimen>
 	<dimen name="text_size_subparagraph">12sp</dimen>
 	<dimen name="text_size_subsubparagraph">8sp</dimen>
@@ -37,7 +37,7 @@
 	<!-- Samsung Galaxy S8 -->
 	<dimen name="marker_user_image_size">56dp</dimen>
 
-
+	<dimen name="thumb_size">32dp</dimen>
 
 
 

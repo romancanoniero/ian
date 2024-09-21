@@ -1,0 +1,6 @@
+<resources>
+    <declare-styleable name="CircularRippleView">
+        <attr name="initialDiameter" format="dimension" />
+        <attr name="rippleSpeed" format="integer" />
+    </declare-styleable>
+</resources>

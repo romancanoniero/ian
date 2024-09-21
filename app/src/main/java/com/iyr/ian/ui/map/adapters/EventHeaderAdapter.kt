@@ -425,10 +425,6 @@ holder.eventLocationRef = eventLocationRef
                                   try {
 
                                       Log.d("UPDATEUI", "Refresco la imagen")
-                                      var storageReferenceCache = FirebaseStorage.getInstance()
-                                          .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                                          .child(event.author?.author_key!!).child(fileName)
-                                          .downloadUrlWithCache(activity)
 
                                       withContext(Dispatchers.Main) {
                                           if (binding.userImage.tag != storageReferenceCache) {
@@ -459,7 +455,7 @@ holder.eventLocationRef = eventLocationRef
               */
                 binding.userImage.visibility = View.INVISIBLE
 
-                GlobalScope.launch(Dispatchers.IO) {
+                GlobalScope.launch(Dispatchers.Main) {
 
                     activity.assignFileImageTo(
                         fileName,

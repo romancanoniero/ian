@@ -187,6 +187,19 @@
     <string name="no_phone_number">No Disponible</string>
     <string name="action_delete_all_notifications">Eliminar</string>
     <string name="action_delete_all_notifications_message">Deseas eliminar todas las notificaciones recibidas?</string>
+    <string name="registered">Registrados:</string>
+    <string name="detected">Detected:</string>
+
+
+
+    <!--- BLUETOOTH -->
+    <string name="hello_no_ble_fragment">Tu dispositivo no tiene adaptador Bluetooth</string>
+    <string name="bluetooth_device_discovered_title">Dispositivo detectado</string>
+    <string name="bluetooth_device_connected_title">Dispositivo conectado</string>
+    <string name="rssi">Intensidad de la señal: %d</string>
+    <string name="try_enable_bt">El Bluetooth se está encendiendo</string>
+    <string name="try_enable_bt_failed">Necesitas habilitar el Bluetooth manualmente en la configuración del dispositivo.</string>
+    <string name="open_bt_settings">Encender Bluetooth</string>
 
 
 </resources>

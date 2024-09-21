@@ -22,6 +22,7 @@ import com.iyr.ian.AppConstants
 import com.iyr.ian.Constants.Companion.MY_PERMISSION_REQUEST_SEND_SMS
 import com.iyr.ian.R
 import com.iyr.ian.dao.models.Contact
+import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.ui.main.dialogs.NewUserInvitationDialog
 import com.iyr.ian.ui.views.home.fragments.main.adapters.ISpeedDialAdapter
 import com.iyr.ian.utils.versionPrefix
@@ -80,11 +81,10 @@ class SpeedDialAdapter(val activity: Activity, val callback: ISpeedDialAdapter) 
             try {
 
 
-                val storageReference = FirebaseStorage.getInstance()
-                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH)
-                    .child(record.user_key.toString())
-                    .child(record.image!!.file_name)
 
+
+                val storageReference = StorageRepositoryImpl().
+                generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${record.user_key.toString()}/${record.image!!.file_name}")
 
                 Glide.with(activity)
                     .asBitmap()
