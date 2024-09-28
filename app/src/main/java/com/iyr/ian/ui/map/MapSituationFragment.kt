@@ -84,12 +84,11 @@ import com.iyr.ian.utils.showErrorDialog
 import com.iyr.ian.viewmodels.MainActivityViewModel
 import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
 import com.iyr.ian.viewmodels.UserViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.Serializable
 import java.math.BigDecimal
@@ -214,9 +213,11 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
         mMap!!.setInfoWindowAdapter(customInfoWindowAdapter)
 
 
-        viewModel.onResetEvent.observe(this) { event ->
-            viewModel.onResetEvent.removeObservers(this)
+        viewModel.onResetEvent.observe(viewLifecycleOwner) { event ->
+           // viewModel.onResetEvent.removeObservers(this)
+         //   viewModel.disconnectToCurrentEvent()
 
+           resetMap()
             /// muevo el mapa
             val eventInfo = event
             val latLng = LatLng(
@@ -228,69 +229,69 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
             val location = LocationUpdate()
             location.location = latLng
             mMap!!.setOnCameraMoveStartedListener { reason ->
-               // lifecycleScope.launch(Dispatchers.Main) {
-                    //stopRippleAll()
-                    if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
-                        setCameraMode(CameraModesEnum.FREE_MODE)
-                    }
-               // }
+                // lifecycleScope.launch(Dispatchers.Main) {
+                //stopRippleAll()
+                if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+                    setCameraMode(CameraModesEnum.FREE_MODE)
+                }
+                // }
             }
 
             mMap!!.setOnCameraIdleListener {
 
                 synchronized(lock) {
 
-      //              lifecycleScope.launch(Dispatchers.Main) {
-                        if (!isFirstRun) {
-                            isFirstRun = false
-                            Thread {
-                                remainingTimeUpdatesJob =
-                                    remainingTimeStartRepeatingJob(5.asSeconds)
-                            }.start()
-                        }
+                    //              lifecycleScope.launch(Dispatchers.Main) {
+                    if (!isFirstRun) {
+                        isFirstRun = false
+                        Thread {
+                            remainingTimeUpdatesJob =
+                                remainingTimeStartRepeatingJob(5.asSeconds)
+                        }.start()
+                    }
 
-                        if (currentZoomLevel == null || currentZoomLevel != mMap!!.cameraPosition.zoom) {
-                            updateMarkersSize()
-                            viewModel.auxEventKey.value?.let { eventKey ->
-                                if (mapConfigs.containsKey(eventKey)) {
-                                    val config = mapConfigs[eventKey]!!
-                                    config.location = mMap!!.cameraPosition.target
-                                    config.zoomLevel = mMap!!.cameraPosition.zoom
-                                    mapConfigs.set(eventKey, config)
-                                }
+                    if (currentZoomLevel == null || currentZoomLevel != mMap!!.cameraPosition.zoom) {
+                        updateMarkersSize()
+                        viewModel.auxEventKey.value?.let { eventKey ->
+                            if (mapConfigs.containsKey(eventKey)) {
+                                val config = mapConfigs[eventKey]!!
+                                config.location = mMap!!.cameraPosition.target
+                                config.zoomLevel = mMap!!.cameraPosition.zoom
+                                mapConfigs.set(eventKey, config)
                             }
                         }
+                    }
                 }
             }
         }
-/*
-        mMap!!.setOnMarkerClickListener { marker ->
-            requireContext().handleTouch()
-            val markerKey = (marker.tag as Bundle).getString("key").toString()
-            val mapObject = mapObjectsMap[markerKey]
-          /*
-            customInfoWindowAdapter.getInfoWindow(marker)
-            viewModel.onMarkerClicked(markerKey)
-*/
-            customInfoWindowAdapter.setSelectedMarker(marker)
-            marker.showInfoWindow()
-            if (mapObject?.type != MapObjectsType.EVENT_MARKER) {
-                val eventKey = MapSituationFragmentViewModel.getInstance().auxEventKey.value ?: ""
-              /*
-                lifecycleScope.launch(Dispatchers.Main) {
+        /*
+                mMap!!.setOnMarkerClickListener { marker ->
+                    requireContext().handleTouch()
+                    val markerKey = (marker.tag as Bundle).getString("key").toString()
+                    val mapObject = mapObjectsMap[markerKey]
+                  /*
+                    customInfoWindowAdapter.getInfoWindow(marker)
+                    viewModel.onMarkerClicked(markerKey)
+        */
+                    customInfoWindowAdapter.setSelectedMarker(marker)
                     marker.showInfoWindow()
+                    if (mapObject?.type != MapObjectsType.EVENT_MARKER) {
+                        val eventKey = MapSituationFragmentViewModel.getInstance().auxEventKey.value ?: ""
+                      /*
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            marker.showInfoWindow()
+                        }
+                        viewModel.onConnectToInfoWindowData(
+                            eventKey, markerKey
+                        )
+
+                       */
+                    }
+
+
+                    true
                 }
-                viewModel.onConnectToInfoWindowData(
-                    eventKey, markerKey
-                )
-
-               */
-            }
-
-
-            true
-        }
-  */
+          */
 
 
         val locationButton = (mapView.requireView()
@@ -431,17 +432,30 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
         }
     }
 
-    val eventsHeaderRecyclerAdapter by lazy {
-        EventHeaderAdapter((requireActivity() as AppCompatActivity), mMap, this)
-    }
+    lateinit var eventsHeaderRecyclerAdapter : EventHeaderAdapter
+
+    private val args: MapSituationFragmentArgs by navArgs()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("EVENT_CREATION", this.javaClass.name)
 
-        val parameters: MapSituationFragmentArgs by navArgs()
+        val parameters = arguments
+
         viewModel = MapSituationFragmentViewModel.getInstance()
+
+        initializeEventsListAdapter()
+        args.eventKey.let { eventKey ->
+            changeToEvent(eventKey!!)
+        }
+
+
+
+
+
         lifecycle.addObserver(viewModel)
+        //      parameters?.getString("eventKey")?
+
 
 //        createRoutesColors()
         mEventsMarkersMap = HashMap()
@@ -459,8 +473,45 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
         binding = FragmentMapSituationBinding.inflate(layoutInflater, container, false)
         mapView = (childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?)!!
         binding.unreadCounterText.visibility = GONE
-        setupUI()
+
+        binding.eventsRecyclerView.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.eventsRecyclerView.adapter = eventsHeaderRecyclerAdapter
+        binding.eventsRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                //   super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val position = layoutManager.findFirstVisibleItemPosition()
+                    val event = eventsHeaderRecyclerAdapter.events[position]
+                  if (viewModel.getEventSelectedKey() != event.event_key) {
+                      this@MapSituationFragment.changeToEvent(event.event_key)
+
+                    }
+                }
+            }
+        })
+
+        binding.dotsIndicator.attachTo(binding.eventsRecyclerView, true)
+        eventsHeaderRecyclerAdapter.notifyDataSetChanged()
+        binding.dotsIndicator.numberOfIndicators = eventsHeaderRecyclerAdapter.events.size
+
+
+        binding.elapsedPeriod.maxValue = 180f
+        setupToolbar()
+
+        binding.elapsedPeriod.visibility = GONE
+
+        //   chatFragment?.setViewReference(binding.fabChat)
+        binding.cameraModeSection.setOnClickListener {
+            toggleCameraModeSelector(isCameraSelectorOpen)
+        }
+
+        setupFABs()
+
+        setupCameraModesUI()
         //finishSetupOfChatFragment()
+
 
         binding.root.viewTreeObserver.addOnGlobalLayoutListener(
             globalLayoutListener
@@ -496,6 +547,9 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
             }
         }
 
+
+        /*
+        ojo con esto.. 26/9/2024 esto hay que adaptarlo
         if (viewModel.auxEventKey.value != null) {
             startObserveEvent(viewModel.auxEventKey.value!!)
         } else {
@@ -503,17 +557,28 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                 findNavController().popBackStack()
             } else {
                 AppClass.instance.eventsMap.value?.values?.first()?.let { event ->
-                    startObserveEvent(event.event_key)
+//                    startObserveEvent(event.event_key)
+                    viewModel.onEventSelected(event.event_key)
                 }
             }
         }
+        */
+//        resumeConnections()
+
+        viewModel.onFragmentResume()
+
+    }
+
+    private fun resumeConnections() {
     }
 
 
     override fun onPause() {
         super.onPause()
 
+        viewModel.onFragmentPaused()
         remainingTimeUpdatesJob?.cancel()
+        remainingTimeUpdatesJob = null
         viewModel.onDisconnectionRequested()
         stopObservers()
         MainActivityViewModel.getInstance().currentFragment = null
@@ -530,18 +595,26 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
 
     private fun startObservers() {
 
-        viewModel.auxEventKey.observe(this) { eventKey ->
+
+        viewModel.goToEvent.observe(this) { eventKey ->
             if (eventKey != null) {
-                /*
+                //      viewModel.onEventSelected(eventKey)
+            }
+        }
+
+        viewModel.auxEventKey.observe(this) { eventKey ->
+            if (eventKey != null) {/*
                         Toast.makeText(
                             requireContext(),
                             "Evento seleccionado: $eventKey",
                             Toast.LENGTH_SHORT
                         ).show()
-                */
+                        */
+
             }
 
         }
+
 
         viewModel.eventFlow.observe(this) { resource ->
 
@@ -556,6 +629,8 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                 is Resource.Loading -> {}
 
                 is Resource.Success -> {
+
+
                     val event = resource.data
                     currentEvent = event
 
@@ -566,10 +641,10 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                     // b) Escucho a los seguidores del evento.
                     val eventKey = event?.event_key.toString()
 
-                    if (viewModel.auxEventKey.value != eventKey) // Cambio de evento
-                    {
-                        viewModel.connectToEvent(eventKey)
-                    }
+//                    if (viewModel.getEventSelectedKey() != eventKey) // Cambio de evento
+//                    {
+                    selectCurrentDot(eventKey)
+                    // }
 
                     viewModel.setEventTimeOfLastView(
                         FirebaseAuth.getInstance().uid.toString(), event?.event_key ?: "error"
@@ -613,9 +688,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
 
             }
         }
-
-
-        viewModel.eventFollowersFlow.observe(this) { resource ->
+        viewModel.eventFollowersFlow.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Error -> {
                     requireActivity().hideLoader()
@@ -636,13 +709,12 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                     when (event) {
                         is EventFollowersRepository.EventFollowerDataEvent.OnChildAdded -> {
                             follower = event.data
-                            if (follower.is_author == false || currentEvent?.event_location_type == EventLocationType.REALTIME.toString()) {
+                            if (follower.following && follower.is_author == false || currentEvent?.event_location_type == EventLocationType.REALTIME.toString()) {
                                 val marker = markersMap[follower.user_key]
                                 // si el marker no existe, lo crea y agrega al mapa
                                 if (marker == null) {
                                     if (markersMap.containsKey(follower.user_key) == false) {
-
-                                        lifecycleScope.launch(Dispatchers.Main) {
+                                        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
                                             addNewMarkerToMap(follower!!)
                                         }
                                     }
@@ -657,11 +729,8 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                         }
 
                         is EventFollowersRepository.EventFollowerDataEvent.OnChildChanged -> {
-                            follower = event.data/*
-                             Log.d(
-                                 "FOLLOWERS", "cambio en el  follower = " + follower.user_key
-                             )
-                             */
+                            follower = event.data
+
                             val marker = getMapMarker(follower.user_key)
                             // si el marker no existe, lo crea y agrega al mapa
                             if (marker == null) {
@@ -692,7 +761,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                                     follower
                                 )
                             }
-                            //                          */
+
                         }
 
                         is EventFollowersRepository.EventFollowerDataEvent.OnChildRemoved -> {
@@ -709,8 +778,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
             }
         }
 
-
-        viewModel.resetEvent.observe(this) { reset ->
+        viewModel.resetEvent.observe(viewLifecycleOwner) { reset ->
             when (reset) {
                 true -> {
                     //                 Toast.makeText(requireContext(), "Reset", Toast.LENGTH_SHORT).show()
@@ -723,7 +791,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
             }
         }
 
-        viewModel.shimmmerVisible.observe(this) { visible ->
+        viewModel.shimmmerVisible.observe(viewLifecycleOwner) { visible ->
             if (visible == true) {
                 startShimmer()
             } else {
@@ -731,18 +799,18 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
             }
         }
 
-        viewModel.spinner.observe(this) { value ->
+        viewModel.spinner.observe(viewLifecycleOwner) { value ->
             value.let { show ->
                 if (show == true) mainActivityViewModel.showLoader()
                 else mainActivityViewModel.hideLoader()
             }
         }
 
-        viewModel.onCloseEventAction.observe(this) { action ->
+        viewModel.onCloseEventAction.observe(viewLifecycleOwner) { action ->
             when (action) {
                 MapSituationFragmentViewModel.OnEventClosedActionsEnum.LOAD_FIRST_EVENT -> {
                     val nextEvent = eventsList.first()
-                    viewModel.connectToEvent(nextEvent.event_key)
+                    changeToEvent(nextEvent.event_key)
                 }
 
                 MapSituationFragmentViewModel.OnEventClosedActionsEnum.GO_MAIN -> {
@@ -754,58 +822,42 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
 
         }
 
-        AppClass.instance.eventsMap.observe(this) { map ->
-            eventsHeaderRecyclerAdapter.events.clear()
-            eventsList.clear()
-
-            map.values.forEach { event ->
-                eventsHeaderRecyclerAdapter.events.add(event)
-                eventsList.add(event)
-            }
-            eventsHeaderRecyclerAdapter.notifyDataSetChanged()
-            binding.dotsIndicator.numberOfIndicators = eventsHeaderRecyclerAdapter.events.size
-
-            AppClass.instance.eventsMap.removeObservers(this)
-
-            AppClass.instance.eventsListFlow.observe(this) { resource ->
-
-                when (resource) {
-                    is EventsRepository.DataEvent.OnChildAdded -> {
-                        val event = resource.data
 
 
-                        if (!eventsHeaderRecyclerAdapter.isEventExists(event.event_key)) {
-                            eventsHeaderRecyclerAdapter.events.add(event)
-                            eventsHeaderRecyclerAdapter.notifyItemInserted(
-                                eventsHeaderRecyclerAdapter.events.size - 1
-                            )
-                            binding.dotsIndicator.numberOfIndicators =
-                                eventsHeaderRecyclerAdapter.events.size
 
-
-                            if ((viewModel.currentEventKey).isEmpty()) {
-
-                                viewModel.connectToEvent(event.event_key)
-                                //                               chatFragment?.connectToEvent(event.event_key)
-                            }
+        AppClass.instance.eventsListFlow.observe(viewLifecycleOwner) { resource ->
+            when (resource) {
+                is EventsRepository.DataEvent.OnChildAdded -> {
+                    val event = resource.data
+                    if (!eventsHeaderRecyclerAdapter.isEventExists(event.event_key)) {
+                        eventsHeaderRecyclerAdapter.events.add(event)
+                        eventsHeaderRecyclerAdapter.events.sortBy { it.event_creation_time }
+                        eventsHeaderRecyclerAdapter.notifyItemInserted(
+                            eventsHeaderRecyclerAdapter.events.size - 1
+                        )
+                        binding.dotsIndicator.numberOfIndicators =
+                            eventsHeaderRecyclerAdapter.events.size
+                        if (viewModel.getEventSelectedKey().isNullOrEmpty()) {
+                            changeToEvent(event.event_key)
                         }
                     }
-
-                    is EventsRepository.DataEvent.OnChildChanged -> {}
-                    is EventsRepository.DataEvent.OnChildMoved -> {}
-                    is EventsRepository.DataEvent.OnChildRemoved -> {
-                        val existingEvents = AppClass.instance.eventsMap.value?.size ?: 0
-                        binding.dotsIndicator.numberOfIndicators = existingEvents
-                    }
-
-                    is EventsRepository.DataEvent.OnError -> TODO()
                 }
 
+                is EventsRepository.DataEvent.OnChildChanged -> {}
+                is EventsRepository.DataEvent.OnChildMoved -> {}
+                is EventsRepository.DataEvent.OnChildRemoved -> {
+                    val existingEvents = AppClass.instance.eventsMap.value?.size ?: 0
+                    binding.dotsIndicator.numberOfIndicators = existingEvents
+                }
+
+                is EventsRepository.DataEvent.OnError -> TODO()
             }
 
         }
 
-        viewModel.isChatOpen.observe(this) { isOpen ->
+
+
+        viewModel.isChatOpen.observe(viewLifecycleOwner) { isOpen ->
 
             if (isOpen == true == true) {
 
@@ -822,14 +874,14 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
         }
 
         //----  Chatroom
-        viewModel.isChatButtonVisible.observe(this) {
+        viewModel.isChatButtonVisible.observe(viewLifecycleOwner) {
             if (it != null) {
                 binding.fabOptionsLayout.isVisible = it
             }
         }
 
 
-        viewModel.unreadMessages.observe(this) { unreadMessages ->
+        viewModel.unreadMessages.observe(viewLifecycleOwner) { unreadMessages ->
             if (unreadMessages > 0) {
                 binding.unreadCounterText.text = unreadMessages.toString()
                 binding.unreadCounterText.visibility = VISIBLE
@@ -838,21 +890,59 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
             }
         }
 
-        viewModel.bottomBarVisibilityStatus.observe(this) { visible ->
+        viewModel.bottomBarVisibilityStatus.observe(viewLifecycleOwner) { visible ->
             if (visible != null) {
                 if (visible) mainActivityViewModel.onBottomBarVisibilityOnRequired()
                 else mainActivityViewModel.onBottomBarVisibilityOffRequired()
             }
         }
 
-/*
-        viewModel.infoWindowData.observe(this) { data ->
+        /*
+                viewModel.infoWindowData.observe(viewLifecycleOwner) { data ->
 
 
-            customInfoWindowAdapter.updateInfoWindowContent(data)
-        }
-*/
+                    customInfoWindowAdapter.updateInfoWindowContent(data)
+                }
+        */
         observing = true
+    }
+
+    /***
+     * Cambia el punto del evento seleccionado
+     */
+    private fun selectCurrentDot(eventKey: String) {
+        val index =
+            eventsHeaderRecyclerAdapter.events.indexOfFirst { it.event_key == eventKey }
+        binding.dotsIndicator.selectedPosition = index
+    }
+
+    private fun initializeEventsListAdapter() {
+        eventsHeaderRecyclerAdapter = EventHeaderAdapter((requireActivity() as AppCompatActivity), mMap, this, lifecycleScope)
+
+        val list = AppClass.instance.eventsMap.value ?: HashMap<String, EventFollowed>()
+        eventsHeaderRecyclerAdapter.events.clear()
+        eventsList.clear()
+        list.values.sortedBy { it.event_creation_time }.forEach { record ->
+            val event = record
+            eventsHeaderRecyclerAdapter.events.add(event)
+            eventsList.add(event)
+        }
+
+    }
+
+    private fun moveRecyclerEventTo(position: Int) {
+        if (position in 0 until eventsHeaderRecyclerAdapter.events.size) {
+            (activity as? AppCompatActivity)?.runOnUiThread {
+                binding.eventsRecyclerView.scrollToPosition(position)
+            }
+        }
+    }
+
+    private fun changeToEvent(eventKey: String) {
+
+Log.d("EVENT_CREATION", "changeToEvent = $eventKey")
+
+        viewModel.connectToEventRequest(eventKey)
     }
 
 
@@ -874,7 +964,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
         viewModel.bottomBarVisibilityStatus.removeObservers(this)
         viewModel.eventFlow.removeObservers(this)
         mainActivityViewModel.isKeyboardOpen.removeObservers(this)
-  //      viewModel.infoWindowData.removeObservers(this)
+        //      viewModel.infoWindowData.removeObservers(this)
         observing = false
 
     }
@@ -894,12 +984,6 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
         binding.eventsRecyclerView.visibility = VISIBLE
     }
 
-
-    fun startObserveEvent(eventKey: String) {
-        if (viewModel.currentEventKey != eventKey) {
-            viewModel.connectToEvent(eventKey)
-        }
-    }
 
 
 // MAP & MARKERS
@@ -935,38 +1019,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
 
         //--- adapter de eventos
 
-        binding.eventsRecyclerView.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        binding.eventsRecyclerView.adapter = eventsHeaderRecyclerAdapter
-        binding.eventsRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                //   super.onScrollStateChanged(recyclerView, newState)
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                    val position = layoutManager.findFirstVisibleItemPosition()
-                    val event = eventsHeaderRecyclerAdapter.events[position]
-                    if (viewModel.visibleEventKey != event.event_key) {
-                        startObserveEvent(event.event_key)
-                    }
-                }
-            }
-        })
 
-        binding.dotsIndicator.attachTo(binding.eventsRecyclerView, true)
-
-        binding.elapsedPeriod.maxValue = 180f
-        setupToolbar()
-
-        binding.elapsedPeriod.visibility = GONE
-
-        //   chatFragment?.setViewReference(binding.fabChat)
-        binding.cameraModeSection.setOnClickListener {
-            toggleCameraModeSelector(isCameraSelectorOpen)
-        }
-
-        setupFABs()
-
-        setupCameraModesUI()
     }
 
     private fun setupFABs() {
@@ -1127,7 +1180,7 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
                         "Llamo a la conexcion del evento {$eventKey} desde resolveOnEventRemoved"
                     )
 
-                    startObserveEvent(nextEvent.event_key)
+                    changeToEvent(nextEvent.event_key)
                 }
             }
         }
@@ -1148,15 +1201,14 @@ class MapSituationFragment() : Fragment(), EventHeaderCallback {
 
 
     private fun remainingTimeStartRepeatingJob(timeInterval: Long): Job {
-        return CoroutineScope(Dispatchers.Default).launch {
-            while (NonCancellable.isActive) {
+        return viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
+            while (isActive) {
                 // add your task here
                 updateElapsedTimeIndicator()
                 delay(timeInterval)
             }
         }
     }
-
 
     private fun updateElapsedTimeIndicator() {
         currentEvent?.let { event ->

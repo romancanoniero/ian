@@ -114,7 +114,6 @@ suspend fun Context.assignFileImageTo(
         fileName, folder
     )
     if (imageBitmap != null) {
-
         if (coroutineContext.isMainContext()) {
             destination.setImageBitmap(imageBitmap)
         } else {

@@ -63,7 +63,6 @@ class ITagsService : Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
 
         Log.d("ITags", "onStartCommand")
-
         if (intent != null) {
             if (ACTION_STOP == intent.action) {
                 stopSelf()

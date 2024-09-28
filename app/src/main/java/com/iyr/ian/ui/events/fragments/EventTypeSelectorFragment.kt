@@ -34,9 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
-class EventTypeSelectorFragment() :
-    Fragment(),
-    EventTypeSelectorCallback {
+class EventTypeSelectorFragment() : Fragment(), EventTypeSelectorCallback {
 
     private var accessLevel: Int = AccessLevelsEnum.FREE.ordinal
     lateinit var viewModel: EventsFragmentViewModel
@@ -47,7 +45,6 @@ class EventTypeSelectorFragment() :
 
 
     fun newInstance(): EventTypeSelectorFragment {
-//        return EventTypeSelectorFragment(parentFragment, viewModel, mainActivityViewModel)
         return EventTypeSelectorFragment()
     }
 
@@ -55,14 +52,12 @@ class EventTypeSelectorFragment() :
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         eventTypeAdapter = EventTypeAdapter(requireActivity(), this as EventTypeSelectorCallback)
-
         viewModel = EventsFragmentViewModel.getInstance(requireContext())
         initializeEventTypesAdapter()
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_event_selection, container, false)
     }
@@ -83,9 +78,7 @@ class EventTypeSelectorFragment() :
         val spacing = (screenWidth - (itemWidth * 2)) / 3
         recyclerEventTypes?.addItemDecoration(
             GridSpacingItemDecoration(
-                2,
-                spacing.toInt(),
-                true
+                2, spacing.toInt(), true
             )
         )
     }
@@ -229,43 +222,38 @@ class EventTypeSelectorFragment() :
 
                 viewModel.setEventType(eventType.toString())
 
-                lifecycleScope.launch(Dispatchers.Main)
-                {
+                lifecycleScope.launch(Dispatchers.Main) {
                     requireActivity().requestLocationRequirements(object :
                         LocationRequirementsCallback {
                         override fun onRequirementsComplete() {
                             //  thisEvent!!.event_type = eventType.name
-                            if (eventType == EventTypesEnum.KID_LOST
-                                || eventType == EventTypesEnum.PET_LOST
-                                || eventType == EventTypesEnum.SCORT_ME
-                            ) {
+                          /*
+                            if (eventType == EventTypesEnum.KID_LOST || eventType == EventTypesEnum.PET_LOST || eventType == EventTypesEnum.SCORT_ME) {
                                 viewModel.setEventLocationMode(EventLocationType.FIXED)
-                                /*
-                                                                callback!!.OnSwitchFragmentRequest(
-                                                                    R.id.event_fragment_location_read_only_selector
-                                                                )
-                                  */
                                 findNavController().navigate(R.id.event_fragment_location_read_only_selector)
                             } else {
 
                                 if (AppClass.instance.isUserAddressStorageEnabled) {
-                                    /*
-                                    callback!!.OnSwitchFragmentRequest(
-                                        R.id.event_fragment_location_selector,
-                                        arguments
-                                    )*/
                                     findNavController().navigate(R.id.event_fragment_location_selector)
                                 } else {
-                                    /*
-                                    callback!!.OnSwitchFragmentRequest(
-                                        R.id.event_fragment_realtime_selector, arguments
-                                    )
-*/
-
                                     val action =
                                         EventTypeSelectorFragmentDirections.actionEventTypeSelectorFragmentToEventRealTimeTrackingFragment()
                                     findNavController().navigate(action)
+                                }
+                            }*/
 
+                            when (eventType) {
+                                EventTypesEnum.KID_LOST, EventTypesEnum.PET_LOST, EventTypesEnum.SCORT_ME -> {
+                                    viewModel.setEventLocationMode(EventLocationType.FIXED)
+                                    findNavController().navigate(R.id.eventLocationReadOnlyFragment)
+                                }
+                                else -> {
+                                    if (AppClass.instance.isUserAddressStorageEnabled) {
+                                        findNavController().navigate(R.id.event_fragment_location_selector)
+                                    } else {
+                                        val action = EventTypeSelectorFragmentDirections.actionEventTypeSelectorFragmentToEventRealTimeTrackingFragment()
+                                        findNavController().navigate(action)
+                                    }
                                 }
                             }
                         }
@@ -276,8 +264,7 @@ class EventTypeSelectorFragment() :
             } else {
                 val action =
                     EventTypeSelectorFragmentDirections.actionEventTypeSelectorFragmentToEventTypeExplanationDialog(
-                        eventType,
-                        DialogFunctionEnum.SUBSCRIPTION_REQUIRED
+                        eventType, DialogFunctionEnum.SUBSCRIPTION_REQUIRED
                     )
                 findNavController().navigate(action)
             }

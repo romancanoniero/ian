@@ -17,7 +17,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
-import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
@@ -316,7 +315,7 @@ class MainActivityViewModel private constructor(
             when (event) {
                 is NotificationsRepository.DataEvent.ChildAdded -> {
                     if (currentFragment != null && (currentFragment == R.id.messagesInEventFragment || MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment) &&
-                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key
+                        MapSituationFragmentViewModel.getInstance().getEventSelectedKey() == event.data.event_key
                     ) {
                         return@collect
                     }
@@ -328,7 +327,7 @@ class MainActivityViewModel private constructor(
 
                 is NotificationsRepository.DataEvent.ChildChanged -> {
                     if (currentFragment != null && (currentFragment == R.id.messagesInEventFragment || MainActivityViewModel.getInstance().currentFragment == R.id.mapSituationFragment) &&
-                        MapSituationFragmentViewModel.getInstance().currentEventKey == event.data.event_key
+                        MapSituationFragmentViewModel.getInstance().getEventSelectedKey() == event.data.event_key
                     ) {
                         return@collect
                     }
@@ -436,7 +435,7 @@ class MainActivityViewModel private constructor(
 
     fun getFirstEvent(): EventFollowed? {
         var toReturn: EventFollowed? = null
-        AppClass.instance.eventsFollowed.forEach { key, value ->
+        AppClass.instance.eventsFollowed.values.sortedByDescending { it.event_creation_time}.forEach {  value ->
             toReturn = value
             return@forEach
         }
@@ -1133,4 +1132,22 @@ class MainActivityViewModel private constructor(
         }
 
     }
+
+    private val _showGoToEventDialog = MutableLiveData<HashMap<String,Any?>?>()
+    val showGoToEventDialog: LiveData<HashMap<String, Any?>?> = _showGoToEventDialog
+
+    fun showGoToEventDialog(notificationKey: String?, eventKey: String) {
+
+        val hashMap = HashMap<String, Any?>()
+        hashMap.put("notification_key", notificationKey)
+        hashMap.put("event_key", eventKey)
+        _showGoToEventDialog.postValue(hashMap)
+    }
+
+    private val _eventToOpen = MutableLiveData<String?>()
+    val eventToOpen: LiveData<String?> = _eventToOpen
+    fun goToEvent(eventKey: String) {
+        _eventToOpen.postValue(eventKey)
+    }
+
 }

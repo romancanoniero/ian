@@ -3,25 +3,11 @@ package com.iyr.ian.utils
 import android.app.Activity
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.widget.Toast
-import com.google.firebase.auth.FirebaseAuth
-import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REFRESH_PANIC_BUTTON
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
-import com.iyr.ian.callbacks.OnCompleteCallback
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.enums.IANModulesEnum
-import com.iyr.ian.sharedpreferences.SessionApp
-import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.MainActivity
-import com.iyr.ian.ui.base.PulseRequestTarget
-import com.iyr.ian.ui.base.PulseValidationCallback
-import com.iyr.ian.ui.base.PulseValidatorDialog
-import com.iyr.ian.ui.events.fragments.dialogs.EventPublishedDoneDialog
-import com.iyr.ian.ui.events.fragments.dialogs.OnEventPublishedDone
-import com.iyr.ian.utils.Validators.requestStatusConfirmationSingleton
-import com.iyr.ian.utils.loaders.hideLoader
-import com.iyr.ian.utils.loaders.showLoader
 
 
 enum class ActivityResultsTarget {
@@ -52,7 +38,7 @@ fun Context.getCurrentActivity(): Activity?
     return AppClass.instance.getCurrentActivity()
 }
 
-
+/*
 fun Activity.showEventRedirectorDialog(eventKey: String) {
     val callbackDialog: OnEventPublishedDone =
         object : OnEventPublishedDone {
@@ -73,7 +59,7 @@ fun Activity.showEventRedirectorDialog(eventKey: String) {
     doneDialog.show()
 
 }
-
+*/
 
 fun Context.getEventTypeName(
     eventType: String

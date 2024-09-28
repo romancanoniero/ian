@@ -3,7 +3,6 @@ package com.iyr.ian.ui.splash
 import android.Manifest
 import android.animation.Animator
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -21,7 +20,6 @@ import androidx.navigation.fragment.findNavController
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthActionCodeException
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.gson.Gson
 import com.iyr.ian.BuildConfig
@@ -29,10 +27,8 @@ import com.iyr.ian.Constants
 import com.iyr.ian.R
 import com.iyr.ian.app.AppClass
 import com.iyr.ian.callbacks.OnCompleteCallback
-import com.iyr.ian.dao.models.SubscriptionTypes
 import com.iyr.ian.dao.models.User
 import com.iyr.ian.databinding.ActivitySplashBinding
-import com.iyr.ian.enums.AccessLevelsEnum
 import com.iyr.ian.enums.ScreensEnum
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.MainActivity
@@ -45,7 +41,6 @@ import com.iyr.ian.ui.setup.pin_setup.PinSetupActivity
 import com.iyr.ian.ui.setup.press_or_tap_setup.PressOrTapSetupActivity
 import com.iyr.ian.ui.setup.speed_dial_setup.SpeedDialSetupActivity
 import com.iyr.ian.ui.signup.phone_contacts.AddContactsFromPhoneActivity
-import com.iyr.ian.utils.UIUtils.getDensityName
 import com.iyr.ian.utils.areLocationPermissionsGranted
 import com.iyr.ian.utils.connectivity.NetworkStatusHelper
 import com.iyr.ian.utils.coroutines.Resource
@@ -62,33 +57,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/*
-interface OnLoginCallback {
-    fun onLoggedIn()
-    fun onNotLogged()
-    fun onEmailNotVerified()
-}
-
-
-interface SplashActivityCallback {
-//    abstract val PreLoaderActivity: Unit
-
-    fun onOkToMainScreen(user: User)
-    fun onProfileIncomplete(user: User)
-    fun onNotLogged()
-    fun onUserDoesNotExistsAnymore() // if the user exists in the pass but was deleted
-    fun onError(exception: Exception)
-    // fun onSignupByEmailLinkComplete()
-}
-*/
 class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
     private var networkObserver: NetworkStatusHelper? = null
-    private var hasConnectivity: Boolean = true
     private lateinit var binding: ActivitySplashBinding
-
-    // private lateinit var mPresenter: SplashPresenter
-    private lateinit var mContext: Context
     private lateinit var analytics: FirebaseAnalytics
 
     private val viewModel: SplashScreenViewModel by lazy { SplashScreenViewModel() }
@@ -97,10 +69,8 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        analytics = FirebaseAnalytics.getInstance(requireContext())
 
-        //   setupSystemConfigs()
-
-        Log.d("SCREEN_DENSITY", requireActivity().getDensityName(requireContext()).toString())
 
         FirebaseDynamicLinks.getInstance()
             .getDynamicLink(requireActivity().intent)
@@ -109,10 +79,6 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
             ) {
                 var pepe = 22
             }
-
-
-
-
         when (requireActivity().intent.action) {
             "android.intent.action.MAIN" -> {
 
@@ -330,7 +296,7 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
                 if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
                     var navController = findNavController()
                     val action =
-                        SplashFragmentDirections.actionSplashFragmentToHomeFragment(it, true)
+                        SplashFragmentDirections.actionSplashFragmentToHomeFragment( it, true)
                     navController.navigate(action)
                     navController.popBackStack(R.id.splashFragment, true)
                 } else {
@@ -587,12 +553,6 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
     }
 
 
-    private fun setupUI() {
-
-
-        //     setupSystemConfigs()
-    }
-
     private fun goToPreloader() {
         if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
             findNavController().navigate(R.id.action_splashFragment_to_preLoaderFragment)
@@ -827,10 +787,8 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
             mPresenter.onUserExistsCheckLoginFlow(FirebaseAuth.getInstance().uid.toString())
         }
     */
-
+/*
     private fun setupSystemConfigs() {
-
-
         val freePlan = SubscriptionTypes()
         freePlan.subscription_type_key =
             FirebaseDatabase.getInstance().getReference("subscription_types").push().key
@@ -989,5 +947,5 @@ class SplashFragment : Fragment(), SplashActivityCallback, IAuthentication {
         */
     }
 
-
+*/
 }

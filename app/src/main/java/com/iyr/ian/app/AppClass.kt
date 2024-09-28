@@ -1381,48 +1381,8 @@ class AppClass : Application(), LifecycleEventObserver, LifecycleObserver {
                                         else -> {}
                                     }
 
-                                    //                        _eventsFollowed.postValue(currentEventsList)
                                     _eventsListFlow.postValue(dataEvent)
-                                    //instance.setEventsFollowed(response.data!!)
-                                    // Elimino los eventos que ya no estan en la lista
 
-                                    /*
-                                                                    for (eventFollowed in currentEventsList) {
-                                                                        if (!newEventsList.contains(eventFollowed)) {
-                                                                            var index = newEventsList.indexOf(eventFollowed)
-                                                                            if (index > -1) {
-                                                                                newEventsList.removeAt(index)
-                                                                                _eventsListFlow.postValue(
-                                                                                    EventsRepository.DataEvent.ChildRemoved(
-                                                                                        eventFollowed
-                                                                                    )
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    // Agrego los eventos que no estan en la lista
-                                                                    for (eventFollowed in newEventsList) {
-                                                                        if (!currentEventsList.contains(eventFollowed)) {
-                                                                            currentEventsList.add(eventFollowed)
-                                                                            _eventsListFlow.postValue(
-                                                                                EventsRepository.DataEvent.ChildAdded(eventFollowed, null)
-                                                                            )
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            var index = currentEventsList.indexOf(eventFollowed)
-                                                                            currentEventsList.set(index, eventFollowed)
-                                                                            _eventsListFlow.postValue(
-                                                                                EventsRepository.DataEvent.ChildChanged(eventFollowed, null)
-                                                                            )
-                                                                        }
-                                                                    }
-
-                                                                    _eventsFollowed.postValue(newEventsList)
-                                                                    processEventsRelatedActions()
-
-                                                                    currentEventsList = newEventsList ?: java.util.ArrayList()
-                                    */
                                     return@collect
                                 } else {
                                     //_eventsFollowed.postValue(Resource.Error(response.message!!))

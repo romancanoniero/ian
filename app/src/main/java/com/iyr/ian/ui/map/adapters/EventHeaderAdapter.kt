@@ -33,14 +33,15 @@ import com.iyr.ian.enums.EventStatusEnum
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.map.event_header.adapter.EventHeaderCallback
 import com.iyr.ian.utils.assignFileImageTo
+import com.iyr.ian.utils.formatDateTime
 import com.iyr.ian.utils.geo.GeoFunctions
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getEventTypeName
 import com.iyr.ian.utils.openNavigatorTo
 import com.iyr.ian.viewmodels.MapSituationFragmentViewModel
 import com.iyr.ian.viewmodels.UserViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -48,7 +49,8 @@ import java.util.Locale
 class EventHeaderAdapter(
     val activity: AppCompatActivity,
     val _mapRef: GoogleMap?,
-    val callback: EventHeaderCallback
+    val callback: EventHeaderCallback,
+    val lifeCycleScope: CoroutineScope
 ) :
     RecyclerView.Adapter<EventHeaderAdapter.EventViewHolder>() {
 
@@ -62,13 +64,15 @@ class EventHeaderAdapter(
         mapRef = _mapRef
     }
 
+
+
     override fun onCreateViewHolder(parent: ViewGroup, p1: Int): EventViewHolder {
 
 
         binding = ItemEventHeaderAdapterBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
-        return EventViewHolder(binding, activity)
+        return EventViewHolder(binding, activity, lifeCycleScope)
     }
 
     override fun getItemCount(): Int {
@@ -397,7 +401,7 @@ holder.eventLocationRef = eventLocationRef
     }
 
     class EventViewHolder(
-        private val binding: ItemEventHeaderAdapterBinding, val activity: Activity
+        private val binding: ItemEventHeaderAdapterBinding, val activity: Activity, val lifeCycleScope: CoroutineScope
     ) : RecyclerView.ViewHolder(binding.root) {
 
         var eventLocationRef: LatLng? = null
@@ -411,6 +415,8 @@ holder.eventLocationRef = eventLocationRef
         fun bind(event: Event) {
 
             val fileName = event.author?.profile_image_path.toString()
+
+            binding.creationTime.text = event.time.formatDateTime()
 
             binding.openRouteButton.setOnClickListener {
                 eventLocationRef?.let { eventLocation ->
@@ -455,13 +461,14 @@ holder.eventLocationRef = eventLocationRef
               */
                 binding.userImage.visibility = View.INVISIBLE
 
-                GlobalScope.launch(Dispatchers.Main) {
+                lifeCycleScope.launch(Dispatchers.Main) {
 
                     activity.assignFileImageTo(
                         fileName,
                         "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}/${event.author?.author_key!!}",
                         binding.userImage
                     )
+                    binding.userImage.visibility = VISIBLE
                 }
                 binding.userImage.tag = fileName
             }
@@ -561,5 +568,7 @@ holder.eventLocationRef = eventLocationRef
 
 
     }
+
+
 
 }

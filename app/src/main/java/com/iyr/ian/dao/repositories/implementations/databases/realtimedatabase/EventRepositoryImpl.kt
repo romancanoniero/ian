@@ -60,13 +60,13 @@ class EventRepositoryImpl : EventRepository() {
         }
     }
 
+
     /*
     * Forma correcta de emitir datos desde Firebase Realtime Database
      */
     override suspend fun listenEventFlow(eventKey: String): Flow<Resource<Event>> = callbackFlow {
 
         trySend(Resource.Loading<Event>())
-
 
         eventsReference = FirebaseDatabase.getInstance().getReference(tableName).child(eventKey)
 

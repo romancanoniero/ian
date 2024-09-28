@@ -200,6 +200,7 @@
     <string name="try_enable_bt">El Bluetooth se está encendiendo</string>
     <string name="try_enable_bt_failed">Necesitas habilitar el Bluetooth manualmente en la configuración del dispositivo.</string>
     <string name="open_bt_settings">Encender Bluetooth</string>
+    <string name="creation_time">Creado:</string>
 
 
 </resources>

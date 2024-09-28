@@ -33,6 +33,7 @@ class NotificationsFragmentViewModel : ViewModel() {
             val call = eventsRepository.subscribeToEvent(notificationKey, eventKey)
             when (call) {
                 is Resource.Success -> {
+MainActivityViewModel.getInstance().showGoToEventDialog(notificationKey, eventKey)
                     MainActivityViewModel.getInstance().hideLoader()
                 }
 

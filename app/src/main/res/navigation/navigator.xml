@@ -27,7 +27,10 @@
             app:destination="@id/settingsFragment" />
         <argument
             android:name="user"
-            app:argType="com.iyr.ian.dao.models.User" />
+            app:argType="com.iyr.ian.dao.models.User"
+
+            app:nullable="true"
+            android:defaultValue="@null" />
         <action
             android:id="@+id/action_homeFragment_to_notificationsFragment"
             app:destination="@id/notificationsFragment" />
@@ -37,6 +40,8 @@
         <argument
             android:name="firstRun"
             app:argType="boolean"
+
+            android:defaultValue="false"
             />
     </fragment>
     <fragment
@@ -625,5 +630,19 @@
         <argument
             android:name="config"
             app:argType="java.io.Serializable" />
+    </dialog>
+    <dialog
+        android:id="@+id/eventPublishedDoneDialog"
+        android:name="com.iyr.ian.ui.events.fragments.dialogs.EventPublishedDoneDialog"
+        android:label="EventPublishedDoneDialog"
+        tools:layout="@layout/fragment_event_published_done_popup">
+        <argument
+            android:name="notificationKey"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="eventKey"
+            app:argType="string" />
     </dialog>
 </navigation>

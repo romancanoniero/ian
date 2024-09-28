@@ -1,9 +1,15 @@
 package com.iyr.ian.utils
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import com.iyr.ian.R
 
@@ -128,6 +134,55 @@ class PushNotification()
 
     }
 
+}
+
+
+fun Context.showPermissionNotification() {
+    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    val notificationChannelId = "location_permission_channel"
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(notificationChannelId, "Location Permissions", NotificationManager.IMPORTANCE_HIGH)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", packageName, null)
+    }
+    val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+    val notification = NotificationCompat.Builder(this, notificationChannelId)
+        .setContentTitle("Permisos de Ubicación Requeridos")
+        .setContentText("La aplicación necesita permisos de ubicación y GPS activado. Toque para configurar.")
+        .setSmallIcon(R.drawable.ic_baseline_location_on_24)
+        .setContentIntent(pendingIntent)
+        .setAutoCancel(true)
+        .build()
+
+    notificationManager.notify(1, notification)
+}
+
+fun Context.showGPSActivationNotification() {
+    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    val notificationChannelId = "gps_activation_channel"
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(notificationChannelId, "GPS Activation", NotificationManager.IMPORTANCE_HIGH)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+    val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+    val notification = NotificationCompat.Builder(this, notificationChannelId)
+        .setContentTitle("Activación de GPS Requerida")
+        .setContentText("La aplicación necesita que el GPS esté activado. Toque para configurar.")
+        .setSmallIcon(R.drawable.ic_satellite)
+        .setContentIntent(pendingIntent)
+        .setAutoCancel(true)
+        .build()
+
+    notificationManager.notify(2, notification)
 }
 
 fun main(args: Array<String>) {

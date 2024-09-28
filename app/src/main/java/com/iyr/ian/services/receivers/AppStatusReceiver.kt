@@ -9,7 +9,6 @@ import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_ENTER_BACKGROUND
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_ENTER_FOREGROUND
 import com.iyr.ian.services.location.ServiceLocation
-import com.iyr.ian.services.location.createBackgroundNotification
 import com.iyr.ian.services.location.isServiceRunning
 
 class AppStatusReceiver(val service: ServiceLocation) : BroadcastReceiver() {
@@ -31,7 +30,7 @@ class AppStatusReceiver(val service: ServiceLocation) : BroadcastReceiver() {
 
             service.startForeground(
                 AppConstants.BACKGROUND_STATE_NOTIFICATION_ID,
-                createBackgroundNotification(context)
+                service.createBackgroundNotification()
             )
 
 

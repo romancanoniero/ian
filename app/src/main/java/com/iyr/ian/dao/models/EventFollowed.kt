@@ -35,6 +35,8 @@ class EventFollowed {
     var last_read: Long = 0
 
 
+    var event_creation_time = 0L
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

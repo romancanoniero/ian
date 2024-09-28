@@ -94,22 +94,6 @@ fun getEventsKeys(): ArrayList<String> {
         notifyDataSetChanged()
     }
 
-    fun removeEvent(eventKey: String) {
-        var fragmentToRemove: EventHeaderFragment? = null
-        var index = -1
-        fragments.forEach { fragment ->
-            if (fragment.getEventData().event_key == eventKey) {
-                fragmentToRemove = fragment
-                index++
-                return@forEach
-            }
-        }
-        fragmentToRemove?.let { fragment ->
-            fragments.remove(fragment)
-            notifyItemRemoved(index)
-        }
-
-    }
 
 
     fun isEventExists(eventKey: String): Boolean {

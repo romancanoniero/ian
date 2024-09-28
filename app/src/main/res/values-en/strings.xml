@@ -246,4 +246,6 @@
     <string name="stop_scan">Stop Scanning</string>
 
 
+    <string name="creation_time">Created:</string>
+
 </resources>

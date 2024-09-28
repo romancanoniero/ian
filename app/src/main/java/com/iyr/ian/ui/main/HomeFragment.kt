@@ -34,14 +34,17 @@ import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.budiyev.android.codescanner.CodeScanner
@@ -60,7 +63,6 @@ import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorPixelSha
 import com.github.alexzhirkevich.customqrgenerator.vector.style.QrVectorShapes
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.iyr.ian.AppConstants
 import com.iyr.ian.AppConstants.Companion.BROADCAST_ACTION_REFRESH_PANIC_BUTTON
@@ -78,9 +80,12 @@ import com.iyr.ian.databinding.FragmentMainBinding
 import com.iyr.ian.enums.EventStatusEnum
 import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.enums.SOSActivationMethodsEnum
+import com.iyr.ian.itag.ITagsService
 import com.iyr.ian.nonui.NonUI
 import com.iyr.ian.repository.implementations.databases.realtimedatabase.StorageRepositoryImpl
 import com.iyr.ian.services.eventservice.EventService
+import com.iyr.ian.services.location.ServiceLocation
+import com.iyr.ian.services.location.isServiceRunning
 import com.iyr.ian.sharedpreferences.SessionApp
 import com.iyr.ian.sharedpreferences.SessionForProfile
 import com.iyr.ian.ui.MainActivity
@@ -167,18 +172,8 @@ class HomeFragment(
 ) : Fragment(), NetworkStateReceiver.NetworkStateReceiverListener, HomeFragmentInteractionCallback,
     ISpeedDialAdapter {
 
-
-    fun HomeFragment() {
-        // Constructor vacío
-    }
-
-    /*
-    constructor() : this(null as EventsPublishingCallback, null as MainActivityViewModel)
-    //   private var homeActivityCallback: EventsPublishingCallback? = null
-*/
     private val commonReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-
             if (intent != null) {
                 when (intent.action) {
                     BROADCAST_ACTION_REFRESH_PANIC_BUTTON -> {
@@ -264,31 +259,29 @@ class HomeFragment(
             if (it.resultCode == Activity.RESULT_OK) {
                 val selectedMedia =
                     it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
-                if (!selectedMedia.isNullOrEmpty()) {
+                if (selectedMedia.isNotEmpty()) {
 
                     lifecycleScope.launch(Dispatchers.IO) {
 
-                        var localPath = selectedMedia[0].path.toString()/*
-                                                var fileName =
-                                                    CHAT_FILES_STORAGE_PATH + this@MessagesInEventFragment.eventKey.toString() + "/" + localPath.getJustFileName()
-                        */
-                        var fileName = localPath.getJustFileName()
+                        val localPath = selectedMedia[0].path.toString()
+                        val fileName = localPath.getJustFileName()
 
-                        var imageFile = File(localPath)
+                        val imageFile = File(localPath)
                         try {
 
 
-                            var mediaFile = requireContext().prepareMediaMessage(
+                            val mediaFile = requireContext().prepareMediaMessage(
                                 MediaTypesEnum.IMAGE, fileName, localPath
                             )
 
                             if (mediaFile is MediaFile) {
-                                var pp = 3
-
-                                var panicEventKey = AppClass.instance.getPanicEventKey().toString()
+                                val panicEventKey = AppClass.instance.getPanicEventKey().toString()
 
                                 viewModel.onNewMediaMessage(
-                                    panicEventKey, mainActivityViewModel?.user?.value!!, mediaFile, imageFile
+                                    panicEventKey,
+                                    mainActivityViewModel?.user?.value!!,
+                                    mediaFile,
+                                    imageFile
                                 )
 
                             }
@@ -356,7 +349,7 @@ class HomeFragment(
             if (it.resultCode == Activity.RESULT_OK) {
                 val selectedMedia =
                     it.data?.getSerializableExtra(KeyUtils.SELECTED_MEDIA) as java.util.ArrayList<MiMedia>
-                if (!selectedMedia.isNullOrEmpty()) {
+                if (selectedMedia.isNotEmpty()) {
 
                     lifecycleScope.launch(Dispatchers.IO) {
                         Log.d("VIDEO_FILE", selectedMedia[0].path.toString())
@@ -365,16 +358,16 @@ class HomeFragment(
 
                         val videoFile = File(localPath)
 
-                        var fileName = localPath.getJustFileName()
+                        val fileName = localPath.getJustFileName()
                         try {
-                            var mediaFile = requireContext().prepareMediaMessage(
+                            val mediaFile = requireContext().prepareMediaMessage(
                                 MediaTypesEnum.VIDEO, fileName, localPath
                             )
 
                             when (mediaFile) {
                                 is MediaFile -> {
 
-                                    var videoDimentions =
+                                    val videoDimentions =
                                         requireContext().getDimentions(Uri.parse(localPath))
                                     mediaFile.width = videoDimentions["width"]
                                     mediaFile.height = videoDimentions["height"]
@@ -408,7 +401,7 @@ class HomeFragment(
                                     }
                                     //     mediaFile.file_name = fileName
 
-                                    var panicEventKey =
+                                    val panicEventKey =
                                         AppClass.instance.getPanicEventKey().toString()
 
                                     viewModel.onNewMediaMessage(
@@ -465,7 +458,28 @@ class HomeFragment(
         super.onCreate(savedInstanceState)
         Log.d("EVENT_CREATION", this.javaClass.name)
 
+        if (args.firstRun) {
 
+            // Verificar e iniciar ServiceLocation
+            if (!requireContext().isServiceRunning(ServiceLocation::class.java)) {
+                val serviceIntent = Intent(requireContext(), ServiceLocation::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(requireContext(), serviceIntent)
+                } else {
+                    requireContext().startService(serviceIntent)
+                }
+            }
+
+            // Verificar e iniciar ITagsService
+            if (!requireContext().isServiceRunning(ITagsService::class.java)) {
+                val serviceIntent = Intent(requireContext(), ITagsService::class.java)
+
+                requireContext().startService(serviceIntent)
+                //  }
+            }
+
+
+        }
 
         findNavController().popBackStack(findNavController().currentDestination?.id!!, false)
 
@@ -504,28 +518,25 @@ class HomeFragment(
             override fun onGlobalLayout() {
                 // Remove the listener to prevent multiple calls
                 binding.redButton.viewTreeObserver.removeOnGlobalLayoutListener(this)
-
                 // Get the width and height of the view
                 val width = binding.redButton.width
                 val height = binding.redButton.height
                 binding.circularRippleView.initialDiameter = width.coerceAtMost(height).toFloat()
-
-                // Use the width and height as needed
-                Log.d("RoundButtonSize", "Width: $width, Height: $height")
             }
         })
 
         return binding.root
     }
 
+    @OptIn(UnstableApi::class)
     private fun startObservers(userKey: String) {
 
 
         AppClass.instance.panic.observe(viewLifecycleOwner) { isInPanic ->
             if (isInPanic) {
                 switchPanicButtonToPanic()
-                var panicEventKey = AppClass.instance.getPanicEventKey().toString()
-                var currentEvent = viewModel.getEventObservedKey()
+                val panicEventKey = AppClass.instance.getPanicEventKey().toString()
+                val currentEvent = viewModel.getEventObservedKey()
                 if (currentEvent == null || currentEvent != panicEventKey) {
                     viewModel.onObserveEventRequest(panicEventKey)
                 }
@@ -537,7 +548,7 @@ class HomeFragment(
 
             val newList = resource.data
 
-            var adapterData = speedDialAdapter.getData()
+            val adapterData = speedDialAdapter.getData()
 
             val copyOfAdapterData = ArrayList(adapterData)
             copyOfAdapterData.forEach { oldRecord ->
@@ -597,18 +608,19 @@ class HomeFragment(
             lifecycleScope.launch {
                 viewers.forEach { viewer ->
 
-                    var extras = viewer.getExtras()
+                    val extras = viewer.getExtras()
                     var userKey: String? = null
                     if (extras != null && extras.containsKey("userKey")) {
                         userKey = extras.get("userKey")
                         try {
 
 
-
-
-                            var storageReferenceCache = ( StorageRepositoryImpl().
-                            generateStorageReference("${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${userKey}/${viewer.getImageSrc().toString()}") as StorageReference)
-                                .downloadUrlWithCache(requireContext())
+                            val storageReferenceCache =
+                                (StorageRepositoryImpl().generateStorageReference(
+                                    "${AppConstants.PROFILE_IMAGES_STORAGE_PATH}${userKey}/${
+                                        viewer.getImageSrc().toString()
+                                    }"
+                                ) as StorageReference).downloadUrlWithCache(requireContext())
 
                             viewer.setImageSrc(storageReferenceCache.toString())
                             binding.activationInstructions.visibility = View.GONE
@@ -742,7 +754,7 @@ class HomeFragment(
                 binding.panicMultiButton.visibility = View.GONE
                 (requireActivity() as MainActivity).requestPermissions()
             } else {
-                var panicEventKey = AppClass.instance.getPanicEventKey()
+                val panicEventKey = AppClass.instance.getPanicEventKey()
 
                 findNavController().navToValidatorDialog(
                     PulseRequestTarget.VALIDATION_BEFORE_CLOSE_EVENT,
@@ -824,14 +836,9 @@ class HomeFragment(
 
 
     private fun setupUI() {
-
-        var me = SessionForProfile.getInstance(requireContext()).getUserProfile()
-
-
         binding.buttonQr.setOnClickListener {
             requireContext().handleTouch()
-            showQRPopup()
-            /*
+            showQRPopup()/*
                         if (requireContext().loadImageFromCache("qr_code", "images") == null) {
                             prepareQrCode()
                         } else
@@ -886,10 +893,10 @@ class HomeFragment(
             MotionEvent.ACTION_DOWN -> {
                 Log.d("RECORDING ", "START")
 
-                var panicEventKey = AppClass.instance.getPanicEventKey().toString()
+                val panicEventKey = AppClass.instance.getPanicEventKey().toString()
 
                 recordingFilename =
-                    AppClass.instance.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH+"/" + panicEventKey + "/" + UUID.randomUUID()
+                    AppClass.instance.cacheDir.toString() + "/" + AppConstants.CHAT_FILES_STORAGE_PATH + "/" + panicEventKey + "/" + UUID.randomUUID()
                         .toString() + ".3gp"
 
                 requireContext().createDirectoryStructure(recordingFilename!!)
@@ -900,7 +907,7 @@ class HomeFragment(
 
                 startMonitoringWave()
 
-                var iconBitmap = requireContext().getBitmapFromVectorDrawable(
+                val iconBitmap = requireContext().getBitmapFromVectorDrawable(
                     R.drawable.ic_recording
                 )
 
@@ -914,7 +921,7 @@ class HomeFragment(
                 try {
                     requireActivity().playSound(R.raw.recording_stop, null, null)
 
-                    var iconBitmap = requireContext().getBitmapFromVectorDrawable(
+                    val iconBitmap = requireContext().getBitmapFromVectorDrawable(
                         R.drawable.ic_microphone
                     )
                     binding.sendVoiceMessageButton?.setImageBitmap(iconBitmap)
@@ -932,22 +939,11 @@ class HomeFragment(
 
 
                     stopMonitoringWave()
-
                     val voiceFile = File(recordingFilename!!)
-
-                    val me = SessionForProfile.getInstance(requireContext()).getUserProfile()
-
-                    /*
-                                        var newFileLocation = FileUtils().moveFile(
-                                            recordingFilename.toString().substringBeforeLast("/"),
-                                            recordingFilename.toString().getJustFileName(),
-                                            requireContext().cacheDir.toString() + "/" + CHAT_FILES_STORAGE_PATH + eventKey!!
-                                        )
-                    */
                     Log.d("AUDIO_FILE", "2-" + recordingFilename.toString())
 
                     try {
-                        var fileName = recordingFilename.toString().getJustFileName()
+                        val fileName = recordingFilename.toString().getJustFileName()
                         ///             var localFolder = recordingFilename.toString().substringBeforeLast("/").replace(requireContext().cacheDir.toString()+"/","")
 
                         val mediaFile = requireContext().prepareMediaMessage(
@@ -962,7 +958,7 @@ class HomeFragment(
 
                                 lifecycleScope.launch(Dispatchers.IO) {
 
-                                    var panicEventKey =
+                                    val panicEventKey =
                                         AppClass.instance.getPanicEventKey().toString()
                                     viewModel.onNewMediaMessage(
                                         panicEventKey,
@@ -1024,7 +1020,7 @@ class HomeFragment(
                     binding.seekCounter.visibility = View.VISIBLE
                     binding.seekCounter.progress = 0
                 }
-                binding.seekCounter.progress = binding.seekCounter.progress + 1
+                binding.seekCounter.progress += 1
 
                 val currentProgress: Int = binding.seekCounter.progress
                 val handler = Handler(Looper.myLooper()!!)
@@ -1114,7 +1110,7 @@ class HomeFragment(
                 requireContext().handleTouch()
                 this@HomeFragment.requireActivity().runOnUiThread {
                     if (binding.seekCounter.progress < binding.seekCounter.max) {
-                        binding.seekCounter.progress = binding.seekCounter.progress + 1
+                        binding.seekCounter.progress += 1
                     }
 
                 }
@@ -1308,8 +1304,7 @@ class HomeFragment(
   */
                         onEmergencyButtonPressed()
                         maxTouchesReached = false
-                    }
-                    /*
+                    }/*
                     val handler = Handler()
                     handler.postDelayed({
                         binding.seekCounter.progress = 0
@@ -1341,37 +1336,26 @@ class HomeFragment(
 
     }
 
-    private fun isPanicButtonActive(): Boolean {
-        return false
-    }
-
-    override fun onStart() {
-        super.onStart()
-    }
-
 
     override fun onResume() {
         registerNetworkBroadcastReceiver(requireContext())
         super.onResume()
         AppClass.instance.setCurrentFragment(this)
-        registerReceivers()
+       // registerReceivers()
         startObservers(FirebaseAuth.getInstance().uid.toString())
 
-        var mainActivityBindings = (requireActivity() as MainActivity).binding
+        val mainActivityBindings = (requireActivity() as MainActivity).binding
 
 
 //        (requireActivity() as MainActivity).setTitleBarTitle(R.string.app_long_title)
 
         if (findNavController().currentDestination?.id == R.id.homeFragment) {
-            var appToolbar = (requireActivity() as MainActivity).appToolbar
+            val appToolbar = (requireActivity() as MainActivity).appToolbar
             appToolbar.enableBackBtn(false)
             appToolbar.updateTitle(getString(R.string.app_long_title))
             mainActivityBindings.includeCustomToolbar.root.visibility = View.VISIBLE
             mainActivityBindings.bottomToolbar.visibility = View.VISIBLE
         }
-
-        val activityRootView = (requireActivity() as MainActivity).binding.root
-        val activityBindings = (requireActivity() as MainActivity).binding
         (requireActivity() as MainActivity).restoreNavigationFragment()
 
         try {
@@ -1384,7 +1368,7 @@ class HomeFragment(
 
 
 
-        if (context?.isGPSEnabled() ?: false && context?.areLocationPermissionsGranted() ?: false) {
+        if (context?.isGPSEnabled() == true && context?.areLocationPermissionsGranted() == true) {
             if (mainActivityViewModel?.isInPanic?.value == true) {
                 switchPanicButtonToPanic()
             } else {
@@ -1397,17 +1381,9 @@ class HomeFragment(
     }
 
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-    }
-
-    override fun onAttach(activity: Activity) {
-        super.onAttach(activity)
-    }
-
     override fun onPause() {
         unregisterNetworkBroadcastReceiver(requireContext())
-        unRegisterReceivers()
+     //   unRegisterReceivers()
         removeObservers()
         super.onPause()
         //     AppClass.instance.removeViewFromStack( this)
@@ -1469,7 +1445,7 @@ class HomeFragment(
                         override fun onLocationChanged(location: Location) {
                             locationManager.removeUpdates(this)
                             CoroutineScope(Dispatchers.IO).launch {
-                                var myName =
+                                val myName =
                                     (requireActivity() as MainActivity).viewModel.user.value?.first_name + " " + (requireActivity() as MainActivity).viewModel.user.value?.last_name
 
                                 viewModel.speedDialFlow.value?.data?.forEach { contact ->
@@ -1582,8 +1558,7 @@ class HomeFragment(
 
 
                 val newEvent = Event()
-                newEvent.author_key =
-                    SessionForProfile.getInstance(requireContext()).getUserId()
+                newEvent.author_key = SessionForProfile.getInstance(requireContext()).getUserId()
                 newEvent.event_type = EventTypesEnum.PANIC_BUTTON.name
                 newEvent.status = EventStatusEnum.DANGER.name
                 newEvent.event_location_type = EventLocationType.REALTIME.name
@@ -1597,7 +1572,7 @@ class HomeFragment(
                 newEvent.location?.latitude = latLng.latitude
                 newEvent.location?.longitude = latLng.longitude
                 val geoLocationAtCreation = GeoLocation()
-                geoLocationAtCreation.l = ArrayList<Double>()
+                geoLocationAtCreation.l = ArrayList()
                 (geoLocationAtCreation.l as ArrayList<Double>).add(latLng.latitude)
                 (geoLocationAtCreation.l as ArrayList<Double>).add(latLng.longitude)
                 geoLocationAtCreation.event_time = newEvent.time
@@ -1632,16 +1607,6 @@ class HomeFragment(
 
 
 //    }
-
-
-    private fun publishPanicEvent(event: Event, callback: OnCompleteCallback?) {
-        requireActivity().showSnackBar(
-            binding.root, "Implementar en el ViewModel el metodo publishPanicEvent"
-        )
-
-//        mPresenter.publishPanicEvent(event, callback)
-    }
-
 
     //------------------- networkStatus
     override fun networkAvailable() {
@@ -1694,7 +1659,7 @@ class HomeFragment(
     }
 
 
-    var phoneNumberToCall: String? = null
+    private var phoneNumberToCall: String? = null
     override fun makeAPhoneCall(phoneNumber: String) {
 
 // verifica permisos y llama al telefono contenido en phoneNumber
@@ -1733,7 +1698,7 @@ class HomeFragment(
         }
     }
 
-
+/*
     fun registerReceivers() {
 
         val intentFilter = IntentFilter()
@@ -1742,17 +1707,15 @@ class HomeFragment(
         LocalBroadcastManager.getInstance(this.requireContext()).registerReceiver(
             commonReceiver, intentFilter
         )
-
-        // forceLocationUpdate()
     }
 
 
     fun unRegisterReceivers() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(commonReceiver)
     }
+*/
 
-
-    fun prepareQrCode() {
+    private fun prepareQrCode() {
         Toast.makeText(
             requireContext(),
             "Generando QR Code - Modificar para que se genere al hacer el setup y se haga una sola vez.",
@@ -1787,43 +1750,35 @@ class HomeFragment(
     private fun generateQRCode(link: String): Bitmap {
         val data = QrData.Url(link)
 
-        val options = QrVectorOptions.Builder()
-            .setPadding(.3f)
-            .setLogo(
+        val options = QrVectorOptions.Builder().setPadding(.3f).setLogo(
                 QrVectorLogo(
-                    drawable = ContextCompat
-                        .getDrawable(requireContext(), R.drawable.logo_vertical),
+                    drawable = ContextCompat.getDrawable(
+                            requireContext(),
+                            R.drawable.logo_vertical
+                        ),
                     size = .25f,
                     padding = QrVectorLogoPadding.Natural(.2f),
                     shape = QrVectorLogoShape.RoundCorners(.25f)
 
                 )
-            )
-            .setBackground(
+            ).setBackground(
                 QrVectorBackground(
-                    drawable = ContextCompat
-                        .getDrawable(requireContext(), R.drawable.qr_frame),
+                    drawable = ContextCompat.getDrawable(requireContext(), R.drawable.qr_frame),
                 )
-            )
-            .setColors(
+            ).setColors(
                 QrVectorColors(
                     dark = Solid(ContextCompat.getColor(requireContext(), R.color.colorPrimary)),
                     ball = Solid(
                         ContextCompat.getColor(requireContext(), R.color.colorPrimary)
                     )
                 )
-            )
-            .setShapes(
+            ).setShapes(
                 QrVectorShapes(
-                    darkPixel = QrVectorPixelShape
-                        .RoundCorners(.5f),
-                    ball = QrVectorBallShape
-                        .RoundCorners(.25f),
-                    frame = QrVectorFrameShape
-                        .RoundCorners(.25f),
+                    darkPixel = QrVectorPixelShape.RoundCorners(.5f),
+                    ball = QrVectorBallShape.RoundCorners(.25f),
+                    frame = QrVectorFrameShape.RoundCorners(.25f),
                 )
-            )
-            .build()
+            ).build()
 
         val bitmap: Bitmap = QrCodeDrawable(data, options).toBitmap(800, 800)
         bitmap.saveImageToCache(requireContext(), "qr_code.png")
@@ -1836,7 +1791,7 @@ class HomeFragment(
 
     private lateinit var codeScanner: CodeScanner
     private lateinit var qrPopupWindow: PopupWindow
-    fun showQRPopup() {
+    private fun showQRPopup() {
 
         val inflater =
             requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -1865,8 +1820,7 @@ class HomeFragment(
 
             qrPopupWindow.dismiss()
 
-            findNavController().navigate(R.id.qrCodeScanningFragment)
-            /*
+            findNavController().navigate(R.id.qrCodeScanningFragment)/*
             val scannerView = requireActivity().findViewById<CodeScannerView>(R.id.scanner_view)
             scannerView.visibility = View.VISIBLE
 

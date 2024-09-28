@@ -1,8 +1,6 @@
 package com.iyr.ian.ui
 
 
-//import com.greysonparrelli.permiso.Permiso
-
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -261,7 +259,6 @@ import com.iyr.ian.utils.requestLocationRequirements
 import com.iyr.ian.utils.resultTarget
 import com.iyr.ian.utils.showAnimatedDialog
 import com.iyr.ian.utils.showErrorDialog
-import com.iyr.ian.utils.showEventRedirectorDialog
 import com.iyr.ian.utils.showSnackBar
 import com.iyr.ian.utils.startActivity
 import com.iyr.ian.utils.support_models.MediaFile
@@ -278,7 +275,6 @@ import com.lassi.presentation.cropper.CropImageView
 import io.nlopez.smartlocation.SmartLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -363,117 +359,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }
             Log.e(LT, errorNotification.message, errorNotification.th)
         }
-
-
-    //-------------------
-
-
-    //------- ADAPTAR ESTO ---------
-    /*
-      private val options by lazy { UCrop.Options() }
-      private var multiPickerWrapper: MultiPickerWrapper? = null
-      private val cacheLocation = _CacheLocation.EXTERNAL_CACHE_DIR
-      var multiPickerWrapperListener: PickerUtilListener = object : PickerUtilListener {
-          override fun onPermissionDenied() {
-          }
-
-          override fun onImagesChosen(list: List<ChosenImage>) {
-              var intent = Intent("Result")
-              intent.data = Uri.parse(list.get(0).originalPath)
-              var requestCode = Picker.PICK_IMAGE_DEVICE
-              var data = intent
-              var resultCode = Activity.RESULT_OK
-              when (currentModuleIndex) {
-                  IANModulesEnum.MAIN.ordinal -> {/*
-                            if (requestCode == com.kbeanie.multipicker.core.VideoPickerImpl.) {
-                                val mPaths: ArrayList<String>? =
-                                    data?.getStringArrayListExtra(VideoPicker.EXTRA_VIDEO_PATH)
-                            } else*/
-                      if (requestCode === Picker.PICK_VIDEO_DEVICE) {
-
-                      } else if (requestCode === Picker.PICK_IMAGE_CAMERA) {
-                          //if (requestCode === com.github.dhaval2404.imagepicker.ImagePicker.REQUEST_CODE) {
-                          val filePath = Uri.parse(data.data?.encodedPath).toString()
-                          //     uploadMediaToPanicEvent(MediaType.IMAGE, filePath)
-                      } else if (requestCode === REQUEST_CODE_RECOVER_PLAY_SERVICES) {
-
-
-                      } else if (resultCode === RESULT_CANCELED) {
-
-                          if (requestCode === REQUEST_CODE_RECOVER_PLAY_SERVICES) {
-
-                              Toast.makeText(
-                                  this@MainActivity,
-                                  "Google Play Services must be installed.",
-                                  Toast.LENGTH_SHORT
-                              ).show()
-                              finish()
-                          }
-                      }
-
-                  }
-
-                  IANModulesEnum.POST_EVENTS.ordinal -> {
-                      if (mEventsFragment.getMediaFragment().isVisible) {
-                          mEventsFragment.getMediaFragment()
-                              .onActivityResult(requestCode, resultCode, data)
-                      }/*
-                      else
-                          if (mEventsFragment.getLocationManualInputFragment()?.isVisible == true) {
-                              mEventsFragment.getLocationManualInputFragment()
-                                  ?.onActivityResult(requestCode, resultCode, data)
-                          }
-
-                       */
-                  }
-
-                  IANModulesEnum.EVENTS_TRACKING.ordinal -> {
-                      mMapFragment.onActivityResult(requestCode, resultCode, data)
-                  }
-
-              }
-          }
-
-          override fun onVideosChosen(list: List<ChosenVideo>) {
-
-
-              var intent = Intent("Result")
-              intent.data = Uri.parse(list.get(0).originalPath)
-              var requestCode = Picker.PICK_VIDEO_CAMERA
-              var data = intent
-              var resultCode = Activity.RESULT_OK
-              when (currentModuleIndex) {
-                  IANModulesEnum.MAIN.ordinal -> {
-                  }
-
-                  IANModulesEnum.POST_EVENTS.ordinal -> {
-                      if (mEventsFragment.getMediaFragment().isVisible) {
-                          mEventsFragment.getMediaFragment()
-                              .onActivityResult(requestCode, resultCode, data)
-                      }
-                  }
-
-                  IANModulesEnum.EVENTS_TRACKING.ordinal -> {
-                      mMapFragment.onActivityResult(requestCode, resultCode, data)
-                  }
-              }
-          }
-
-          override fun onAudiosChosen(list: List<ChosenAudio>) {
-              // do something here
-              var oo = 23
-          }
-
-          override fun onFilesChosen(list: List<ChosenFile>) {
-              // do something here
-              var oo = 23
-          }
-
-          override fun onError(s: String) {
-              showErrorDialog(s)
-          }
-      }
-  */
 
 
     private lateinit var imagePickerStartForResult: ActivityResultLauncher<Intent>
@@ -772,7 +657,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
         SessionForProfile.getInstance(this).setProfileProperty("LocationPermissionsGranted", true)
 
-
         if (SessionForProfile.getInstance(this).getProfileProperty("RTLocationEnabled") == null) {
             SessionForProfile.getInstance(this).setProfileProperty("RTLocationEnabled", true)
         }
@@ -792,90 +676,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         )
         */
     }
-
-    /*
-        @SuppressLint("MissingPermission")
-        private fun startLocationJobService(
-            intensity: LocationIntensityEnum = LocationIntensityEnum.LOW,
-            skipInitialLocationRequest: Boolean = false
-        ) {
-            Log.d("LOCATION_SENSITIVITY", "startLocationJobService")
-            locationUpdatesIntensity = intensity
-            val mLocationManager = this.getSystemService(LOCATION_SERVICE) as LocationManager
-            if (mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) == null) {
-                initialLocationManagerListener = object : LocationListener {
-                    override fun onLocationChanged(location: Location) {
-                        //         mLocationManager.removeUpdates(this::onLocationChanged);
-                        mLocationManager.removeUpdates(this@MainActivity.initialLocationManagerListener)
-                        if (!locationJobServiceInitialLocationAquired) {
-                            val latLng = LatLng(location.latitude, location.longitude)
-                            Log.i("LocationJobService", "Ubicacion inicial adquirida")
-                            Log.d(
-                                "LocationJobService", "Emito el mensaje de la ubicacion inicial $latLng"
-                            )
-    //                        val intent = Intent(applicationContext, LocationService::class.java)
-                            val intent = Intent(Constants.BROADCAST_LOCATION_UPDATED)
-    //                        intent.action = Constants.BROADCAST_LOCATION_UPDATED
-                            val data = LocationUpdate()
-                            data.location = latLng
-                            val dataJson = Gson().toJson(data)
-                            intent.putExtra("data", dataJson)
-                            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
-                            JobServicesUtils.scheduleJob(
-                                applicationContext, LocationJobService::class.java, intensity
-                            )
-                        }
-
-                    }
-
-                    override fun onLocationChanged(locations: MutableList<Location>) {
-                        super.onLocationChanged(locations)
-                        mLocationManager.removeUpdates(this@MainActivity.initialLocationManagerListener)
-                    }
-
-                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-                        mLocationManager.removeUpdates(this@MainActivity.initialLocationManagerListener)
-                        //                super.onStatusChanged(provider, status, extras)
-                    }
-
-                }
-                mLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    100L,
-                    0F,
-                    initialLocationManagerListener,
-                    Looper.getMainLooper()
-                )
-            } else {
-                val intent = Intent(Constants.BROADCAST_LOCATION_UPDATED)
-
-                val data = LocationUpdate()
-                val location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)!!
-                data.location = LatLng(location.latitude, location.longitude)
-                val dataJson = Gson().toJson(data)
-                intent.putExtra("data", dataJson)
-                LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
-
-                Log.d(
-                    "LocationJobService", "Emito el mensaje de la ubicacion inicial $data.location"
-                )
-
-                JobServicesUtils.scheduleJob(
-                    applicationContext, LocationJobService::class.java, intensity
-                )
-            }
-            locationJobServiceInitialLocationAquired = true
-
-        }
-    *//*
-        private fun updateIntensityInLocationJobService(intensity: LocationIntensityEnum) {
-            if (locationUpdatesIntensity != intensity) {
-                Log.d("LocationJobService", "updateIntensityInLocationJobService")
-                locationUpdatesIntensity = intensity
-                startLocationJobService(intensity, true)
-            }
-        }
-    */
 
     var onWantToExtendCallback: EventCloseToExpireDialogCallback =
         object : EventCloseToExpireDialogCallback {
@@ -1650,21 +1450,18 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-// TODO: Borrar toda referencia a la clase AppClass es decir , a la mainActivity y reemplazar por requireActivity
-        AppClass.instance.setMainActivityRef(this)
-
-
-        onBackPressedDispatcher.addCallback(this, callback)
-
+        Log.d("SCREEN_DENSITY", getDensityName(this).toString())
 
         hideStatusBar()
 
-        //----------------------
+        // TODO: Borrar toda referencia a la clase AppClass es decir , a la mainActivity y reemplazar por requireActivity
+        AppClass.instance.setMainActivityRef(this)
+
+        onBackPressedDispatcher.addCallback(this, callback)
 
         if (BuildConfig.NAVIGATION_HOST_MODE?.toBoolean() == true) {
             binding = ActivityMainBinding.inflate(layoutInflater)
             binding.eventsCounterText.visibility = GONE
-
             // Obtain reference to the NavHostFragment
             appToolbar =
                 AppToolbar.Companion.Builder().withBinding(binding.includeCustomToolbar).build()
@@ -1681,6 +1478,15 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 //            binding.toolbar.setupWithNavController(navController, appBarConfiguration)
 
             setContentView(binding.root)
+
+            if (!isGooglePlayInstalled()) {
+                GoogleApiAvailability.getInstance().makeGooglePlayServicesAvailable(this)
+            } else {
+                if (checkGooglePlayServices()) {
+                    ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifecycleListener())
+                }
+            }
+
 
             startCoreObservers()
             runServices()
@@ -1715,9 +1521,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         viewModel.setUser(user)
 
         //  speak("Bienvenido a IAN!!!")
-
-
-        Log.d("SCREEN_DENSITY", getDensityName(this).toString())
 
 
         //configureCropOptions()
@@ -1851,30 +1654,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
 
     var keyboardHeightProvider: KeyboardHeightProvider? = null
-    private fun setupKeyboardHeightObserver() {
-
-        /*
-          keyboardHeightProvider  =KeyboardHeightProvider(this)
-          // make sure to start the keyboard height provider after the onResume
-          // of this activity. This is because a popup window must be initialised
-          // and attached to the activity root view.
-          val  view : View = findViewById(R.id.activitylayout);
-          view.post { keyboardHeightProvider?.start() };
-
-         *//*
-                binding.root.viewTreeObserver.addOnGlobalLayoutListener {
-
-                    val rootViewHeight: Int = binding.root.getRootView().getHeight()
-                    val tv = binding.actionsSections
-                    val location = IntArray(2)
-                    tv.getLocationOnScreen(location)
-                    var deff = rootViewHeight - (location[1] + tv.measuredHeight)
-                    // deff is the height of soft keyboard        }
-                }
-                */
-
-    }
-
 
     private fun runServices() {
         /*
@@ -2296,7 +2075,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
                 is Resource.Success -> {
                     hideLoader()
-                    showEventRedirectorDialog(status.data.toString())
+//                    showEventRedirectorDialog(status.data.toString())
+                    viewModel.showGoToEventDialog(null, status.data.toString())
+
                 }
 
                 is Resource.Error -> {
@@ -2363,7 +2144,9 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
                 is Resource.Success -> {
                     hideLoader()
-                    showEventRedirectorDialog(status.data.toString())
+//                    showEventRedirectorDialog(status.data.toString())
+                    viewModel.showGoToEventDialog(null, status.data.toString())
+
                 }
             }
         }
@@ -2421,6 +2204,45 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                 else -> {}
             }
         }
+
+        viewModel.showGoToEventDialog.observe(this) { propsMap ->
+
+            val bundle = Bundle()
+            bundle.putString("event_key", propsMap?.get("event_key") as String?)
+            bundle.putString("notification_key", propsMap?.get("notification_key") as String?)
+
+            findNavController(R.id.nav_host_fragment).navigate(
+                R.id.eventPublishedDoneDialog, bundle
+            )
+
+            /*
+            val callbackDialog: OnEventPublishedDone = object : OnEventPublishedDone {
+                override fun onBringMeToEvent() {
+                    if (requireActivity() is MainActivityCallback) {
+                        (requireActivity() as MainActivityCallback).goToEvent(status.data?.event_key!!)
+                    }
+                }
+
+                override fun onRefuse() {
+
+                }
+            }
+            val doneDialog = EventPublishedDoneDialog(
+                requireContext(), requireActivity(), callbackDialog
+            )
+*/
+
+        }
+
+        viewModel.eventToOpen.observe(this) { eventKey ->
+
+            if (eventKey != null) {
+                findNavController(R.id.nav_host_fragment).navigate(
+                    R.id.mapSituationFragment, bundleOf("eventKey" to eventKey)
+                )
+            }
+        }
+
 
         AppClass.instance.getEventsFollowedFlow.observe(this) { event ->
 
@@ -2821,49 +2643,49 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
 
                     //    appToolbar.updateTitle(user.display_name.capitalizeWords())
                     try {
-                    /*
-                        Log.d("STORAGEREFERENCE", "va a cargar 1")
-                        var storageReference: Any? = null
-                        if (user.image.file_name != null) {
-                            if (!user.image.file_name!!.startsWith("http")) {
+                        /*
+                            Log.d("STORAGEREFERENCE", "va a cargar 1")
+                            var storageReference: Any? = null
+                            if (user.image.file_name != null) {
+                                if (!user.image.file_name!!.startsWith("http")) {
 
-                                // TODO: Pasarlo a Coroutina
+                                    // TODO: Pasarlo a Coroutina
 
-                                storageReference = FirebaseStorage.getInstance()
-                                    .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH).child(
-                                        SessionForProfile.getInstance(this@MainActivity).getUserId()
-                                    ).child(user.image.file_name.toString())
-                            } else {
-                                storageReference = user.image.file_name
+                                    storageReference = FirebaseStorage.getInstance()
+                                        .getReference(AppConstants.PROFILE_IMAGES_STORAGE_PATH).child(
+                                            SessionForProfile.getInstance(this@MainActivity).getUserId()
+                                        ).child(user.image.file_name.toString())
+                                } else {
+                                    storageReference = user.image.file_name
+                                }
+
+                                try {
+
+                                    Log.d("GLIDEAPP", "2")
+
+
+                                    GlideApp.with(this@MainActivity).asBitmap().load(storageReference)
+                                        .placeholder(getDrawable(R.drawable.progress_animation))
+                                        .error(getDrawable(R.drawable.ic_error))
+                                        .into(appToolbar.getUserAvatarRef())
+                                } catch (exception: Exception) {
+                                    showErrorDialog(exception.localizedMessage.toString())
+                                }
                             }
+                            else
+                            {
 
-                            try {
-
-                                Log.d("GLIDEAPP", "2")
+                                Log.d("GLIDEAPP", "3")
 
 
-                                GlideApp.with(this@MainActivity).asBitmap().load(storageReference)
+                                GlideApp.with(this@MainActivity).asBitmap().load("null")
                                     .placeholder(getDrawable(R.drawable.progress_animation))
                                     .error(getDrawable(R.drawable.ic_error))
                                     .into(appToolbar.getUserAvatarRef())
-                            } catch (exception: Exception) {
-                                showErrorDialog(exception.localizedMessage.toString())
+
                             }
-                        }
-                        else
-                        {
-
-                            Log.d("GLIDEAPP", "3")
-
-
-                            GlideApp.with(this@MainActivity).asBitmap().load("null")
-                                .placeholder(getDrawable(R.drawable.progress_animation))
-                                .error(getDrawable(R.drawable.ic_error))
-                                .into(appToolbar.getUserAvatarRef())
-
-                        }
-                        Log.d("STORAGEREFERENCE", "--------------------va a cargar 1")
-                  */
+                            Log.d("STORAGEREFERENCE", "--------------------va a cargar 1")
+                      */
                     } catch (exception: Exception) {
                         showErrorDialog(exception.localizedMessage.toString())
                     }
@@ -3826,37 +3648,12 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
             }
         })
 
-
-        /*
-                binding.bell.setOnClickListener {
-                    if (mNotificationsFragment.getData().size > 0) {
-                        handleTouch()
-                        switchToModule(5, "notifications", true, null)
-                    }
-                }
-        */
-
         appToolbar.hideTagsMiniatures()
-//        binding.itagsIndicator.visibility = GONE
-        /*
-                binding.contactListControl.setOnClickListener {
-                    handleTouch()
-                    showContactListPopupWindow(binding.contactListControl, this)
-                }
-        *//*
-                    binding.backArrow.setOnClickListener {
-                        handleGoBack()
-                    }
-            */
-
-
-
 
         binding.actionHome.setOnClickListener(View.OnClickListener {
             handleTouch()
             goHome()
         })
-
 
         binding.actionPublish.setOnClickListener(View.OnClickListener {
             handleTouch()
@@ -3895,38 +3692,20 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
                     })
                 }
 
-            } else {
-                //     if (versionPrefix() >= 2) {
-
-                var bundle = Bundle()
-                bundle.putString("go_to", SettingsFragmentsEnum.PLAN_SETTINGS.name)/*
-                              switchToModule(
-                                  IANModulesEnum.SETTINGS.ordinal, "settings", false, "", bundle
-                              )
-              */
-
-                findNavController(R.id.nav_host_fragment).navigate(R.id.settingsFragment, bundle)/*
-                   } else {
-                       Toast.makeText(
-                           this@MainActivity,
-                           "Esta funcionalidad esta prevista para la proxima actualizacion. Se paciente y continua acompañandonos, lo que viene, te va a sorprender",
-                           Toast.LENGTH_LONG
-                       ).show()
-                   }
-
-                 */
             }
-
-
+            else
+            {
+                var bundle = Bundle()
+                bundle.putString("go_to", SettingsFragmentsEnum.PLAN_SETTINGS.name)
+                findNavController(R.id.nav_host_fragment).navigate(R.id.settingsFragment, bundle)
+            }
         })
 
         binding.actionFriends.setOnClickListener(View.OnClickListener {
-
             handleTouch()
             val action = HomeFragmentDirections.actionHomeFragmentToContactsFragment()
             findNavController(R.id.nav_host_fragment).navigate(action)
         })
-
 
         appToolbar.setSettingsOnClickListener(object : OnClickListener {
             override fun onClick(v: View?) {
@@ -3946,7 +3725,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     }
 
     private fun getNotificationsToken() {
-        GlobalScope.launch(Dispatchers.IO) {
+//        GlobalScope.launch(Dispatchers.IO) {
+        lifecycleScope.launch(Dispatchers.IO) {
 
             var token = FirebaseMessaging.getInstance().token.await()
 // show token in toast including Looper.prepare() and Looper.loop()
@@ -5472,198 +5252,6 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     }
 
 
-    // Data Listener
-    /*
-        fun onNotificationAdded(
-            notification: EventNotificationModel, previousChildName: String?
-        ) {/*
-                        Log.d("TIEMPO", "onNotificationAdded")
-                        val notification = snapshot.getValue(EventNotificationModel::class.java)!!
-                        notification.notification_key = snapshot.key!!
-                  */
-            onNotificationAddedInternal(notification)
-            if (notification.time > AppClass.instance.startTime) {
-                playSound(R.raw.intro_bell)
-            }
-
-        }
-    */
-    /*
-    fun onNotificationAddedInternal(notification: EventNotificationModel) {
-
-        Log.d("TIEMPO", "onNotificationAddedInternal")
-
-
-   //     var notificationsFragment = mNotificationsFragment
-      //  val notificationsAdapter = mNotificationsFragment.getAdapter()
-       // val notificationsData = mNotificationsFragment.getData()
-
-        if (!notificationsData.contains(notification)) {
-            notificationsData.add(notification)
-            if (notificationsData.size == 1) {
-                updateBellVisibilityStatus(true)
-            }
-
-            if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
-                notificationsAdapter.notifyItemInserted(notificationsData.size - 1)
-            }
-
-            Log.d("TIEMPO", "queculo")
-
-            var eventType = notification.event_type
-
-
-            if (notification.notification_type.compareTo(AppConstants.NOTIFICATION_TYPE_PANIC_BUTTON) == 0) {
-                viewModel.onNewEventNotification(notification)
-            }
-
-            when (eventType) {
-                EventTypesEnum.SEND_POLICE.name -> {
-                    playSound(R.raw.policesiren, null, null)
-                }
-
-                EventTypesEnum.SEND_FIREMAN.name -> {
-                    playSound(R.raw.fire_truck_siren, null, null)
-                }
-            }
-        }
-
-
-    }
-*/
-    /*
-    fun onNotificationChanged(
-        notification: EventNotificationModel, previousChildName: String?
-    ) {
-        onNotificationAddedChangedInternal(notification)
-    }
-*/
-    /*
-    fun onNotificationAddedChangedInternal(notification: EventNotificationModel) {
-
-        var notificationsFragment = mNotificationsFragment
-        val notificationsAdapter = mNotificationsFragment.getAdapter()
-        val notificationsData = mNotificationsFragment.getData()
-
-        val index = notificationsData.indexOf(notification)
-        if (index > -1) {
-            notificationsData[index] = notification
-            if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
-                notificationsAdapter.notifyItemChanged(index)
-            }
-//            updateBellVisibilityStatus()
-        }
-
-    }
-
-*/
-    /*
-    fun onNotificationRemoved(notification: EventNotificationModel) {/*
-                val event = snapshot.getValue(EventNotificationModel::class.java)!!
-                event.notification_key = snapshot.key!!
-        */
-        var notificationsFragment = mNotificationsFragment
-        val notificationsAdapter = mNotificationsFragment.getAdapter()
-        val notificationsData = mNotificationsFragment.getData()
-        val index = notificationsData.indexOf(notification)
-        if (index > -1) {
-            notificationsData.removeAt(index)
-            if (notificationsData.size == 0) {
-                updateBellVisibilityStatus(false)
-            }
-            if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
-                notificationsAdapter.notifyItemRemoved(index)
-            }
-
-        }
-    }
-*/
-    /*
-        private fun onNotificationRemoveInternal(event: EventNotificationModel) {
-            // var notificationsFragment = mNotificationsFragment
-            val notificationsAdapter = mNotificationsFragment.getAdapter()
-            val notificationsData = mNotificationsFragment.getData()
-            val indexInDialog = notificationsData.indexOf(event)
-            if (indexInDialog != -1) {
-                notificationsData.removeAt(indexInDialog)
-                if (findNavController(R.id.nav_host_fragment).currentDestination?.id == R.id.notificationsFragment) {
-                    notificationsAdapter.notifyItemRemoved(indexInDialog)
-                }
-                if (notificationsData.size == 0) {
-                    updateBellVisibilityStatus(false)
-                }
-            }
-        }
-    */
-    /*
-    override fun notificationDeleteByKey(
-        notification: EventNotificationModel, viewPressed: View
-    ) {
-        if (viewPressed.isEnabled) {
-
-            viewPressed.isEnabled = false
-            val callback = object : OnCompleteCallback {
-                override fun onComplete(success: Boolean, result: Any?) {
-                    viewPressed.isEnabled = true
-                }
-
-                override fun onError(exception: java.lang.Exception) {
-                    viewPressed.isEnabled = true
-                    onNotificationAddedInternal(notification)
-                    showSnackBar(
-                        binding.root, getString(R.string.cannot_update_in_database)
-                    )
-                }
-            }
-
-            onNotificationRemoveInternal(notification)
-            //mPresenter.notificationDeleteByKey(notification.notification_key, callback)
-            showSnackBar(
-                binding.root, "Implementar en el viewmodel notificationDeleteByKey"
-            )
-
-        } else {
-            Toast.makeText(this, "No molestes mosquito!", Toast.LENGTH_LONG).show()
-        }
-
-    }
-*/
-    /*
-    override fun notificationsDeleteByEvent(
-        notification: EventNotificationModel, viewPressed: View
-    ) {
-
-        if (viewPressed.isEnabled) {
-            viewPressed.isEnabled = false
-            val callback = object : OnCompleteCallback {
-                override fun onComplete(success: Boolean, result: Any?) {
-                    viewPressed.isEnabled = true
-                }
-
-                override fun onError(exception: java.lang.Exception) {
-                    onNotificationAddedInternal(notification)
-                    showSnackBar(
-                        binding.root, getString(R.string.cannot_update_in_database)
-                    )
-                    viewPressed.isEnabled = true
-                }
-            }
-            onNotificationRemoveInternal(notification)
-            //  mPresenter.notificationsDeleteForEvent(notification.event_key, callback)
-
-            showSnackBar(
-                binding.root, "Implementar en el viewmodel notificationsDeleteForEvent"
-            )
-
-        } else {
-            Toast.makeText(this, "No molestes mosquito!", Toast.LENGTH_LONG).show()
-        }
-    }
-*/
-    fun onGoToChatPressed(channelKey: String, messageKey: String) {
-        viewModel.onGoToChatPressed(channelKey, messageKey)
-    }
-
     override fun onEventFollowedAdded(
         eventFull: Event, eventFollowed: EventFollowed
     ) {
@@ -5775,7 +5363,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         //    switchToModule(0, "home")
         goHome()
         if (event != null) {
-            showEventRedirectorDialog(event.event_key)
+//            showEventRedirectorDialog(event.event_key)
+            viewModel.showGoToEventDialog(null, event.event_key)
         }
         appIsBussy = false
         updateUI()
@@ -5899,7 +5488,8 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
     }
 
     override fun onAgreeToAssistDone(eventKey: String) {
-        showEventRedirectorDialog(eventKey)
+//        showEventRedirectorDialog(eventKey)
+        viewModel.showGoToEventDialog(null, eventKey)
     }
     /*
         override fun onNotificationDismiss(notification: EventNotificationModel) {
@@ -6325,19 +5915,7 @@ class MainActivity : AppCompatActivity(), MainActivityCallback,
         Log.d("BLUETOOTH", "State = " + state.toString())
     }
 
-    /*
-      fun getEvents(): ArrayList<EventFollowed> {
-          /* CCCC
-            if (::mMapFragment.isInitialized)
-                return mMapFragment.getEvents()
-            else
-                return ArrayList<EventFollowed>()
-          return mMapFragment.getEvents()
 
-           */
-          return eventsFollowedArray
-      }
-    */
     fun addButtonToToolbar(controlResId: Int, image: Any): View {
         if (getToolbarButton(controlResId) == null) {
             val newButton = ToolbarUtils().createToolbarButton(this, controlResId, image)

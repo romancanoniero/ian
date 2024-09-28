@@ -99,21 +99,48 @@
                     android:text="Call Police request"
                     android:textSize="@dimen/text_size_subparagraph" />
 
-                <TextView
-                    android:id="@+id/time_mark"
+                <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginEnd="20dp"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    >
 
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:shadowColor="@color/colorGrey50"
-                    android:text="(hace 20 mins)"
-                    android:textColor="@color/black"
-                    android:textSize="@dimen/text_size_subparagraph"
-                    android:textStyle="normal" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+
+                            android:text="@string/creation_time" />
+
+                        <TextView
+                            android:id="@+id/creation_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+
+                            android:text="Lunes, 4 de ciinsidnasoidnsaoid" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/time_mark"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="20dp"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:shadowColor="@color/colorGrey50"
+                        android:text="(hace 20 mins)"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/text_size_subparagraph"
+                        android:textStyle="normal" />
+                </LinearLayout>
 
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -168,7 +195,7 @@
                 app:layout_constraintBottom_toTopOf="@+id/linearLayout15"
                 app:layout_constraintDimensionRatio="v,1:1"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
+                app:layout_constraintTop_toTopOf="parent" />
 
             <LinearLayout
                 android:id="@+id/data_section"

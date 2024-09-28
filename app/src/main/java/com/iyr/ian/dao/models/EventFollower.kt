@@ -7,6 +7,7 @@ open class EventFollower() : UserLocation() {
         this.user_key = userKey
     }
 
+    var eventKey: String = ""
     @field:JvmField // use this annotation if your Boolean field is prefixed with 'is'
     var is_author: Boolean = false
     var time: Long? = null

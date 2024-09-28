@@ -40,6 +40,7 @@ import com.iyr.ian.ui.map.event_header.adapter.EventHeaderCallback
 import com.iyr.ian.utils.FirebaseExtensions.downloadUrlWithCache
 import com.iyr.ian.utils.activity_contracts.MakePhoneCallActivityContract
 import com.iyr.ian.utils.coroutines.Resource
+import com.iyr.ian.utils.formatDateTime
 import com.iyr.ian.utils.geo.GeoFunctions
 import com.iyr.ian.utils.getEventTypeDrawable
 import com.iyr.ian.utils.getEventTypeName
@@ -167,6 +168,9 @@ class EventHeaderFragment(
                     is Resource.Success -> {
 
                         var eventData = resource.data!!
+
+                        binding.creationTime.text = eventData.time.formatDateTime()
+
 
                         if (ActivityCompat.checkSelfPermission(
                                 requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
@@ -348,6 +352,8 @@ class EventHeaderFragment(
             } else {
                 binding.distanceFromYou.text = getString(R.string.not_avalaible)
             }
+
+
         }
 
 

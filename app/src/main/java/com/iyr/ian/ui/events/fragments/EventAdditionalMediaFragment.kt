@@ -43,11 +43,8 @@ import com.iyr.ian.enums.EventTypesEnum
 import com.iyr.ian.enums.RecordingStatusEnum
 import com.iyr.ian.services.eventservice.EventService
 import com.iyr.ian.ui.MainActivity
-import com.iyr.ian.ui.callback.MainActivityCallback
 import com.iyr.ian.ui.events.fragments.adapters.EventMediaAdapter
 import com.iyr.ian.ui.events.fragments.adapters.MediaHandlingCallback
-import com.iyr.ian.ui.events.fragments.dialogs.EventPublishedDoneDialog
-import com.iyr.ian.ui.events.fragments.dialogs.OnEventPublishedDone
 import com.iyr.ian.ui.interfaces.ErrorInterface
 import com.iyr.ian.ui.interfaces.EventsPublishingCallback
 import com.iyr.ian.utils.FileUtils
@@ -453,6 +450,14 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                         findNavController().clearBackStack(R.id.homeFragment)
                         eventService.resetFlow()
                     }
+
+
+                    val eventKey = status.data?.event_key!!
+
+                    MainActivityViewModel.getInstance().showGoToEventDialog(null, eventKey)
+
+/*
+                    findNavController().navigate(R.id.eventPublishedDoneDialog, bundle)
                     val callbackDialog: OnEventPublishedDone = object : OnEventPublishedDone {
                         override fun onBringMeToEvent() {
                             if (requireActivity() is MainActivityCallback) {
@@ -470,6 +475,7 @@ class EventAdditionalMediaFragment() : Fragment(), EventAdditionalMediaFragmentC
                     lifecycleScope.launch(Dispatchers.Main) {
                         doneDialog.show()
                     }
+                    */
                 }
 
                 is Resource.Error -> {

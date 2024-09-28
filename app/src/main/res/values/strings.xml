@@ -736,6 +736,7 @@
     <string name="bt_disconnect">Diconnect</string>
     <string name="bt_forget">Forget</string>
     <string name="stop_scan">Stop Scanning</string>
+    <string name="creation_time">Fecha de Creación:</string>
 
 
 </resources>
